@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+    <ImageButton
+        android:id="@+id/Canastilla"
+        android:layout_width="118dp"
+        android:layout_height="118dp"
+        app:layout_constraintStart_toEndOf="@+id/Abrir"
+        app:layout_constraintTop_toBottomOf="@+id/config"
+        app:srcCompat="@mipmap/ic_carrito_foreground" />
+
+    <ImageButton
+        android:id="@+id/Ventas"
+        android:layout_width="118dp"
+        android:layout_height="118dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageView2"
+        app:srcCompat="@mipmap/ic_gasolina_foreground" />
+
+    <ImageButton
+        android:id="@+id/Fidelizar"
+        android:layout_width="118dp"
+        android:layout_height="118dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginLeft="4dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toEndOf="@+id/Ventas"
+        app:layout_constraintTop_toBottomOf="@+id/imageView2"
+        app:srcCompat="@android:drawable/btn_star_big_on" />
+
+    <ImageButton
+        android:id="@+id/Cerrar"
+        android:layout_width="118dp"
+        android:layout_height="118dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/Ventas"
+        app:srcCompat="@mipmap/ic_close_foreground" />
+
+    <ImageButton
+        android:id="@+id/config"
+        android:layout_width="118dp"
+        android:layout_height="118dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintStart_toEndOf="@+id/Fidelizar"
+        app:layout_constraintTop_toBottomOf="@+id/imageView2"
+        app:srcCompat="@mipmap/ic_config_foreground" />
+
+    <ImageButton
+        android:id="@+id/Abrir"
+        android:layout_width="118dp"
+        android:layout_height="118dp"
+        android:layout_marginStart="4dp"
+        app:layout_constraintStart_toEndOf="@+id/Cerrar"
+        app:layout_constraintTop_toBottomOf="@+id/Fidelizar"
+        app:srcCompat="@mipmap/ic_open_foreground" />
+
+    <ImageView
+        android:id="@+id/imageView2"
+        android:layout_width="168dp"
+        android:layout_height="168dp"
+        android:src="@mipmap/ic_logosiges"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:layout_editor_absoluteY="1dp" />
+
+    <TextView
+        android:id="@+id/textView14"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="60dp"
+        android:layout_marginLeft="60dp"
+        android:layout_marginTop="80dp"
+        android:text="Facturador"
+        app:layout_constraintStart_toEndOf="@+id/imageView2"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
