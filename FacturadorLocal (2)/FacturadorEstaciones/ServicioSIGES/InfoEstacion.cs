@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace FacturadorEstacionesPOSWinForm
+namespace ServicioSIGES
 {
     public class InfoEstacion
     {

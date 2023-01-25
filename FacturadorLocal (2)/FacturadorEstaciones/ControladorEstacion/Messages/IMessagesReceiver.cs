@@ -4,11 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SigesServicio
+namespace ControladorEstacion.Messages
 {
-    internal class ImprimirAperturaCierreTurnosWorker
+    public interface IMessagesReceiver
     {
-        //Buscar turnos sin imprimir
-        //Imprimir
+        void ReceiveMessages();
     }
 }

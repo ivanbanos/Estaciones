@@ -1,5 +1,7 @@
-﻿using FactoradorEstacionesModelo.Objetos;
+﻿using EnviadorInformacionService.Models;
+using FactoradorEstacionesModelo.Objetos;
 using FactoradorEstacionesModelo.Siges;
+using FacturacionelectronicaCore.Repositorio.Entities;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -36,5 +38,29 @@ namespace FacturadorEstacionesRepositorio
         TurnoSiges ObtenerTurnoSurtidor(int id);
         void EnviarTotalizadorCierre(int idSurtidor, int? idTurno, int idManguera, string total);
         void EnviarTotalizadorApertura(int idSurtidor, int? idTurno, int idManguera, string total);
+        void ActualizarCarros(List<VehiculoSuic> vehiculos);
+        TurnoSiges getTurnosSinImprimir();
+        void ActualizarTurnoImpreso(int  id);
+        VehiculoSuic GetVehiculoSuic(string iButton);
+        Resolucion BuscarResolucionActiva(IEnumerable<Resolucion> resolucionRemota);
+        void CambiarConsecutivoActual(int v);
+        List<Tercero> BuscarTercerosNoEnviados();
+        List<Factura> BuscarFacturasNoEnviadas();
+        void ActuralizarTercerosEnviados(IEnumerable<int> enumerable);
+        void ActuralizarFacturasEnviados(IEnumerable<int> enumerable);
+        void ActuralizarTerceros(Tercero tercero);
+        void AgregarFacturaDesdeIdVenta();
+        List<Factura> BuscarFacturasNoEnviadasFacturacion();
+        void ActuralizarFacturasEnviadosFacturacion(IEnumerable<int> facturas);
+        List<FacturaFechaReporte> BuscarFechasReportesNoEnviadas();
+        void ActuralizarFechasReportesEnviadas(IEnumerable<int> facturas);
+        bool HayFacturasCanastillaPorImprimir();
+        FacturaCanastilla getFacturasCanastillaImprimir();
+        IEnumerable<FacturaCanastilla> BuscarFacturasNoEnviadasCanastilla();
+        void ActuralizarFacturasEnviadosCanastilla(IEnumerable<int> facturas);
+        FacturaCanastilla BuscarFacturaCanastillaPorConsecutivo(int consecutivo);
+        void SetFacturaCanastillaImpresa(int facturasCanastillaId);
+        List<FacturaSiges> BuscarFacturasNoEnviadasSiges();
+        object BuscarFechasReportesNoEnviadasSiges();
     }
 }

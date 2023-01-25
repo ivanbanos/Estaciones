@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using NLog;
+using System;
 using System.Collections.Generic;
 using System.IO.Ports;
 using System.Text;
@@ -13,12 +15,11 @@ namespace ManejadorSurtidor.SICOM
         private string resultado;
         private bool leido;
         private int cant;
-        private NLog.Logger _logger;
+        private readonly Logger _logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public async Task<string> leerBoton(string puerto, bool caraPAr, NLog.Logger _logger)
+        public async Task<string> leerBoton(string puerto, bool caraPAr, Logger _logger)
         {
             cant = 0;
-            this._logger = _logger;
             System.ComponentModel.IContainer components = null;
             components = new System.ComponentModel.Container();
             serialPort1 = new SerialPort(components);
@@ -53,7 +54,7 @@ namespace ManejadorSurtidor.SICOM
                 {
                     iButton = codigos[i]+iButton;
                 }
-            _logger.Log(NLog.LogLevel.Info, $"Leyendo boton {resultado}");
+                _logger.Log(NLog.LogLevel.Info, $"Leyendo boton {resultado}");
                 return iButton;
             }
             catch (Exception) {
@@ -67,9 +68,9 @@ namespace ManejadorSurtidor.SICOM
             {
 
                 byte[] tramaByte = FromHex(trama);
-                //_logger.Log(NLog.LogLevel.Info, $"Enviando trama {trama}");
+                //_logger.LogInformation( $"Enviando trama {trama}");
                 serialPort1.Write(tramaByte, 0, tramaByte.Length); //ENVIO DE LA TRAMA
-                await Task.Delay(1000);
+                Thread.Sleep(1000);
             }
         }
 
@@ -88,7 +89,7 @@ namespace ManejadorSurtidor.SICOM
         {
             SerialPort sp = (SerialPort)sender;
             string intdata = sp.ReadExisting();
-            // _logger.Log(NLog.LogLevel.Info, $"Buffer {sp.ReadBufferSize}");
+            // _logger.LogInformation( $"Buffer {sp.ReadBufferSize}");
             
             byte[] response = Encoding.GetEncoding(28591).GetBytes(intdata);
             string hexString = BitConverter.ToString(response);

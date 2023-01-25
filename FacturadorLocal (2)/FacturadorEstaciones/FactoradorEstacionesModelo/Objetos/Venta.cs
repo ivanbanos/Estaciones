@@ -32,5 +32,8 @@ namespace FactoradorEstacionesModelo.Objetos
         public string Combustible { get; set; }
         public decimal Descuento { get; set; }
         public string EMPLEADO { get; set; }
+        public string CEDULA { get; internal set; }
+        public DateTime? FECH_PRMA { get; internal set; }
+        public string COD_EMP { get; internal set; }
     }
 }

@@ -9,6 +9,12 @@ namespace FactoradorEstacionesModelo.Siges
         public int Id { get; set; }
         public string Descripcion { get; set; }
         public string Ubicacion { get; set; }
+        public string Estado { get; set; }
+        public double ultimaVenta { get; set; }
         public bool Totalizador { get; set; } = false;
+        public double totalizador { get; set; }
+        public bool esperando { get; set; }
+        public bool Vendiendo { get; set; }
+        public VehiculoSuic Vehiculo { get; set; }
     }
 }

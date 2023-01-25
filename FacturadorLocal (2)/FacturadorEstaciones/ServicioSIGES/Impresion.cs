@@ -1,5 +1,3 @@
-
-using FacturadorEstacionesPOSWinForm;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,6 +10,8 @@ using System.Threading.Tasks;
 using System.Drawing;
 using System.Drawing.Printing;
 using System.Text;
+using FacturadorEstacionesRepositorio;
+using FactoradorEstacionesModelo.Siges;
 
 namespace ServicioSIGES
 {

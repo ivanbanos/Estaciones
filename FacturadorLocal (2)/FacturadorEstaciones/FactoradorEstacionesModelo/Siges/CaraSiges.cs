@@ -8,6 +8,8 @@ namespace FactoradorEstacionesModelo.Siges
     {
         public int Id { get; set; }
         public string Descripcion { get; set; }
+        public string Impresora { get; set; }
+        
         public string Isla { get; set; }
     }
 }

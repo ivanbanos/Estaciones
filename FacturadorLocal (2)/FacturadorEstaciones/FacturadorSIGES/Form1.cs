@@ -622,7 +622,7 @@ namespace FacturadorEstacionesPOSWinForm
             }
             facturaCanastilla.terceroId = _terceroCanastilla;
             facturaCanastilla.descuento = 0;
-            facturaCanastilla.codigoFormaPago = new FormasPagos() { Id = 4 };
+            facturaCanastilla.codigoFormaPago = new FormaPagoSiges() { Id = 1 };
             try
             {
                 var consecutivo = _conexionEstacionRemota.GenerarFacturaCanastilla(facturaCanastilla);

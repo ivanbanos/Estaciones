@@ -1,117 +1,203 @@
-using System.Drawing.Printing;
-using FacturadorEstacionesRepositorio;
+﻿using EnviadorInformacionService.Models;
+using FactoradorEstacionesModelo;
 using FactoradorEstacionesModelo.Siges;
 using FacturadorEstacionesPOSWinForm;
+using FacturadorEstacionesPOSWinForm.Repo;
+using FacturadorEstacionesRepositorio;
 using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Printing;
+using System.Linq;
+using System.Net.NetworkInformation;
 using System.Text;
-using ServicioSIGES;
-
+using System.Threading.Tasks;
 
 namespace SigesServicio
 {
-    public class Worker : BackgroundService
+    public class CanastillaWorker : BackgroundService
     {
-        private readonly ILogger<Worker> _logger;
+        private Dictionary<int, string> carasImpresoras;
         private int imprimiendo = 0;
-        private bool ImpresionAutomatica = false;
-        private bool impresionFormaDePagoOrdenDespacho = false;
         private string firstMacAddress;
+        private readonly IConexionEstacionRemota _conexionEstacionRemota;
         private readonly Guid estacionFuente;
-        private readonly IEstacionesRepositorio _estacionesRepositorio;
 
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly bool generaFacturaElectronica;
-        private readonly InfoEstacion _infoEstacion;
-        private readonly List<CaraImpresora> _caraImpresoras;
-        public Worker(ILogger<Worker> logger, IEstacionesRepositorio estacionesRepositorio, IOptions<InfoEstacion> infoEstacion, IOptions<List<CaraImpresora>> caraImpresoras)
+        private Font printFont;
+        private FacturaCanastilla _factura;
+        private InfoEstacion _infoEstacion;
+        private InformacionCuenta _informacionCuenta; 
+        private int _charactersPerPage;
+        private IEstacionesRepositorio _estacionesRepositorio;
+
+        private List<FormaPagoSiges> formasDePago;
+        private List<LineasImprimir> lineasImprimir;
+        private string impresora;
+        private int vecesImpresionCanastilla;
+
+        public CanastillaWorker(IEstacionesRepositorio estacionesRepositorio, IOptions<InformacionCuenta> informacionCuenta, IOptions<InfoEstacion> infoEstacion, IConexionEstacionRemota conexionEstacionRemota)
         {
             _estacionesRepositorio = estacionesRepositorio;
             _infoEstacion = infoEstacion.Value;
-            _caraImpresoras = caraImpresoras.Value;
+            _informacionCuenta = informacionCuenta.Value;
+            _conexionEstacionRemota = conexionEstacionRemota;
+            firstMacAddress = NetworkInterface
+        .GetAllNetworkInterfaces()
+        .Where(nic => nic.OperationalStatus == OperationalStatus.Up && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+        .Select(nic => nic.GetPhysicalAddress().ToString())
+        .FirstOrDefault();
 
-            _logger = logger;
+
         }
+
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var estacionFuente = new Guid(_infoEstacion.EstacionFuente);
-
-
-            Console.WriteLine(_infoEstacion.Razon);
-            ImpresionAutomatica = _infoEstacion.ImpresionAutomatica;
-            impresionFormaDePagoOrdenDespacho = _infoEstacion.ImpresionFormaDePagoOrdenDespacho;
-            var generaFacturaElectronica = _infoEstacion.GeneraFacturaElectronica;
-
-
-            formas = _estacionesRepositorio.BuscarFormasPagosSiges();
-
-            Console.WriteLine("formas");
+            formasDePago = _estacionesRepositorio.BuscarFormasPagosSiges();
             imprimiendo = 0;
+
+
             while (!stoppingToken.IsCancellationRequested)
             {
-                Console.WriteLine("iniciando");
+                DateTime lastTimeExec = DateTime.Now;
+
                 try
                 {
-
                     if (imprimiendo == 0)
                     {
-
-                        var factura = _estacionesRepositorio.getFacturasImprimir();
-
-                        if (imprimiendo == 0 && factura != null
-                            && ((factura.impresa == 0 && ImpresionAutomatica) || factura.impresa <= -1))
+                        if (lastTimeExec < DateTime.Now.AddHours(-6))
                         {
-
-
-                            while (true)
+                            lastTimeExec = DateTime.Now;
+                            try
                             {
-                                if (imprimiendo == 0)
-                                {
-                                    imprimiendo++;
-                                    Imprimir(factura);
-                                    factura.impresa++;
-                                }
-                                else
-                                {
-                                    Thread.Sleep(100);
-                                }
-                                if (factura.impresa == 0)
-                                {
-                                    break;
-                                }
+                                var infoTemp = _conexionEstacionRemota.getInfoEstacion(estacionFuente, _conexionEstacionRemota.getToken());
+                                _infoEstacion = infoTemp;
                             }
-                            await Task.Delay(1000, stoppingToken);
+                            catch (Exception e)
+                            {
+                               
+
+                            }
+                        }
+                        if (_estacionesRepositorio.HayFacturasCanastillaPorImprimir())
+                        {
+                            var factura = _estacionesRepositorio.getFacturasCanastillaImprimir(); if (imprimiendo == 0 && factura != null
+                             && ((factura.impresa == 0 && _infoEstacion.ImpresionAutomatica) || factura.impresa <= -1))
+                            {
+
+
+                                factura.impresa = 0 - vecesImpresionCanastilla;
+                                while (factura.impresa != 0)
+                                {
+                                    if (imprimiendo == 0)
+                                    {
+                                        imprimiendo++;
+                                        Imprimir(factura);
+                                        factura.impresa++;
+                                    }
+                                    else
+                                    {
+                                        Thread.Sleep(100);
+                                    }
+                                }
+                                Thread.Sleep(1000);
+                            }
+
+
                         }
 
 
-                        await Task.Delay(1000, stoppingToken);
+                        Thread.Sleep(1000);
 
                     }
                     else
                     {
-                        await Task.Delay(1000, stoppingToken);
+                        Thread.Sleep(1000);
                     }
                 }
                 catch (Exception ex)
                 {
 
                     imprimiendo = 0;
-                    Console.WriteLine("Error " + ex.Message);
-                    Console.WriteLine("Error " + ex.StackTrace);
-                    await Task.Delay(1000, stoppingToken);
+                    Logger.Error("Error " + ex.Message);
+                    Logger.Error("Error " + ex.StackTrace);
+                    Thread.Sleep(5000);
                 }
 
-                _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
+                Thread.Sleep(5000);
             }
         }
-        private Font printFont;
-        private FacturaSiges _factura;
-        private List<FormaPagoSiges> formas;
-        private List<LineasImprimir> lineasImprimir;
-        private void Imprimir(FacturaSiges factura)
+
+        public void WebCanastilla()
+        {
+            while (true)
+            {
+                try
+                {
+                    var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadasCanastilla();
+                    var token = _conexionEstacionRemota.getToken();
+                    if (facturas.Any())
+                    {
+                        var formas = _estacionesRepositorio.BuscarFormasPagos();
+                        foreach (var factura in facturas)
+                        {
+                            factura.codigoFormaPago = formasDePago.FirstOrDefault(x => x.Id == factura.codigoFormaPago.Id);
+                        }
+                        var okFacturas = _conexionEstacionRemota.EnviarFacturasCanastilla(facturas, estacionFuente, token);
+                        if (okFacturas)
+                        {
+
+                            _estacionesRepositorio.ActuralizarFacturasEnviadosCanastilla(facturas.Select(x => x.FacturasCanastillaId));
+
+                        }
+                        else
+                        {
+
+                            Logger.Error("No subieron facturas");
+                        }
+                    }
+
+                    var consecutivo = _conexionEstacionRemota.ObtenerParaImprimir(estacionFuente, token);
+
+                    Logger.Error("Factura Encontrada" + consecutivo);
+                    if (consecutivo != 0)
+                    {
+                        Logger.Error("Factura Encontrada");
+                        var facturaReal = _estacionesRepositorio.BuscarFacturaCanastillaPorConsecutivo(consecutivo);
+                        facturaReal.impresa = 0 - vecesImpresionCanastilla;
+                        while (facturaReal.impresa != 0)
+                        {
+                            if (imprimiendo == 0)
+                            {
+                                imprimiendo++;
+                                Imprimir(facturaReal);
+                                facturaReal.impresa++;
+                            }
+                            else
+                            {
+                                Thread.Sleep(2000);
+                            }
+                        }
+                    }
+
+                }
+                catch (Exception ex)
+                {
+
+                    Logger.Error($"Error en proceso {ex.Message}. {ex.StackTrace} ");
+                }
+                Thread.Sleep(300000);
+            }
+
+        }
+
+
+        private void Imprimir(FacturaCanastilla factura)
         {
             _factura = factura;
-
             getLineasImprimir();
             //imprimir
             try
@@ -124,12 +210,8 @@ namespace SigesServicio
                     pd.PrintPage += new PrintPageEventHandler(pd_PrintPageOnly);
                     pd.DefaultPageSettings.Margins.Bottom = 20;
                     // Print the document.
-                    if (_caraImpresoras.Any(x => x.Cara == factura.Cara))
-                    {
 
-                        Console.WriteLine("Selecionando impresora " + _caraImpresoras.First(x => x.Cara == factura.Cara).Impresora.Trim());
-                        pd.PrinterSettings.PrinterName = _caraImpresoras.First(x => x.Cara == factura.Cara).Impresora.Trim();
-                    }
+                    pd.PrinterSettings.PrinterName = impresora;
 
                     pd.Print();
 
@@ -148,23 +230,23 @@ namespace SigesServicio
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                Console.WriteLine("Error " + ex.Message);
-                Console.WriteLine("Error " + ex.StackTrace);
+                Logger.Error("Error " + ex.Message);
+                Logger.Error("Error " + ex.StackTrace);
                 Thread.Sleep(5000);
             }
         }
 
         private void getLineasImprimir()
         {
-            
+            _charactersPerPage = _infoEstacion.CaracteresPorPagina;
 
-            if (_infoEstacion.CaracteresPorPagina == 0)
+            if (_charactersPerPage == 0)
             {
-                _infoEstacion.CaracteresPorPagina = 40;
+                _charactersPerPage = 40;
             }
             lineasImprimir = new List<LineasImprimir>();
             var guiones = new StringBuilder();
-            guiones.Append('-', _infoEstacion.CaracteresPorPagina);
+            guiones.Append('-', _charactersPerPage);
             // Iterate over the file, printing each line.
             lineasImprimir.Add(new LineasImprimir(".", true));
             lineasImprimir.Add(new LineasImprimir(_infoEstacion.Razon, true));
@@ -174,150 +256,120 @@ namespace SigesServicio
             lineasImprimir.Add(new LineasImprimir(_infoEstacion.Telefono, true));
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             var infoTemp = "";
+            //if (generaFacturaElectronica)
+            //{
+            //    try
+            //    {
+            //        infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, estacionFuente, _conexionEstacionRemota.getToken());
 
+            //    }
+            //    catch (Exception)
+            //    {
+            //        infoTemp = null;
+            //    }
+            //}
             if (!string.IsNullOrEmpty(infoTemp))
             {
                 infoTemp = infoTemp.Replace("\n\r", " ");
 
                 var facturaElectronica = infoTemp.Split(' ');
 
-                lineasImprimir.Add(new LineasImprimir("Factura Electr�nica" + facturaElectronica[2], true));
+                lineasImprimir.Add(new LineasImprimir("Factura Electrónica" + facturaElectronica[2], true));
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[3], true));
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[4], true));
             }
-            else if (_factura.Consecutivo == 0)
-            {
 
-                lineasImprimir.Add(new LineasImprimir("Orden de despacho No: " + _factura.Consecutivo, true));
-            }
-            else
-            {
-                lineasImprimir.Add(new LineasImprimir("Factura de venta P.O.S No: " + _factura.DescripcionResolucion + "-" + _factura.Consecutivo, true));
-            }
+            lineasImprimir.Add(new LineasImprimir("Factura de venta P.O.S No: " + _factura.resolucion.DescripcionResolucion + "-" + _factura.consecutivo, true));
+
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-            var placa = (!string.IsNullOrEmpty(_factura.Placa) ? _factura.Placa : _factura.Placa + "").Trim();
-            if (_factura.codigoFormaPago != 1)
-            {
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", _factura.terceroId.Nombre == null ? "" : _factura.terceroId.Nombre.Trim()), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Nit/C.C. : ", _factura.terceroId.identificacion.Trim()), false));
 
-                lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", _factura.Tercero.Nombre == null ? "" : _factura.Tercero.Nombre.Trim()), false));
-                lineasImprimir.Add(new LineasImprimir(formatoTotales("Nit/C.C. : ", _factura.Tercero.identificacion.Trim()), false));
-                lineasImprimir.Add(new LineasImprimir(formatoTotales("Placa : ", placa), false));
-                lineasImprimir.Add(new LineasImprimir(formatoTotales("Kilometraje : ", (!string.IsNullOrEmpty(_factura.Kilometraje) ? _factura.Kilometraje : "").Trim()), false));
-                var codigoInterno = _factura.CodigoInterno;
-                if (codigoInterno != null)
-                {
-                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Cod Int : ", codigoInterno), false));
-                }
-            }
-            else
-            {
-                if (string.IsNullOrEmpty(_factura.Tercero.Nombre))
-                {
-                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a :", " CONSUMIDOR FINAL".Trim()), false));
-                }
-                else
-                {
-                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", _factura.Tercero.Nombre.Trim()) + "", false));
-                }
-                if (string.IsNullOrEmpty(_factura.Tercero.identificacion))
-                {
-                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Nit/C.C. : ", "222222222222".Trim()), false));
-                }
-                else
-                {
-                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Nit/C.C. : ", _factura.Tercero.identificacion.Trim()), false));
-                }
-                lineasImprimir.Add(new LineasImprimir(formatoTotales("Placa : ", (!string.IsNullOrEmpty(_factura.Placa) ? _factura.Placa : _factura.Placa + "").Trim()), false));
-                lineasImprimir.Add(new LineasImprimir(formatoTotales("Kilometraje : ", (!string.IsNullOrEmpty(_factura.Kilometraje) ? _factura.Kilometraje : "").Trim()), false));
-                var codigoInterno = _factura.CodigoInterno;
-                if (codigoInterno != null)
-                {
-                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Cod Int : ", codigoInterno), false));
-                }
-            }
 
-            //if (_factura.fechaUltimaActualizacion.HasValue && (_mangueras.DESCRIPCION.ToLower().Contains("gn") || _mangueras.DESCRIPCION.ToLower().Contains("gas")))
-            //{
-            //    lineasImprimir.Add(new LineasImprimir(formatoTotales("Proximo mantenimiento : ", _venta.FECH_PRMA.Value.ToString("dd/MM/yyyy").Trim()), false));
-            //}
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Fecha : ", _factura.fecha.ToString("dd/MM/yyyy HH:mm:ss")), false));
-
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Surtidor : ", _factura.Surtidor + ""), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Cara : ", _factura.Cara + ""), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Manguera : ", _factura.Mangueras + ""), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendedor : ", _factura.Empleado?.Trim() + ""), false));
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             if (_infoEstacion.ImpresionPDA)
             {
-                lineasImprimir.Add(new LineasImprimir($"Producto: {_factura.Combustible.Trim()}", false));
-                lineasImprimir.Add(new LineasImprimir($"Cantidad: {string.Format("{0:#,0.000}", _factura.Cantidad)}", false));
-                lineasImprimir.Add(new LineasImprimir($"Precio: {_factura.Precio.ToString("F")}", false));
-                lineasImprimir.Add(new LineasImprimir($"Total: {_factura.Total}", false));
+                foreach (var canastilla in _factura.canastillas)
+                {
+                    lineasImprimir.Add(new LineasImprimir($"Producto: {canastilla.Canastilla.descripcion.Trim()}", false));
+                    lineasImprimir.Add(new LineasImprimir($"Cantidad: {string.Format("{0:#,0.000}", canastilla.cantidad)}", false));
+                    lineasImprimir.Add(new LineasImprimir($"Precio: {canastilla.precioBruto.ToString("F")}", false));
+                    lineasImprimir.Add(new LineasImprimir($"Subtotal: {canastilla.subtotal}", false));
+                }
 
             }
             else
             {
-                lineasImprimir.Add(new LineasImprimir(getLienaTarifas("Producto", "   Cant.", "  Precio", "   Total") + "", false));
-                lineasImprimir.Add(new LineasImprimir(getLienaTarifas(_factura.Combustible.Trim(), String.Format("{0:#,0.000}", _factura.Cantidad), _factura.Precio.ToString("F"), String.Format("{0:#,0.00}", _factura.Total), true) + "", false));
+                lineasImprimir.Add(new LineasImprimir(getLienaTarifas("Producto", "   Cant.", "  Precio", "   subtotal") + "", false));
+                foreach (var canastilla in _factura.canastillas)
+                {
+                    lineasImprimir.Add(new LineasImprimir(getLienaTarifas(canastilla.Canastilla.descripcion.Trim(), String.Format("{0:#,0.000}", canastilla.cantidad), canastilla.precioBruto.ToString("F"), String.Format("{0:#,0.00}", canastilla.subtotal), true) + "", false));
+                }
             }
             lineasImprimir.Add(new LineasImprimir(guiones.ToString() + "", false));
             lineasImprimir.Add(new LineasImprimir("DISCRIMINACION TARIFAS IVA" + "", true));
             //  lineasImprimir.Add(new LineasImprimir(guiones.ToString() + "", false));
             if (_infoEstacion.ImpresionPDA)
             {
-                lineasImprimir.Add(new LineasImprimir($"Producto: {_factura.Combustible.Trim()}", false));
-                lineasImprimir.Add(new LineasImprimir($"Cantidad: {string.Format("{0:#,0.000}", _factura.Cantidad)}", false));
-                lineasImprimir.Add(new LineasImprimir($"Tafira: 0 % ", false));
-                lineasImprimir.Add(new LineasImprimir($"Total: {_factura.Total}", false));
-
+                foreach (var canastilla in _factura.canastillas)
+                {
+                    lineasImprimir.Add(new LineasImprimir($"Producto: {canastilla.Canastilla.descripcion.Trim()}", false));
+                    lineasImprimir.Add(new LineasImprimir($"Cantidad: {string.Format("{0:#,0.000}", canastilla.cantidad)}", false));
+                    lineasImprimir.Add(new LineasImprimir($"Iva: {canastilla.iva}  ", false));
+                    lineasImprimir.Add(new LineasImprimir($"Total: {canastilla.total}", false));
+                }
             }
             else
             {
-                lineasImprimir.Add(new LineasImprimir(getLienaTarifas("Producto", "   Cant.", "  Tafira", "   Total") + "", false));
-                lineasImprimir.Add(new LineasImprimir(getLienaTarifas(_factura.Combustible.Trim(), String.Format("{0:#,0.000}", _factura.Cantidad), "0%", String.Format("{0:#,0.00}", _factura.Total), true) + "", false));
+                lineasImprimir.Add(new LineasImprimir(getLienaTarifas("Producto", "   Cant.", "  Iva", "   Total") + "", false));
+                foreach (var canastilla in _factura.canastillas)
+                {
+                    lineasImprimir.Add(new LineasImprimir(getLienaTarifas(canastilla.Canastilla.descripcion.Trim(), String.Format("{0:#,0.000}", canastilla.cantidad), $"{canastilla.iva}", String.Format("{0:#,0.00}", canastilla.total), true) + "", false));
+                }
             }
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Descuento: ", String.Format("{0:#,0.00}", _factura.Descuento)), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Descuento: ", String.Format("{0:#,0.00}", _factura.descuento)), false));
             //lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Subtotal sin IVA : ", String.Format("{0:#,0.00}", _factura.Subtotal)), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Subtotal sin IVA : ", String.Format("{0:#,0.00}", _factura.subtotal)), false));
             //lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Subtotal IVA :", "0,00"), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Subtotal IVA :", $"{_factura.iva}"), false));
             //lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("TOTAL : ", String.Format("{0:#,0.00}", _factura.Total)), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("TOTAL : ", String.Format("{0:#,0.00}", _factura.total)), false));
             //lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
 
-            if (_factura.Consecutivo != 0 || impresionFormaDePagoOrdenDespacho)
+            var forma = formasDePago.FirstOrDefault(x => x.Id == _factura.codigoFormaPago.Id);
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago : ", forma?.Descripcion?.Trim()), false));
+
+
+            if (!string.IsNullOrEmpty(infoTemp))
             {
-                if (formas.FirstOrDefault(x => x.Id == _factura.codigoFormaPago) != null)
-                {
-                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago : ", formas.FirstOrDefault(x => x.Id == _factura.codigoFormaPago).Descripcion.Trim()), false));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                lineasImprimir.Add(new LineasImprimir("Resolucion de Facturacion No. ", false));
+                lineasImprimir.Add(new LineasImprimir("18764013579016 de 2021-05-24", false));
+                lineasImprimir.Add(new LineasImprimir("Modalidad Factura Electrónica ", false));
+                lineasImprimir.Add(new LineasImprimir("Desde N° FEE1 hasta FEE1000000", false));
+                lineasImprimir.Add(new LineasImprimir("Vigencia hasta 2021-11-24", false));
 
-                }
-                else
-                {
-                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago :", " Efectivo"), false));
-
-                }
             }
 
-
-            else if (_factura.Consecutivo != 0)
+            else if (_factura.consecutivo != 0)
             {
 
 
                 lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
                 lineasImprimir.Add(new LineasImprimir("Resolucion de Facturacion No. ", false));
-                lineasImprimir.Add(new LineasImprimir(_factura.Autorizacion + " de " + _factura.FechaInicioResolucion.ToString("dd/MM/yyyy") + " ", false));
+                lineasImprimir.Add(new LineasImprimir(_factura.resolucion.Autorizacion + " de " + _factura.resolucion.FechaInicioResolucion.ToString("dd/MM/yyyy") + " ", false));
                 var numeracion = "Numeracion Autorizada por la DIAN";
-                if (_factura.habilitada)
+                if (_factura.resolucion.Habilitada)
                 {
                     numeracion = "Numeracion Habilitada por la DIAN";
                 }
                 lineasImprimir.Add(new LineasImprimir(numeracion + " ", false));
-                lineasImprimir.Add(new LineasImprimir("Del " + _factura.DescripcionResolucion + "-" + _factura.Inicio + " al " + _factura.DescripcionResolucion + "-" + _factura.Final + "", false));
+                lineasImprimir.Add(new LineasImprimir("Del " + _factura.resolucion.DescripcionResolucion + "-" + _factura.resolucion.ConsecutivoInicial + " al " + _factura.resolucion.DescripcionResolucion + "-" + _factura.resolucion.ConsecutivoFinal + "", false));
 
             }
             if (!String.IsNullOrEmpty(_infoEstacion.Linea1))
@@ -339,7 +391,7 @@ namespace SigesServicio
             lineasImprimir.Add(new LineasImprimir("Fabricado por:" + " SIGES SOLUCIONES SAS ", true));
             lineasImprimir.Add(new LineasImprimir("Nit:" + " 901430393-2 ", true));
             lineasImprimir.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ","MAC"), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress), false));
             lineasImprimir.Add(new LineasImprimir(".", true));
 
         }
@@ -348,7 +400,6 @@ namespace SigesServicio
         {
             try
             {
-
                 float yPos = 0;
                 int count = 0;
                 float leftMargin = 5;
@@ -356,9 +407,10 @@ namespace SigesServicio
                 String line = null;
                 int sizePaper = ev.PageSettings.PaperSize.Width;
                 int fonSizeInches = 72 / 9;
-                if (_infoEstacion.CaracteresPorPagina == 0)
+                _charactersPerPage = _infoEstacion.CaracteresPorPagina;
+                if (_charactersPerPage == 0)
                 {
-                    _infoEstacion.CaracteresPorPagina = fonSizeInches * sizePaper / 100;
+                    _charactersPerPage = fonSizeInches * sizePaper / 100;
                 }
                 foreach (var linea in lineasImprimir)
                 {
@@ -373,7 +425,7 @@ namespace SigesServicio
                     ev.HasMorePages = false;
 
 
-                _estacionesRepositorio.SetFacturaImpresa(_factura.ventaId);
+                _estacionesRepositorio.SetFacturaCanastillaImpresa(_factura.FacturasCanastillaId);
                 imprimiendo--;
                 if (line != null)
                     ev.HasMorePages = true;
@@ -383,8 +435,8 @@ namespace SigesServicio
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                Console.WriteLine("Error " + ex.Message);
-                Console.WriteLine("Error " + ex.StackTrace);
+                Logger.Error("Error " + ex.Message);
+                Logger.Error("Error " + ex.StackTrace);
                 Thread.Sleep(5000);
             }
 
@@ -395,7 +447,7 @@ namespace SigesServicio
             var result = v1;
             var tabs = new StringBuilder();
             tabs.Append(v1);
-            var whitespaces = _infoEstacion.CaracteresPorPagina - v1.Length - v2.Length;
+            var whitespaces = _charactersPerPage - v1.Length - v2.Length;
             whitespaces = whitespaces < 0 ? 0 : whitespaces;
             tabs.Append(' ', whitespaces);
 
@@ -405,9 +457,9 @@ namespace SigesServicio
 
         private string getLienaTarifas(string v1, string v2, string v3, string v4, bool after = false)
         {
-            var spacesInPage = _infoEstacion.CaracteresPorPagina / 4;
+            var spacesInPage = _charactersPerPage / 4;
             var tabs = new StringBuilder();
-            if (_infoEstacion.CaracteresPorPagina == 40)
+            if (_charactersPerPage == 40)
             {
                 tabs.Append(v1.Substring(0, v1.Length < 12 ? v1.Length : 12));
                 var whitespaces = 12 - v1.Length;
@@ -505,7 +557,7 @@ namespace SigesServicio
         {
             if (center)
             {
-                var whitespaces = (_infoEstacion.CaracteresPorPagina - text.Length) / 2;
+                var whitespaces = (_charactersPerPage - text.Length) / 2;
                 var tabs = new StringBuilder();
                 whitespaces = whitespaces < 0 ? 0 : whitespaces;
                 tabs.Append(' ', whitespaces);
@@ -516,18 +568,5 @@ namespace SigesServicio
             count++;
             return count;
         }
-    }
-
-    public class LineasImprimir
-    {
-        public LineasImprimir(string linea, bool centrada)
-        {
-            this.linea = linea;
-            this.centrada = centrada;
-        }
-
-        public string linea;
-        public bool centrada;
-
     }
 }

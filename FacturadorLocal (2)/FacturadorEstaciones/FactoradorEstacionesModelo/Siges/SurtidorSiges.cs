@@ -13,7 +13,8 @@ namespace FactoradorEstacionesModelo.Siges
         public int Id { get; set; }
         public int Numero { get; set; }
         public List<CaraSiges> caras { get; set; }
-
+        public string PuertoIButton { get; set; }
+        
         public int? idTurno  {get;set;}
         public SurtidorSiges()
         {

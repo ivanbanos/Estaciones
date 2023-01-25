@@ -9,6 +9,8 @@ using NLog;
 using NLog.Targets;
 using System.Threading.Tasks;
 using ManejadorSurtidor.SICOM;
+using ManejadorSurtidor.Messages;
+using System.Collections.Generic;
 
 namespace ManejadorSurtidor
 {
@@ -60,10 +62,15 @@ namespace ManejadorSurtidor
                 {
                     services.AddSingleton<ISicomConection, SicomConection>();
                     services.AddSingleton<IEstacionesRepositorio, EstacionesRepositorioSqlServer>();
+                    services.AddSingleton<IMessageProducer, RabbitMQProducer>();
                     services.Configure<ConnectionStrings>(options => hostContext.Configuration.GetSection("ConnectionStrings").Bind(options));
+                    services.AddSingleton<ISicomConection, SicomConection>();
+                    services.AddSingleton<IMessageProducer, RabbitMQProducer>();
                     services.Configure<Sicom>(options => hostContext.Configuration.GetSection("Sicom").Bind(options));
                     services.AddHostedService<Worker>();
-                    services.AddHostedService<SubirVentasWorker>();
+                    services.Configure<FacturadorEstacionesPOSWinForm.InfoEstacion>(options => hostContext.Configuration.GetSection("InfoEstacion").Bind(options));
+                    services.Configure<List<ServicioSIGES.CaraImpresora>>(options => hostContext.Configuration.GetSection("CarasImpresoras").Bind(options));
+
                 });
     }
 }

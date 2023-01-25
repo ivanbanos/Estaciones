@@ -1,6 +1,9 @@
-﻿using FactoradorEstacionesModelo.Convertidor;
+﻿using EnviadorInformacionService.Models;
+using FactoradorEstacionesModelo.Convertidor;
+using FactoradorEstacionesModelo.Extensions;
 using FactoradorEstacionesModelo.Objetos;
 using FactoradorEstacionesModelo.Siges;
+using FacturacionelectronicaCore.Repositorio.Entities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -8,6 +11,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FacturadorEstacionesRepositorio
@@ -475,6 +479,481 @@ namespace FacturadorEstacionesRepositorio
             };
             DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ActualizarVentaSubidaSicom",
                          parameters);
+        }
+
+        public void ActualizarCarros(List<VehiculoSuic> vehiculos)
+        {
+            var table = CommonExtensions.ConvertToDataTable(vehiculos.ToArray());
+
+            var parameters = new Dictionary<string, object>
+            {
+                 {"@VehiculosType",table },
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ActualizarCarros",
+                         parameters);
+        }
+
+        public TurnoSiges getTurnosSinImprimir()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnoImprimir",
+                         parameters);
+            var turno = _convertidor.ConvertirTurnoSiges(dt2).FirstOrDefault();
+            if(turno!= null)
+            {
+                var parameters2 = new Dictionary<string, object>
+                {
+                 {"@Id",turno.Id },
+                };
+                DataTable dt3 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnoSurtidorInfo",
+                             parameters2);
+                turno.turnoSurtidores = _convertidor.ConvertirTurnoSurtidoresSiges(dt3);
+            }
+            return turno;
+        }
+
+        public VehiculoSuic GetVehiculoSuic(string iButton)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                 {"@idrom",iButton },
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetVehiculoSuic",
+                         parameters);
+            return _convertidor.ConvertirVehiculoSiges(dt2).FirstOrDefault();
+        }
+
+        public void ActualizarTurnoImpreso(int id)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                 {"@Id",id },
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ActualizarTurnoImpreso",
+                         parameters);
+        }
+
+        public Resolucion BuscarResolucionActiva(IEnumerable<Resolucion> resolucionesRemota)
+        {
+            var combustible = resolucionesRemota.FirstOrDefault(x => x.Tipo == 0);
+            var canastilla = resolucionesRemota.FirstOrDefault(x => x.Tipo == 1);
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "BuscarResolucionActiva",
+                      new Dictionary<string, object>
+                      {
+                {"@DescripcionResolucion",combustible?.DescripcionResolucion },
+                {"@FechaFinalResolucion",combustible?.FechaFinalResolucion },
+                {"@FechaInicioResolucion",combustible?.FechaInicioResolucion },
+                {"@ConsecutivoInicial",combustible?.ConsecutivoInicial },
+                {"@ConsecutivoFinal",combustible?.ConsecutivoFinal },
+                {"@ConsecutivoActual",combustible?.ConsecutivoActual },
+                {"@Autorizacion",combustible?.Autorizacion },
+                {"@Habilitada",combustible?.Habilitada },
+                {"@Tipo",combustible?.Tipo },
+                {"@DescripcionResolucionCanastilla",canastilla?.DescripcionResolucion },
+                {"@FechaFinalResolucionCanastilla",canastilla?.FechaFinalResolucion },
+                {"@FechaInicioResolucionCanastilla",canastilla?.FechaInicioResolucion },
+                {"@ConsecutivoInicialCanastilla",canastilla?.ConsecutivoInicial },
+                {"@ConsecutivoFinalCanastilla",canastilla?.ConsecutivoFinal },
+                {"@ConsecutivoActualCanastilla",canastilla?.ConsecutivoActual },
+                {"@AutorizacionCanastilla",canastilla?.Autorizacion },
+                {"@HabilitadaCanastilla",canastilla?.Habilitada },
+                {"@TipoCanastilla",canastilla?.Tipo },
+        });
+
+            return _convertidor.ConvertirResolucion(dt).FirstOrDefault();
+        }
+
+        public bool HayFacturasCanastillaPorImprimir()
+        {
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "FacturasCanastillaPorImprimir",
+                         new Dictionary<string, object>
+                         {
+                         });
+            return dt.AsEnumerable().Count() > 0;
+        }
+
+        public List<Tercero> BuscarTercerosNoEnviados()
+        {
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "BuscarTercerosNoEnviados",
+                      new Dictionary<string, object>
+                      {
+                      });
+
+            return _convertidor.ConvertirTercero(dt).ToList();
+        }
+
+
+        public void CambiarConsecutivoActual(int consecutivoActual)
+        {
+
+            var parameters = new Dictionary<string, object>
+            {
+                {"@consecutivoActual",consecutivoActual }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "CambiarConsecutivoActual",
+                         parameters);
+        }
+
+        public List<Factura> BuscarFacturasNoEnviadas()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSinEnviar",
+                         parameters);
+            var facturas = _convertidor.ConvertirFactura(dt2);
+            foreach (Factura factura in facturas)
+            {
+                DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "getVentaPorId",
+                           new Dictionary<string, object>{
+                {"@CONSECUTIVO",factura.ventaId }
+                           });
+
+                var ventas = _convertidor.ConvertirVenta(dt);
+                var manguera = _convertidor.ConvertirManguera(dt).Single();
+                factura.Venta = ventas.FirstOrDefault();
+                factura.Manguera = manguera;
+            }
+            return facturas.ToList();
+        }
+
+        public void ActualizarCanastilla(Canastilla canastilla)
+        {
+            throw new NotImplementedException();
+        }
+
+        public FacturaCanastilla BuscarFacturaCanastillaPorConsecutivo(int consecutivo)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@consecutivo",consecutivo }
+            };
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "BuscarFacturaCanastillaPorConsecutivo",
+                         parameters);
+            var facturas = _convertidor.ConvertirFacturaCanastilla(dt);
+            List<FacturaCanastilla> facturasEnviar = new List<FacturaCanastilla>();
+            foreach (var factura in facturas)
+            {
+
+
+                var parameters2 = new Dictionary<string, object>
+            {
+                {"@FacturaCanastillaId",factura.FacturasCanastillaId }
+            };
+                DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaCanatillaDetalle",
+                             parameters2);
+
+                factura.canastillas = _convertidor.ConvertirFacturaCanastillaDEtalle(dt2);
+                facturasEnviar.Add(factura);
+            }
+            return facturasEnviar.FirstOrDefault();
+        }
+
+        public object ActualizarResolucionCanastilla(object resolucionRemota)
+        {
+            throw new NotImplementedException();
+        }
+        
+        public IEnumerable<FacturaCanastilla> BuscarFacturasNoEnviadasCanastilla()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+            };
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaEnviarCanastilla",
+                         parameters);
+            var facturas = _convertidor.ConvertirFacturaCanastilla(dt);
+            List<FacturaCanastilla> facturasEnviar = new List<FacturaCanastilla>();
+            foreach (var factura in facturas)
+            {
+
+
+                var parameters2 = new Dictionary<string, object>
+            {
+                {"@FacturaCanastillaId",factura.FacturasCanastillaId }
+            };
+                DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaCanatillaDetalle",
+                             parameters2);
+
+                factura.canastillas = _convertidor.ConvertirFacturaCanastillaDEtalle(dt2);
+                facturasEnviar.Add(factura);
+            }
+            return facturasEnviar;
+        }
+
+        public void SetFacturaCanastillaEnviada(int facturasCanastillaId)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@facturaCanastillaId",facturasCanastillaId }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "SetFacturaCanastillaEnviada",
+                         parameters);
+        }
+
+        public void ActuralizarTercerosEnviados(IEnumerable<int> terceros)
+        {
+            var ventasIds = new DataTable();
+            ventasIds.Columns.Add(new DataColumn("ventaId", typeof(long))
+            {
+                AllowDBNull = false
+            });
+            foreach (var t in terceros)
+            {
+                var row = ventasIds.NewRow();
+                row["ventaId"] = t;
+                ventasIds.Rows.Add(row);
+            }
+            var parameters = new Dictionary<string, object>
+            {
+                {"@terceros",ventasIds }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "CambiarEstadoTerceroEnviado",
+                         parameters);
+        }
+
+        public void ActuralizarFacturasEnviadosCanastilla(IEnumerable<int> facturas)
+        {
+            var ventasIds = new DataTable();
+            ventasIds.Columns.Add(new DataColumn("ventaId", typeof(long))
+            {
+                AllowDBNull = false
+            });
+            foreach (var t in facturas)
+            {
+                var row = ventasIds.NewRow();
+                row["ventaId"] = t;
+                ventasIds.Rows.Add(row);
+            }
+            var parameters = new Dictionary<string, object>
+            {
+                {"@facturas",ventasIds }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "SetFacturaCanastillaEnviada",
+                         parameters);
+        }
+
+        public void ActuralizarFacturasEnviados(IEnumerable<int> facturas)
+        {
+            var ventasIds = new DataTable();
+            ventasIds.Columns.Add(new DataColumn("ventaId", typeof(long))
+            {
+                AllowDBNull = false
+            });
+            foreach (var t in facturas)
+            {
+                var row = ventasIds.NewRow();
+                row["ventaId"] = t;
+                ventasIds.Rows.Add(row);
+            }
+            var parameters = new Dictionary<string, object>
+            {
+                {"@facturas",ventasIds }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "CambiarEstadoFactursEnviada",
+                         parameters);
+        }
+
+        public void ActuralizarTerceros(Tercero tercero)
+        {
+            List<TipoIdentificacion> tipos = getTiposIdentifiaciones();
+            tercero.tipoIdentificacion = tipos.Where(x => x.Descripcion.ToLower() == tercero.tipoIdentificacionS.ToLower()).FirstOrDefault().TipoIdentificacionId;
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "CrearTercero",
+                         new Dictionary<string, object>
+                         {
+                    {"@terceroId", tercero.terceroId },
+                    {"@tipoIdentificacion", tercero.tipoIdentificacion },
+                    {"@identificacion", tercero.identificacion },
+                    {"@nombre", tercero.Nombre },
+                    {"@telefono", tercero.Telefono },
+                    {"@correo", tercero.Correo },
+                    {"@direccion", tercero.Direccion },
+                    {"@estado", "AC" },
+                    {"@COD_CLI", tercero.COD_CLI },
+                         });
+        }
+       
+        public void AgregarFacturaDesdeIdVenta()
+        {
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "AgregarFacturaDesdeIdVenta",
+                     new Dictionary<string, object>
+                     {
+                     });
+        }
+
+
+
+        public List<Factura> BuscarFacturasNoEnviadasFacturacion()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSinEnviadaFacturacion",
+                         parameters);
+            var facturas = _convertidor.ConvertirFactura(dt2);
+
+
+
+
+
+            foreach (Factura factura in facturas)
+            {
+                DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "getVentaPorId",
+                           new Dictionary<string, object>{
+                {"@CONSECUTIVO",factura.ventaId }
+                           });
+
+                var ventas = _convertidor.ConvertirVenta(dt);
+                var manguera = _convertidor.ConvertirManguera(dt).Single();
+                factura.Venta = ventas.FirstOrDefault();
+                factura.Manguera = manguera;
+            }
+            return facturas.ToList();
+        }
+
+
+        public void ActuralizarFacturasEnviadosFacturacion(IEnumerable<int> facturas)
+        {
+            var ventasIds = new DataTable();
+            ventasIds.Columns.Add(new DataColumn("ventaId", typeof(long))
+            {
+                AllowDBNull = false
+            });
+            foreach (var t in facturas)
+            {
+                var row = ventasIds.NewRow();
+                row["ventaId"] = t;
+                ventasIds.Rows.Add(row);
+            }
+            var parameters = new Dictionary<string, object>
+            {
+                {"@facturas",ventasIds }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "CambiarEstadoFactursEnviadaFacturacion",
+                         parameters);
+        }
+
+        public List<FacturaFechaReporte> BuscarFechasReportesNoEnviadas()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.estacion, "BuscarFechasReportesNoEnviadas",
+                         parameters);
+            return _convertidor.ConvertirFacturaFechaReporte(dt2);
+        }
+
+        public string ObtenerCodigoInterno(string placa, string identificacion)
+        {
+            var parameters = new Dictionary<string, object>
+            {{"@PLACA",placa },
+            {"@identificacion",identificacion }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.estacion, "ObtenerCodigoInterno",
+                         parameters);
+            return dt2.AsEnumerable().Select(dr => dr.Field<string>("COD_INT")).FirstOrDefault();
+        }
+
+        public void ActuralizarFechasReportesEnviadas(IEnumerable<int> facturas)
+        {
+            var ventasIds = new DataTable();
+            ventasIds.Columns.Add(new DataColumn("ventaId", typeof(long))
+            {
+                AllowDBNull = false
+            });
+            foreach (var t in facturas)
+            {
+                var row = ventasIds.NewRow();
+                row["ventaId"] = t;
+                ventasIds.Rows.Add(row);
+            }
+            var parameters = new Dictionary<string, object>
+            {
+                {"@facturas",ventasIds }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ActuralizarFechasReportesEnviadas",
+                         parameters);
+        }
+
+
+        public IEnumerable<Factura> getFacturasSiigo()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSiigo",
+                         parameters);
+            var facturas = _convertidor.ConvertirFactura(dt2);
+
+
+
+
+            Thread.Sleep(3000);
+            foreach (Factura factura in facturas)
+            {
+                DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "getVentaPorId",
+                           new Dictionary<string, object>{
+                {"@CONSECUTIVO",factura.ventaId }
+                           });
+
+                var ventas = _convertidor.ConvertirVenta(dt);
+                var manguera = _convertidor.ConvertirManguera(dt).Single();
+                factura.Venta = ventas.FirstOrDefault();
+                factura.Manguera = manguera;
+            }
+            return facturas;
+        }
+
+        public void SetFacturaCanastillaImpresa(int facturasCanastillaId)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@facturaCanastillaId",facturasCanastillaId }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "SetFacturaCanastillaImpresa",
+                         parameters);
+        }
+
+
+        public FacturaCanastilla getFacturasCanastillaImprimir()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+            };
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaImprimirCanastilla",
+                         parameters);
+            var facturas = _convertidor.ConvertirFacturaCanastilla(dt);
+            if (!facturas.Any())
+            {
+                return null;
+            }
+            var factura = facturas.First();
+
+            var parameters2 = new Dictionary<string, object>
+            {
+                {"@FacturaCanastillaId",factura.FacturasCanastillaId }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaCanatillaDetalle",
+                         parameters2);
+
+            factura.canastillas = _convertidor.ConvertirFacturaCanastillaDEtalle(dt2);
+            return factura;
+        }
+
+        public List<FacturaSiges> BuscarFacturasNoEnviadasSiges()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSinEnviar",
+                         parameters);
+            return _convertidor.ConvertirFacturasSiges(dt2);
+        }
+
+        public object BuscarFechasReportesNoEnviadasSiges()
+        {
+            throw new NotImplementedException();
         }
     }
 }

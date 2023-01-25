@@ -15,7 +15,7 @@ namespace ManejadorSurtidor
 {
     public class SubirVentasWorker : BackgroundService
     {
-        private readonly Logger _logger;
+        private readonly ILogger<SubirVentasWorker> _logger;
         private readonly IEstacionesRepositorio _estacionesRepositorio;
         private readonly IOptions<Sicom> _options;
 
@@ -24,16 +24,16 @@ namespace ManejadorSurtidor
         {
             _estacionesRepositorio = estacionesRepositorio;
             _options = options;
-            _logger = NLog.LogManager.GetCurrentClassLogger(); ;
+            _logger = logger;
             _sicomConection = sicomConection;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(async () =>
         {
             while (!stoppingToken.IsCancellationRequested)
             {
                 var ventas = _estacionesRepositorio.getVentaSinSubirSICOM();
-                if(ventas.Any(x=>x.IButton != ""))
+                if (ventas.Any(x => x.IButton != ""))
                 {
 
                     foreach (var venta in ventas.Where(x => x.IButton != ""))
@@ -47,9 +47,9 @@ namespace ManejadorSurtidor
                         catch (Exception ex) { }
                     }
                 }
-                await Task.Delay(300000, stoppingToken);
+                Thread.Sleep(300000);
             }
-        }
+        });
 
 
     }

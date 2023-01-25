@@ -14,5 +14,6 @@ namespace EnviadorInformacionService.Models
         public float precio { get; set; }
         public Guid IdWeb { get; set; }
         public int iva { get; set; }
+        public Guid guid { get; internal set; }
     }
 }

@@ -4,13 +4,8 @@ using FactoradorEstacionesModelo.Objetos;
 using FactoradorEstacionesModelo.Siges;
 using FacturadorEstacionesPOSWinForm;
 using FacturadorEstacionesPOSWinForm.Repo;
-using FacturadorEstacionesRepositorio;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Net.Http;
 using System.Net.Http.Headers;
 
 namespace EnviadorInformacionService

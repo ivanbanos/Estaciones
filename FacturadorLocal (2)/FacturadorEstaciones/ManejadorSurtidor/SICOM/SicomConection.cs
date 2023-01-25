@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using FactoradorEstacionesModelo.Siges;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using NLog;
@@ -15,11 +16,10 @@ namespace ManejadorSurtidor.SICOM
     {
         private Sicom sicom;
 
-        private readonly Logger _logger;
+        private readonly Logger _logger = NLog.LogManager.GetCurrentClassLogger();
         public SicomConection(IOptions<Sicom> options, ILogger<SicomConection> logger)
         {
             sicom = options.Value;
-            _logger = NLog.LogManager.GetCurrentClassLogger();
             System.Net.ServicePointManager.ServerCertificateValidationCallback +=
      (se, cert, chain, sslerror) =>
      {
@@ -27,7 +27,7 @@ namespace ManejadorSurtidor.SICOM
      };
         }
 
-        public async Task<bool> validateIButton(string iButton)
+        public async Task<VehiculoSuic> validateIButton(string iButton)
         {
             using (var client = new HttpClient())
             {
@@ -47,13 +47,13 @@ namespace ManejadorSurtidor.SICOM
                     string responseBody = await response.Content.ReadAsStringAsync();
 
                     _logger.Log(NLog.LogLevel.Info, $"Sicom respuesta {responseBody}");
-                    var chipResponse = JsonConvert.DeserializeObject<ChipResponse>(responseBody);
-                    return chipResponse.estado == "0";
+                    var chipResponse = JsonConvert.DeserializeObject<VehiculoSuic>(responseBody);
+                    return chipResponse;
                 } catch(Exception ex)
                 {
                     
                     _logger.Log(NLog.LogLevel.Info, $"Sicom error {ex.Message}");
-                    return true;
+                    return null;
                 }
             }
         }

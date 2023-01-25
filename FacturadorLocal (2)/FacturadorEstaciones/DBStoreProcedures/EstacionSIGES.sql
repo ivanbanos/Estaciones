@@ -27,6 +27,11 @@ BEGIN
     IdSurtidor int NOT NULL,
     IdEstado int NOT NULL
 );
+ALTER TABLE
+  Cara
+ADD
+  impresora
+    VARCHAR (50) NULL;
 END
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Combustible' and xtype='U')
 BEGIN
@@ -58,6 +63,11 @@ BEGIN
     IdIsla int NOT NULL,
     IdEstado int NOT NULL
 );
+ALTER TABLE
+  Surtidor
+ADD
+  PuertoIButton
+    VARCHAR (50) NULL;
 END
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Isla' and xtype='U')
 BEGIN
@@ -107,7 +117,7 @@ CREATE procedure [dbo].[ObtenerSurtidores]
 as
 begin try
     set nocount on;
-	select Cara.Id, Cara.descripcion, Surtidor.puerto, Surtidor.Id as IdSurtidor, Surtidor.descripcion as Surtidor, Surtidor.numero as Numero, Isla.descripcion as Isla
+	select Cara.Id, Cara.descripcion, Cara.Impresora, Surtidor.puerto, Surtidor.PuertoIButton, Surtidor.Id as IdSurtidor, Surtidor.descripcion as Surtidor, Surtidor.numero as Numero, Isla.descripcion as Isla
 	from dbo.Cara 
     inner join dbo.Surtidor on Cara.IdSurtidor = Surtidor.Id
     inner join dbo.Isla on Isla.Id = Surtidor.IdIsla
@@ -220,7 +230,7 @@ as
 begin try
     set nocount on;
 
-	declare @iva float, @turnoAbierto int;
+	declare @iva float, @turnoAbierto int, @Ventaid int;
 	select @iva=  convert(float,valor) from configuracionEstacion where descripcion = 'iva'
 	
 	select @turnoAbierto = Turno.Id from Turno
@@ -234,10 +244,28 @@ begin try
     from Manguera
 	inner join Combustible on Combustible.Id = Manguera.IdCombustible
 	where Manguera.Id = @IdManguera
-    declare @terceroId int;
+
+	select @VentaId = @@Identity
+
+    declare @terceroId int, @placa varchar(max), @kilometraje varchar(max), @COd_FOr_PAg int;
 	
 		declare @tipoIdentificacion int;
+		
+		select @terceroId = t.terceroId from terceros t
+		inner join vehiculos on t.terceroId = vehiculos.terceroId
+		where vehiculos.idrom = @Ibutton
 
+		select @placa = placa, @kilometraje = kilometraje, @COd_FOr_PAg = IdFormaDePago
+		from vehiculos
+		where vehiculos.idrom = @Ibutton
+
+		if @COd_FOr_PAg is null
+		begin
+		select @COd_FOr_PAg = 1
+		end
+
+		if @terceroId is null 
+		begin
 		select @terceroId = t.terceroId from terceros t
 			where t.nombre like '%CONSUMIDOR FINAL%' and identificacion like '222222222222'
 			if @terceroId is null
@@ -247,12 +275,13 @@ begin try
 
 			select @terceroId = SCOPE_IDENTITY()
 			end
+		end
 	select @tipoIdentificacion = TipoIdentificacionId 
 			from dbo.TipoIdentificaciones ti
 			where ti.descripcion = 'No especificada'
 			declare @Fecha datetime
 	select @Fecha = GETDATE()
-    exec CrearFactura @VentaId= @@Identity, @terceroId=@terceroId, @Placa='', @Kilometraje='', @COd_FOr_PAg =1, @Fecha=@fecha
+    exec CrearFactura @VentaId= @Ventaid, @terceroId=@terceroId, @Placa='', @Kilometraje='', @COd_FOr_PAg=@COd_FOr_PAg, @Fecha=@fecha
 
 end try
 begin catch
@@ -276,15 +305,12 @@ GO
 --GO
 --insert into isla(descripcion,idestado)values('Isla 1', 0)
 --GO
---insert into surtidor(descripcion,idestado,idIsla,puerto,numero)values('Surtidor 1',0,1,'COM6',1)
+--insert into surtidor(descripcion,idestado,idIsla,puerto,numero)values('Surtidor 2',0,1,'COM6',1)
 --GO
---insert into Cara(descripcion,idestado,IdSurtidor)values('Cara Impar Surtidor 1', 0, 1),('Cara Par Surtidor 1', 0, 1)
+--insert into Cara(descripcion,idestado,IdSurtidor)values('Cara Impar Surtidor 2', 0, 2),('Cara Par Surtidor 2', 0, 2)
 --GO
 --insert into Manguera(descripcion,ubicacion,IdCombustible,IdCara,IdEstado)
---values('Manguera Impar Surtidor 1', 'Impar', 1, 1,0),('Manguera Par Surtidor 1', 'Par', 1, 2,0)
-
-
-
+--values('Manguera Impar Surtidor 2', 'Impar', 1, 3,0),('Manguera Par Surtidor 2', 'Par', 1, 4,0)
 
 
 
@@ -344,6 +370,11 @@ ALTER TABLE
 ALTER COLUMN
   identificacion
     VARCHAR(50) NULL;
+ALTER TABLE
+  Terceros
+add 
+  IdFormaDePago
+    int NULL;
 ALTER TABLE
   Terceros
 ALTER COLUMN
@@ -1356,7 +1387,7 @@ begin try
 		end
 		else
 		begin
-			if @soloGeneraOrdenes = 'SI' or (  @clientesCreditoGeneranFactura != 'SI' and @COD_FOR_PAG !=4)
+			if @soloGeneraOrdenes = 'SI' or (  @clientesCreditoGeneranFactura != 'SI' and @COD_FOR_PAG !=1)
 			begin
 			
 				insert into OrdenesDeDespacho (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago)
@@ -2490,8 +2521,11 @@ BEGIN
     idIsla int NOT NULL,
     FechaApertura Datetime NOT NULL,
     FechaCierre Datetime,
-    IdEstado int NOT NULL
+    IdEstado int NOT NULL,
+    Impreso int NOT NULL
 );
+
+
 END
     GO
 
@@ -2549,10 +2583,18 @@ begin try
 
 	if @turnoAbierto is null
 	begin
-		insert into Turno( idEmpleado, IdIsla, FechaApertura,IdEstado)
-		select Id, @IdIsla, getdate(),1
+		insert into Turno( idEmpleado, IdIsla, FechaApertura,IdEstado,impreso)
+		select Id, @IdIsla, getdate(),1,0
 		from Empleado
 		where Codigo = @codigo
+		
+		insert into [TurnoSurtidor] (idSurtidor, idManguera, idTurno, Apertura,IdEstado)
+		select surtidor.Id, Manguera.Id,  SCOPE_IDENTITY(),0,0
+		from Isla
+		inner join surtidor on surtidor.IdIsla = Isla.Id
+		inner join Cara on Cara.IdSurtidor = Surtidor.Id
+		inner join Manguera on Manguera.IdCara = Cara.Id
+		where isla.Id = @IdIsla
 	end
 	else
 	begin
@@ -2634,7 +2676,7 @@ CREATE procedure [dbo].[ObtenerTurnoSurtidor]
 as
 begin try
     set nocount on;
-	select Turno.Id, Turno.IdEstado, EMpleado.Nombre
+	select turno.Id, Empleado.Nombre, turno.FechaApertura, turno.FechaCierre, turno.IdEstado
 	from dbo.Turno 
 	inner join isla on  Turno.IdIsla = Isla.Id
 		inner join Empleado on IdEmpleado = EMpleado.Id
@@ -2664,16 +2706,17 @@ CREATE procedure [dbo].[SetTotalizadorTurnoSurtidorApertura]
 as
 begin try
     set nocount on;
-	declare @turnosurtidor int;
+	declare @turnosurtidor int, @noabierto int;
 
-	select @turnosurtidor = Id from [TurnoSurtidor] where idTurno=@IdTurno and idManguera=@idManguera
+	update [TurnoSurtidor] set Apertura=@totalizador, IdEstado=1 from [TurnoSurtidor] where idTurno=@IdTurno and idManguera=@idManguera
 
-	if @turnosurtidor is null
-	begin
-		insert into [TurnoSurtidor] (idSurtidor, idManguera, idTurno, Apertura,IdEstado)
-		values (@idSurtidor, @idManguera, @IdTurno, @totalizador, 0)
-	end
     
+	select @noabierto =  count(*) from [TurnoSurtidor] where idTurno=@IdTurno and IdEstado = 0
+
+	if @noabierto = 0
+	begin
+		update turno set idEstado = 2 where Id=@IdTurno
+	end
 end try
 begin catch
     declare 
@@ -2711,16 +2754,15 @@ begin try
            N'Turno no abierto');
 	end
     
-		update turnoSurtidor set cierre=@totalizador
-		from turnoSurtidor where idTurno=@IdTurno and idManguera=@idManguera
-		
-		select @cerrado = count(*) from turnoSurtidor where idTurno=@IdTurno and cierre is not null
-		select @Todos = count(*) from turnoSurtidor where idTurno=@IdTurno 
+		update [TurnoSurtidor] set Cierre=@totalizador, IdEstado=2 from [TurnoSurtidor] where idTurno=@IdTurno and idManguera=@idManguera
 
-		if @Todos-@cerrado = 0
-		begin
-		 update turno set idEstado=4
-		end
+    
+	select @noabierto =  count(*) from [TurnoSurtidor] where idTurno=@IdTurno and (IdEstado = 0 or IdEstado = 1)
+
+	if @noabierto = 0
+	begin
+		update turno set idEstado = 2 where Id=@IdTurno
+	end
 end try
 begin catch
     declare 
@@ -2793,34 +2835,43 @@ GO
 CREATE table [dbo].[Vehiculos] (
 
     Id INT PRIMARY KEY IDENTITY (1, 1),
-	[idrom] [char](16) NULL,
+	[idrom] [varchar](max) NULL,
 	[fechaInicio] [datetime] NULL,
 	[fechaFin] [datetime] NULL,
-	[placa] [char](9) NULL,
+	[placa] [varchar](max) NULL,
 	[vin] [varchar](max) NULL,
 	[servicio] [varchar](max) NULL,
 	[capacidad] [varchar](max) NULL,
 	[estado] [int] NULL,
 	[motivo] [varchar](max) NULL,
+	[motivoTexto] [varchar](max) NULL,
 	[MAX_NUM_TAN] [int] NULL,
-	[TIPO] [char](16) NULL
+	[TIPO] [char](16) NULL,
+	terceroId int NULL,
+	kilometraje [varchar](max) NULL,
 )
 GO
+alter table [Vehiculos] add  terceroId int NULL
+alter table [Vehiculos] add  kilometraje [varchar](max) NULL
+ALTER TABLE
+  [Vehiculos]
+add 
+  IdFormaDePago
+    int NULL;
 GO
 
 /****** Object:  UserDefinedTableType [dbo].[VehiculosType]    Script Date: 02/01/23 14:27:06 ******/
 CREATE TYPE [dbo].[VehiculosType] AS TABLE(
-	[idrom] [char](16) NULL,
+	[idrom] [varchar](100) NULL,
 	[fechaInicio] [datetime] NULL,
 	[fechaFin] [datetime] NULL,
-	[placa] [char](9) NULL,
+	[placa] [varchar](100) NULL,
 	[vin] [varchar](max) NULL,
 	[servicio] [varchar](max) NULL,
 	[capacidad] [varchar](max) NULL,
 	[estado] [int] NULL,
 	[motivo] [varchar](max) NULL,
-	[MAX_NUM_TAN] [int] NULL,
-	[TIPO] [char](16) NULL
+	[motivoTexto] [varchar](max) NULL
 )
 GO
 
@@ -2832,26 +2883,24 @@ CREATE procedure [dbo].ActualizarCarros
 as
 begin try
     set nocount on;
-	MERGE [dbo].[Vehiculos] AS Target
-		USING (select [idrom],[fechaInicio],[fechaFin],[placa],[vin],[servicio],[capacidad],[estado],[motivo],[MAX_NUM_TAN],[TIPO] FROM @VehiculosType)
-			AS Source ([idrom],[fechaInicio],[fechaFin],[placa],[vin],[servicio],[capacidad],[estado],[motivo],[MAX_NUM_TAN],[TIPO])
-		ON (Source.[idrom] = Target.[idrom])
-		WHEN MATCHED THEN
-			UPDATE SET Target.[idrom] = Source.[idrom],
-			Target.[fechaInicio] = Source.[fechaInicio],
-			Target.[fechaFin] = Source.[fechaFin],
-			Target.[placa] = Source.[placa],
-			Target.[vin] = Source.[vin],
-			Target.[servicio] = Source.[servicio],
-			Target.[capacidad] = Source.[capacidad],
-			Target.[estado] = Source.[estado],
-			Target.[motivo] = Source.[motivo],
-			Target.[MAX_NUM_TAN] = Source.[MAX_NUM_TAN],
-			Target.[TIPO] = Source.[TIPO],
-		WHEN NOT MATCHED BY TARGET THEN
-			INSERT ([idrom],[fechaInicio],[fechaFin],[placa],[vin],[servicio],[capacidad],[estado],[motivo],[MAX_NUM_TAN],[TIPO])
-			VALUES(Source.[idrom],Source.[fechaInicio],Source.[fechaFin],Source.[placa],Source.[vin],Source.[servicio],Source.[capacidad],
-			Source.[estado],Source.[motivo],Source.[MAX_NUM_TAN],Source.[TIPO]);
+	INSERT into [Vehiculos]([idrom],[fechaInicio],[fechaFin],[placa],[vin],[servicio],[capacidad],[estado],[motivo])
+	select vt.[idrom],vt.[fechaInicio],vt.[fechaFin],vt.[placa],vt.[vin],vt.[servicio],vt.[capacidad],vt.[estado],vt.[motivo] FROM @VehiculosType vt
+	left join [Vehiculos] ON [Vehiculos].idrom = vt.idrom
+	where [Vehiculos].Idrom is null
+	
+	UPDATE  [Vehiculos] SET [Vehiculos].[idrom] = Source.[idrom],
+			[Vehiculos].[fechaInicio] = Source.[fechaInicio],
+			[Vehiculos].[fechaFin] = Source.[fechaFin],
+			[Vehiculos].[placa] = Source.[placa],
+			[Vehiculos].[vin] = Source.[vin],
+			[Vehiculos].[servicio] = Source.[servicio],
+			[Vehiculos].[capacidad] = Source.[capacidad],
+			[Vehiculos].[estado] = Source.[estado],
+			[Vehiculos].[motivo] = Source.[motivo],
+			[Vehiculos].[MAX_NUM_TAN] = case Source.[servicio] when  'PARTICULAR' then 3 else 5 end 
+			from [Vehiculos]
+			inner join @VehiculosType source on [Vehiculos].idrom = source.idrom
+
     
     
 end try
@@ -2869,3 +2918,136 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
+
+drop procedure [dbo].ActualizarTurnoImpreso
+GO
+CREATE procedure [dbo].ActualizarTurnoImpreso
+(@Id int)
+as
+begin try
+    set nocount on;
+	update turno set impreso+=1 from venta where turno.ID=@Id
+    
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+drop procedure [dbo].GetTurnoImprimir
+GO
+CREATE procedure [dbo].GetTurnoImprimir
+
+as
+begin try
+    set nocount on;
+	select top(1)turno.Id, Empleado.Nombre, turno.FechaApertura, turno.FechaCierre, turno.IdEstado
+	from dbo.turno 
+	left join empleado on turno.IdEmpleado = empleado.Id
+	where turno.impreso=0 and turno.Idestado=2
+	or (turno.impreso=1 and turno.Idestado=4)
+    
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+drop procedure [dbo].GetTurnoSurtidorInfo
+GO
+CREATE procedure [dbo].GetTurnoSurtidorInfo
+(@Id int)
+as
+begin try
+    set nocount on;
+	select TurnoSurtidor.Apertura, TurnoSurtidor.Cierre, Manguera.*
+	from dbo.TurnoSurtidor 
+	left join Manguera on TurnoSurtidor.idManguera = Manguera.Id
+	where TurnoSurtidor.idTurno = @Id
+    
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+drop procedure [dbo].GetVehiculoSuic
+GO
+CREATE procedure [dbo].GetVehiculoSuic
+(@idrom varchar(max))
+as
+begin try
+    set nocount on;
+	select *
+	from dbo.Vehiculos 
+	where Vehiculos.idrom = @idrom
+    
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+create index vehiculos_idRom
+on [Vehiculos]([idrom]);
+GO
+
+--select * from eds.dbo.CLIENTES
+
+--select * from terceros
+--select * from TipoIdentificaciones
+
+--insert into terceros (tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, estado, enviada, tipo, IdFormaDePago)
+--select TipoIdentificaciones.TipoIdentificacionId, CLIENTES.NIT,CLIENTES.Nombre, '' ,CLIENTES.TEL_OFICINA, CLIENTES.DIR_OFICINA, 'AC',0,0,case CLIENTES.COD_FOR_PAG when 4 then 1 else 6 end
+--from eds.dbo.CLIENTES
+--inner join TipoIdentificaciones on CLIENTES.TIPO_NIT = TipoIdentificaciones.descripcion
+
+--update Vehiculos set Vehiculos.IdFormaDePago = case AUTOMOTO.COD_FOR_PAG when 4 then 1 else 6 end,
+--Vehiculos.terceroid = terceros.terceroId
+--from Vehiculos
+--inner join eds.dbo.automoto on AUTOMOTO.PLACA = Vehiculos.placa
+--inner join terceros on AUTOMOTO.COD_CLI = terceros.identificacion
+
+--select * from vehiculos where terceroId != 4
+--select* from eds.dbo.automoto where COD_CLI not like '222222222222'

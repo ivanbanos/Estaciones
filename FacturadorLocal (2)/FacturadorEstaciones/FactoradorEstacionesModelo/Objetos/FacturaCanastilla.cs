@@ -1,4 +1,5 @@
 ﻿using FactoradorEstacionesModelo.Objetos;
+using FactoradorEstacionesModelo.Siges;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace EnviadorInformacionService.Models
 		public Tercero terceroId { get; set; }
 		public int impresa { get; set; }
 		public int enviada { get; set; }
-		public FormasPagos codigoFormaPago { get; set; }
+		public FormaPagoSiges codigoFormaPago { get; set; }
 		public List<CanastillaFactura> canastillas { get; set; }
 		public float subtotal { get; set; }
 		public float descuento { get; set; }

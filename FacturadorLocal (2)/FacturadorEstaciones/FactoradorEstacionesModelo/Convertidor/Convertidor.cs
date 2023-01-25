@@ -1,5 +1,7 @@
-﻿using FactoradorEstacionesModelo.Objetos;
+﻿using EnviadorInformacionService.Models;
+using FactoradorEstacionesModelo.Objetos;
 using FactoradorEstacionesModelo.Siges;
+using FacturacionelectronicaCore.Repositorio.Entities;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -275,6 +277,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                         Id = dr.Field<int>("IdSurtidor"),
                         Puerto = dr.Field<string>("puerto"),
                         Numero = dr.Field<int>("Numero"),
+                        PuertoIButton = dr.Field<string>("PuertoIButton"),
                     });
                 }
                 response.Find(x=>x.Numero == dr.Field<int>("Numero")).caras.Add(
@@ -282,6 +285,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                 {
                     Id = dr.Field<int>("Id"),
                     Descripcion = dr.Field<string>("descripcion"),
+                    Impresora = dr.Field<string>("Impresora"),
                     Isla = dr.Field<string>("Isla")
                 });
             }
@@ -394,7 +398,9 @@ namespace FactoradorEstacionesModelo.Convertidor
                 {
                     Id = dr.Field<int>("Id"),
                     Empleado = dr.Field<string>("Nombre"),
-                    IdEstado = dr.Field<int>("IdEstado")
+                    IdEstado = dr.Field<int>("IdEstado"),
+                    FechaApertura = dr.Field<DateTime>("FechaApertura"),
+                    FechaCierre = dr.Field<DateTime?>("FechaCierre")
                 });
             }
             return response;
@@ -413,6 +419,162 @@ namespace FactoradorEstacionesModelo.Convertidor
 
 
                     IButton = dr.Field<string>("Ibutton"),
+                })
+            );
+            return response;
+        }
+
+        public List<TurnoSurtidor> ConvertirTurnoSurtidoresSiges(DataTable dt)
+        {
+            List<TurnoSurtidor> response = new List<TurnoSurtidor>();
+
+            response.AddRange(
+                dt.AsEnumerable().Select(dr => new TurnoSurtidor()
+                {
+                    Apertura = dr.Field<double>("Apertura"),
+
+                    Cierre = dr.Field<double?>("Cierre"),
+
+
+                    Manguera = new MangueraSiges()
+                    {
+                        Id = dr.Field<int>("Id"),
+                        Descripcion = dr.Field<string>("descripcion"),
+                        Ubicacion = dr.Field<string>("ubicacion")
+                    },
+                })
+            );
+            return response;
+        }
+
+        public List<VehiculoSuic> ConvertirVehiculoSiges(DataTable dt)
+        {
+            List<VehiculoSuic> response = new List<VehiculoSuic>();
+
+            response.AddRange(
+                dt.AsEnumerable().Select(dr => new VehiculoSuic()
+                {
+                    estado = dr.Field<int>("estado"),
+                    capacidad = dr.Field<string>("capacidad"),
+                    fechaFin = dr.Field<DateTime>("fechaFin"),
+                    fechaInicio = dr.Field<DateTime>("fechaInicio"),
+                    idrom = dr.Field<string>("idrom"),
+                    motivo = dr.Field<string>("motivo"),
+                    motivoTexto = dr.Field<string>("motivoTexto"),
+                    placa = dr.Field<string>("placa"),
+                    servicio = dr.Field<string>("servicio"),
+                    vin = dr.Field<string>("vin"),
+                })
+            );
+            return response;
+        }
+
+        private static DateTime? JulianToDateTime(int julianDate)
+        {
+            try
+            {
+                int day = julianDate % 1000;
+                int year = (julianDate - day + 2000000) / 1000;
+                var date1 = new DateTime(year, 1, 1);
+                return date1.AddDays(day - 1);
+
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+        }
+        public List<Resolucion> ConvertirResolucion(DataTable dt)
+        {
+            List<Resolucion> response = new List<Resolucion>();
+
+            response.AddRange(
+                dt.AsEnumerable().Select(dr => new Resolucion()
+                {
+                    ConsecutivoInicial = dr.Field<int>("consecutivoInicio"),
+                    ConsecutivoFinal = dr.Field<int>("consecutivoFinal"),
+                    ConsecutivoActual = dr.Field<int>("consecutivoActual"),
+                    DescripcionResolucion = dr.Field<string>("descripcionRes"),
+                    FechaFinalResolucion = dr.Field<DateTime>("fechafinal"),
+                    FechaInicioResolucion = dr.Field<DateTime>("fechaInicio"),
+                    Autorizacion = dr.Field<string>("Autorizacion"),
+                })
+            );
+            return response;
+        }
+
+        public List<FacturaFechaReporte> ConvertirFacturaFechaReporte(DataTable dt2)
+        {
+            List<FacturaFechaReporte> response = new List<FacturaFechaReporte>();
+
+            response.AddRange(
+                dt2.AsEnumerable().Select(dr => new FacturaFechaReporte()
+                {
+                    FechaReporte = dr.Field<DateTime>("FechaReporte"),
+                    IdVentaLocal = dr.Field<int>("IdVentaLocal")
+                })
+            );
+            return response;
+        }
+
+        public List<FacturaCanastilla> ConvertirFacturaCanastilla(DataTable dt)
+        {
+            List<FacturaCanastilla> response = new List<FacturaCanastilla>();
+
+            response.AddRange(
+                dt.AsEnumerable().Select(dr => {
+                    var fc = new FacturaCanastilla();
+
+                    fc.FacturasCanastillaId = dr.Field<int>("FacturasCanastillaId");
+                    fc.consecutivo = dr.Field<int>("consecutivo");
+                    fc.fecha = dr.Field<DateTime>("fecha");
+                    fc.impresa = dr.Field<int>("impresa");
+                    fc.estado = dr.Field<string>("estado");
+                    fc.codigoFormaPago = new FormaPagoSiges() { Id = dr.Field<int>("codigoFormaPago") };
+                    fc.descuento = Convert.ToSingle(dr.Field<double>("descuento"));
+                    fc.subtotal = Convert.ToSingle(dr.Field<double>("subtotal"));
+                    fc.total = Convert.ToSingle(dr.Field<double>("total"));
+                    fc.iva = Convert.ToSingle(dr.Field<double>("iva"));
+                    fc.resolucion = ConvertirResolucion(dt).FirstOrDefault();
+                    fc.enviada = dr.Field<int>("enviada");
+                    fc.terceroId = new Tercero();
+
+                    fc.terceroId.COD_CLI = dr.Field<string>("COD_CLI");
+                    fc.terceroId.Direccion = dr.Field<string>("direccion");
+                    fc.terceroId.Nombre = dr.Field<string>("Nombre");
+                    fc.terceroId.Telefono = dr.Field<string>("Telefono");
+                    fc.terceroId.identificacion = dr.Field<string>("identificacion");
+
+                    fc.terceroId.Correo = dr.Field<string>("correo");
+                    fc.terceroId.terceroId = dr.Field<int>("terceroId");
+                    fc.terceroId.tipoIdentificacion = dr.Field<int?>("tipoIdentificacion");
+                    fc.terceroId.tipoIdentificacionS = dr.Field<string>("descripcion");
+
+
+                    return fc;
+                })
+            );
+            return response;
+        }
+
+        public List<CanastillaFactura> ConvertirFacturaCanastillaDEtalle(DataTable dt)
+        {
+            List<CanastillaFactura> response = new List<CanastillaFactura>();
+
+            response.AddRange(
+                dt.AsEnumerable().Select(dr => new CanastillaFactura()
+                {
+                    cantidad = Convert.ToSingle(dr.Field<double>("cantidad")),
+                    iva = Convert.ToSingle(dr.Field<double>("iva")),
+                    precio = Convert.ToSingle(dr.Field<double>("precio")),
+                    subtotal = Convert.ToSingle(dr.Field<double>("subtotal")),
+                    total = Convert.ToSingle(dr.Field<double>("total")),
+                    Canastilla = new Canastilla()
+                    {
+                        guid = dr.Field<Guid>("guid"),
+                        CanastillaId = dr.Field<int>("CanastillaId"),
+                        descripcion = dr.Field<string>("descripcion"),
+                    }
                 })
             );
             return response;
