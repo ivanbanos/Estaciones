@@ -96,9 +96,9 @@ namespace ManejadorSurtidor.SICOM
 
             resultado = hexString;
             cant++;
-            _logger.Log(NLog.LogLevel.Info, $"Leyendo boton {resultado}");
             if ((!resultado.ToLower().Contains("4e-42") && resultado.Length>8) || cant>10)
             {
+                _logger.Log(NLog.LogLevel.Info, $"Leyendo boton {resultado}");
                 leido = true;
             }
         }

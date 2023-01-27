@@ -330,7 +330,7 @@ namespace FacturadorEstacionesRepositorio
             return _convertidor.ConvertirManguerasSiges(dt);
         }
 
-        public void AgregarVenta(int idManguera, string cantidadventa, string iButton)
+        public void AgregarVenta(int idManguera, double cantidadventa, string iButton)
         {
             LoadDataTableFromStoredProc(_connectionString.EstacionSiges, "AgregarVenta",
                                new Dictionary<string, object>{

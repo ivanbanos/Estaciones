@@ -26,7 +26,7 @@ namespace FacturadorEstacionesRepositorio
         List<CaraSiges> GetCarasSiges();
         List<SurtidorSiges> GetSurtidoresSiges();
         List<MangueraSiges> GetMangueras(int id);
-        void AgregarVenta(int idManguera, string cantidadventa, string iButton);
+        void AgregarVenta(int idManguera, double cantidadventa, string iButton);
         List<FacturaSiges> getVentaSinSubirSICOM();
         List<FormaPagoSiges> BuscarFormasPagosSiges();
         List<FacturaSiges> getUltimasFacturasSiges(int idCara, int cantidad);

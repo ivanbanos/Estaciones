@@ -62,10 +62,6 @@ namespace SigesServicio
                         var turnoimprimir = _estacionesRepositorio.getTurnosSinImprimir();
                         if (imprimiendo == 0 && turnoimprimir != null)
                         {
-
-
-                            while (true)
-                            {
                                 if (imprimiendo == 0)
                                 {
                                     imprimiendo++;
@@ -78,11 +74,6 @@ namespace SigesServicio
                                 {
                                     Thread.Sleep(100);
                                 }
-                                if (turnoimprimir.impresa == 0)
-                                {
-                                    break;
-                                }
-                            }
                             Thread.Sleep(1000);
                         }
                         var factura = _estacionesRepositorio.getFacturasImprimir();

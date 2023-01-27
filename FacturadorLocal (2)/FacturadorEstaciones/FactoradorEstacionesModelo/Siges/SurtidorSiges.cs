@@ -24,7 +24,7 @@ namespace FactoradorEstacionesModelo.Siges
             esperando = false;
             respondio = false;
         }
-
+        public int lapso { get; set; } = 0;
         public int ventaPar { get; set; }
         public int ventaImpar { get; set; }
         public int action { get; set; }
@@ -33,5 +33,6 @@ namespace FactoradorEstacionesModelo.Siges
         public bool respondio { get; set; }
         public string IButtonPar { get; set; }
         public string IButtonImpar { get; set; }
+        public TurnoSiges turno { get; set; }
     }
 }

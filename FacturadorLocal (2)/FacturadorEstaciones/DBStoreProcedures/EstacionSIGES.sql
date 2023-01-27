@@ -1547,6 +1547,12 @@ CREATE procedure [dbo].[ObtenerFacturaPorVenta]
 as
 begin try
     set nocount on;
+	declare @ventaId int;
+
+	select @ventaId = max(venta.id) from venta
+	inner join manguera on venta.Idmanguera = manguera.Id
+	where manguera.IdCara = @IdCara
+
 	select 
 	Resoluciones.habilitada as habilitada,
 	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
@@ -1566,7 +1572,6 @@ begin try
       ,FacturasPOS.[codigoFormaPago]
       ,FacturasPOS.[reporteEnviado]
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
-	
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
 	from dbo.FacturasPOS
 	
@@ -1580,7 +1585,8 @@ begin try
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
 	
 	
-	where FacturasPOS.estado != 'AN' and Cara.Id = @idCara
+	where FacturasPOS.estado != 'AN' and FacturasPOS.[ventaId] = @ventaId 
+	
     union
 	select 
 	Resoluciones.habilitada as habilitada,
@@ -1601,7 +1607,6 @@ begin try
       ,OrdenesDeDespacho.[codigoFormaPago]
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
-	
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
 	from dbo.OrdenesDeDespacho
 	
@@ -1613,7 +1618,7 @@ begin try
 	left join dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
 	left join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	where Cara.Id = @idCara
+	where  OrdenesDeDespacho.ventaId = @ventaId 
 end try
 begin catch
     declare 
@@ -2739,7 +2744,7 @@ CREATE procedure [dbo].[SetTotalizadorTurnoSurtidorCierrre]
 as
 begin try
     set nocount on;
-	declare @turnosurtidor int, @cerrado int, @Todos int;
+	declare @turnosurtidor int, @cerrado int, @Todos int,  @noabierto int;
 
 	select @turnosurtidor = Id from [TurnoSurtidor] where idTurno=@IdTurno and idManguera=@idManguera
 
@@ -2761,7 +2766,7 @@ begin try
 
 	if @noabierto = 0
 	begin
-		update turno set idEstado = 2 where Id=@IdTurno
+		update turno set idEstado = 4 where Id=@IdTurno
 	end
 end try
 begin catch

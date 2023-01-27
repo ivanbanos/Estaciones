@@ -16,5 +16,9 @@ namespace FactoradorEstacionesModelo.Siges
         public bool esperando { get; set; }
         public bool Vendiendo { get; set; }
         public VehiculoSuic Vehiculo { get; set; }
+        public double NuevoTotalizador { get; set; }
+        public DateTime Date { get; set; }
+        public double NuevaVenta { get; set; }
+        public bool CambioVenta { get; set; }
     }
 }
