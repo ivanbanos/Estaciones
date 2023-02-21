@@ -369,6 +369,8 @@ namespace FactoradorEstacionesModelo.Convertidor
                     Total = dr.Field<double>("total"),
                     Subtotal = dr.Field<double>("subtotal"),
                     Descuento = dr.Field<double>("descuento"),
+                    Empleado = dr.Field<string>("Empleado"),
+                    fechaProximoMantenimiento = dr.Field<DateTime?>("fechaProximoMantenimiento"),
 
                     Tercero = new Tercero()
                     {

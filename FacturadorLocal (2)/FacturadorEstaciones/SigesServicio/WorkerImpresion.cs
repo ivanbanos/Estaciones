@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using System.Drawing;
 using System.Text;
 using ServicioSIGES;
+using System.Net.NetworkInformation;
 
 namespace SigesServicio
 {
@@ -28,7 +29,12 @@ namespace SigesServicio
             _infoEstacion = infoEstacion.Value;
             _caraImpresoras = caraImpresoras.Value;
 
-            _logger = logger;
+            _logger = logger; 
+            firstMacAddress = NetworkInterface
+        .GetAllNetworkInterfaces()
+        .Where(nic => nic.OperationalStatus == OperationalStatus.Up && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+        .Select(nic => nic.GetPhysicalAddress().ToString())
+        .FirstOrDefault();
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(async () =>
@@ -278,7 +284,7 @@ namespace SigesServicio
             else if (_factura.Consecutivo == 0)
             {
 
-                lineasImprimir.Add(new LineasImprimir("Orden de despacho No: " + _factura.Consecutivo, true));
+                lineasImprimir.Add(new LineasImprimir("Orden de despacho No: " + _factura.facturaPOSId, true));
             }
             else
             {
@@ -327,10 +333,10 @@ namespace SigesServicio
                 }
             }
 
-            //if (_factura.fechaUltimaActualizacion.HasValue && (_mangueras.DESCRIPCION.ToLower().Contains("gn") || _mangueras.DESCRIPCION.ToLower().Contains("gas")))
-            //{
-            //    lineasImprimir.Add(new LineasImprimir(formatoTotales("Proximo mantenimiento : ", _venta.FECH_PRMA.Value.ToString("dd/MM/yyyy").Trim()), false));
-            //}
+            if (_factura.fechaProximoMantenimiento.HasValue)
+            {
+                lineasImprimir.Add(new LineasImprimir(formatoTotales("Proximo mantenimiento : ", _factura.fechaProximoMantenimiento.Value.ToString("dd/MM/yyyy").Trim()), false));
+            }
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Fecha : ", _factura.fecha.ToString("dd/MM/yyyy HH:mm:ss")), false));
@@ -429,7 +435,7 @@ namespace SigesServicio
             lineasImprimir.Add(new LineasImprimir("Fabricado por:" + " SIGES SOLUCIONES SAS ", true));
             lineasImprimir.Add(new LineasImprimir("Nit:" + " 901430393-2 ", true));
             lineasImprimir.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ","MAC"), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress), false));
             lineasImprimir.Add(new LineasImprimir(".", true));
 
         }

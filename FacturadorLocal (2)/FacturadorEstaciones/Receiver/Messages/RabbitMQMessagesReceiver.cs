@@ -1,5 +1,4 @@
 ﻿using FactoradorEstacionesModelo;
-using Microsoft.AspNetCore.Connections;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -12,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace ControladorEstacion.Messages
 {
-    public class RabbitMQMessagesReceiver : IMessagesReceiver , IObservable<Mensaje>
+    public class RabbitMQMessagesReceiver : IObservable<Mensaje>
     {
         List<IObserver<Mensaje>> observers = new List<IObserver<Mensaje>>();
         EventingBasicConsumer consumer;
@@ -21,30 +20,26 @@ namespace ControladorEstacion.Messages
             var factory = new ConnectionFactory() { HostName = "localhost" };
             var connection = factory.CreateConnection();
             var channel = connection.CreateModel();
-
-            channel.QueueDeclare(queue: "hello",
-                                 durable: false,
-                                 exclusive: false,
-                                 autoDelete: false,
-                                 arguments: null);
-
-            consumer = new EventingBasicConsumer(channel);
-            consumer.Received += (model, ea) =>
-            {
-                var body = ea.Body.ToArray();
-                var mensaje = JsonConvert.DeserializeObject<Mensaje>(Encoding.UTF8.GetString(body));
-                foreach (var observer in observers)
-                {
-                    observer.OnNext(mensaje);
-                }
-            };
-            channel.BasicConsume(queue: "hello",
-                                 autoAck: true,
-                                 consumer: consumer);
-        }
-        public void ReceiveMessages()
-        {
             
+                channel.QueueDeclare(queue: "hello",
+                                     durable: false,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: null);
+
+                consumer = new EventingBasicConsumer(channel);
+                consumer.Received += (model, ea) =>
+                {
+                    var body = ea.Body.ToArray();
+                    var mensaje = JsonConvert.DeserializeObject<Mensaje>(Encoding.UTF8.GetString(body));
+                    foreach (var observer in observers)
+                    {
+                        observer.OnNext(mensaje);
+                    }
+                };
+                channel.BasicConsume(queue: "hello",
+                                     autoAck: true,
+                                     consumer: consumer);
         }
 
         public IDisposable Subscribe(IObserver<Mensaje> observer)

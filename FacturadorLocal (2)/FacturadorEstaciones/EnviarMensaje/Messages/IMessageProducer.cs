@@ -7,6 +7,6 @@ namespace ManejadorSurtidor.Messages
 {
     public  interface IMessageProducer
     {
-        Task SendMessage<T>(T message, string queue);
+        Task SendMessage<T>(T message);
     }
 }

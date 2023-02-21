@@ -47,5 +47,6 @@ namespace FactoradorEstacionesModelo.Siges
         public double Descuento { get; set; }
         public int IdCara { get; set; }
         public string IButton { get; set; }
+        public DateTime? fechaProximoMantenimiento { get; set; }
     }
 }

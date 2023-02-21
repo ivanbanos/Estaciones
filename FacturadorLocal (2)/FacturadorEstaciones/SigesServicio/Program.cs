@@ -1,4 +1,6 @@
+using EnviadorInformacionService;
 using FactoradorEstacionesModelo;
+using FacturadorEstacionesPOSWinForm.Repo;
 using ManejadorSurtidor;
 using ManejadorSurtidor.Messages;
 using ManejadorSurtidor.SICOM;
@@ -15,12 +17,13 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<IMessageProducer, RabbitMQProducer>();
         services.Configure<Sicom>(options => hostContext.Configuration.GetSection("Sicom").Bind(options));
         services.Configure<InformacionCuenta>(options => hostContext.Configuration.GetSection("InformacionCuenta").Bind(options));
-        
+
+        services.AddSingleton<IConexionEstacionRemota, ConexionEstacionRemota>();
         services.AddHostedService<SubirVentasWorker>();
         services.AddHostedService<ObtenerVehiculosWorker>();
         services.AddHostedService<WorkerImpresion>();
-        //services.AddHostedService<CanastillaWorker>();
-        //services.AddHostedService<FacturasWorker>();
+        services.AddHostedService<CanastillaWorker>();
+        services.AddHostedService<FacturasWorker>();
 
     })
     .Build();

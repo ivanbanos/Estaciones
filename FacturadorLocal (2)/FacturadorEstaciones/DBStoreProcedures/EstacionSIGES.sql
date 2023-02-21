@@ -2684,8 +2684,10 @@ begin try
 	select turno.Id, Empleado.Nombre, turno.FechaApertura, turno.FechaCierre, turno.IdEstado
 	from dbo.Turno 
 	inner join isla on  Turno.IdIsla = Isla.Id
+	inner join surtidor on  surtidor.IdIsla = Isla.Id
 		inner join Empleado on IdEmpleado = EMpleado.Id
-	where Turno.IdEstado=1 or Turno.IdEstado=2 or Turno.IdEstado=3
+	where (Turno.IdEstado=1 or Turno.IdEstado=2 or Turno.IdEstado=3)
+	and surtidor.Id = @idSurtidor
     
     
 end try

@@ -17,7 +17,7 @@ namespace ManejadorSurtidor.SICOM
         private int cant;
         private readonly Logger _logger = NLog.LogManager.GetCurrentClassLogger();
 
-        public async Task<string> leerBoton(string puerto, bool caraPAr, Logger _logger)
+        public async Task<string> leerBoton(string puerto, int surtidorNumero, bool caraPAr, Logger _logger)
         {
             cant = 0;
             System.ComponentModel.IContainer components = null;
@@ -36,14 +36,14 @@ namespace ManejadorSurtidor.SICOM
             serialPort1.DataReceived += new SerialDataReceivedEventHandler(DataReceiverHandler);
             //serialPort1.WriteTimeout = 500;
             //serialPort1.ReadTimeout = 500;
-            while (true)
+           while (!serialPort1.IsOpen)
             {
-
-                if (!serialPort1.IsOpen) { serialPort1.Open(); break; }
+                serialPort1.Open();
             }
+            
             serialPort1.ReceivedBytesThreshold = 10;
             _logger.Log(NLog.LogLevel.Info, $"Leyendo boton ");
-            string trama = caraPAr?$"3b31324971" : $"3b31314972";
+            string trama = GetTrama(surtidorNumero, caraPAr);
             await EnviarTramaAsync(trama);
             serialPort1.Close();
             try
@@ -54,17 +54,68 @@ namespace ManejadorSurtidor.SICOM
                 {
                     iButton = codigos[i]+iButton;
                 }
-                _logger.Log(NLog.LogLevel.Info, $"Leyendo boton {resultado}");
+                _logger.Log(NLog.LogLevel.Info, $"Leyendo boton {iButton}");
                 return iButton;
             }
             catch (Exception) {
                 return "fail";
             }
         }
+
+        private string GetTrama(int surtidorNumero, bool caraPAr)
+        {
+            if (caraPAr)
+            {
+                switch (surtidorNumero)
+                {
+                    case 1:
+                        return "3B31324971";
+                    case 2:
+                        return "3B32324972";
+                    case 3:
+                        return "3B33324973";
+                    case 4:
+                        return "3B34324974";
+                    case 5:
+                        return "3B35324975";
+                    case 6:
+                        return "3B36324976";
+                    case 7:
+                        return "3B37324977";
+                    case 8:
+                        return "3B38324972";
+                }
+            }
+            else
+            {
+                switch (surtidorNumero)
+                {
+                    case 1:
+                        return "3B31314972";
+                    case 2:
+                        return "3B32314971";
+                    case 3:
+                        return "3B33314970";
+                    case 4:
+                        return "3B34314977";
+                    case 5:
+                        return "3B35314976";
+                    case 6:
+                        return "3B36314975";
+                    case 7:
+                        return "3B37314974";
+                    case 8:
+                        return "3B38314972";
+                }
+            }
+            return "";
+        }
+
         private async Task EnviarTramaAsync(string trama)
         {
             leido = false;
-            while (!leido)
+            var count = 0;
+            while (!leido && count++ < 7)
             {
 
                 byte[] tramaByte = FromHex(trama);
@@ -87,20 +138,39 @@ namespace ManejadorSurtidor.SICOM
         public void DataReceiverHandler(object sender,
             SerialDataReceivedEventArgs e)
         {
-            SerialPort sp = (SerialPort)sender;
-            string intdata = sp.ReadExisting();
-            // _logger.LogInformation( $"Buffer {sp.ReadBufferSize}");
-            
-            byte[] response = Encoding.GetEncoding(28591).GetBytes(intdata);
-            string hexString = BitConverter.ToString(response);
-
-            resultado = hexString;
-            cant++;
-            if ((!resultado.ToLower().Contains("4e-42") && resultado.Length>8) || cant>10)
+            try
             {
-                _logger.Log(NLog.LogLevel.Info, $"Leyendo boton {resultado}");
-                leido = true;
+                SerialPort sp = (SerialPort)sender;
+
+                cant = 0;
+                resultado = "";
+                while ((resultado.ToLower().Contains("4e-42") || resultado.Length < 8) && cant++ < 5)
+                {
+                    if (sp.BytesToRead > 0)
+                    {
+                        string intdata = sp.ReadExisting();
+                        // _logger.LogInformation( $"Buffer {sp.ReadBufferSize}");
+
+                        byte[] response = Encoding.GetEncoding(28591).GetBytes(intdata);
+                        string hexString = BitConverter.ToString(response);
+
+                        resultado += hexString;
+
+                        resultado = resultado.Replace("4e-42-", "");
+                        _logger.Log(NLog.LogLevel.Info, $"Leyendo boton {resultado}");
+                        if (resultado.Length >= 8)
+                        {
+                            leido = true;
+                        }
+                    }
+                    Thread.Sleep(250);
+                }
+            }catch(Exception ex)
+            {
+
             }
+           
+            
         }
     }
 }

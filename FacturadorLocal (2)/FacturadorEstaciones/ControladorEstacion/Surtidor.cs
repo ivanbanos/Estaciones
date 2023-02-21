@@ -19,8 +19,6 @@ namespace ControladorEstacion
             InitializeComponent();
             this.Nombre.Text = surtidor.Descripcion;
             SurtidorControl = surtidor;
-            //Buscar Turno
-            //Buscar Mangueras
         }
 
         public SurtidorSiges SurtidorControl { get; }
@@ -35,19 +33,76 @@ namespace ControladorEstacion
             throw new NotImplementedException();
         }
 
+        delegate void SetTurnoCallback(string value);
+        private void SetTurno(string value)
+        {
+            if (this.Turno.InvokeRequired)
+            {
+                SetTurnoCallback d = new SetTurnoCallback(SetTurno);
+                this.Invoke(d, new object[] { value });
+            }
+            else
+            {
+                Turno.Text = value;
+            }
+        }
+
+        delegate void SetIsleroCallback(string value);
+        private void SetIslero(string value)
+        {
+            if (this.Turno.InvokeRequired)
+            {
+                SetIsleroCallback d = new SetIsleroCallback(SetIslero);
+                this.Invoke(d, new object[] { value });
+            }
+            else
+            {
+                Islero.Text = value;
+            }
+        }
+
+        delegate void SetEstadoParCallback(string value);
+        private void SetEstadoPar(string value)
+        {
+            if (this.Turno.InvokeRequired)
+            {
+                SetEstadoParCallback d = new SetEstadoParCallback(SetEstadoPar);
+                this.Invoke(d, new object[] { value });
+            }
+            else
+            {
+                this.EstadoPar.Text = value;
+            }
+        }
+
+
+        delegate void SetEstadoImparCallback(string value);
+        private void SetEstadoImpar(string value)
+        {
+            if (this.Turno.InvokeRequired)
+            {
+                SetEstadoImparCallback d = new SetEstadoImparCallback(SetEstadoImpar);
+                this.Invoke(d, new object[] { value });
+            }
+            else
+            {
+                this.EstadoImpar.Text = value;
+            }
+        }
+
         public void OnNext(Mensaje value)
         {
             if (SurtidorControl.Id == value.SurtidorId)
             {
-                Turno.Text = value.Turno;
-                Islero.Text = value.Empleado;
+                SetTurno(value.Turno);
+                SetIslero(value.Empleado);
                 if (value.Ubicacion == "Par")
                 {
-                    this.EstadoPar.Text = value.Estado;
+                    SetEstadoPar(value.Estado);
                 }
                 else
                 {
-                    this.EstadoImpar.Text = value.Estado;
+                    SetEstadoImpar(value.Estado);
                 }
             }
         }

@@ -123,7 +123,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.Nombre);
             this.Name = "Surtidor";
-            this.Size = new System.Drawing.Size(162, 158);
+            this.Size = new System.Drawing.Size(262, 158);
             this.ResumeLayout(false);
             this.PerformLayout();
 

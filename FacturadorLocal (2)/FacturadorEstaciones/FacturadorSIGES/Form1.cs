@@ -1,9 +1,11 @@
 ﻿using EnviadorInformacionService.Models;
+using FactoradorEstacionesModelo;
 using FactoradorEstacionesModelo.Objetos;
 using FactoradorEstacionesModelo.Siges;
 using FacturadorEstacionesPOSWinForm.Repo;
 using FacturadorEstacionesRepositorio;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -19,7 +21,7 @@ using System.Windows.Forms;
 
 namespace FacturadorEstacionesPOSWinForm
 {
-    public partial class Islas : Form
+    public partial class Islas : Form, IObserver<VehiculoSuic>
     {
         private readonly IEstacionesRepositorio _estacionesRepositorio;
         private readonly IConexionEstacionRemota _conexionEstacionRemota;
@@ -720,6 +722,21 @@ namespace FacturadorEstacionesPOSWinForm
                 OnTextBox4ChangedComplete();
             }
             pestanaActual = pestanaSiguiente;
+        }
+
+        public void OnCompleted()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void OnError(Exception error)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void OnNext(VehiculoSuic value)
+        {
+            MessageBox.Show($"Tanqueando vehiculo {JsonConvert.SerializeObject(value)}");
         }
     }
 }

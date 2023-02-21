@@ -24,9 +24,10 @@ namespace ControladorEstacion
             {
                 var newSurtidor = new Surtidor(surtidor);
                 surtidoresComponets.Add(newSurtidor);
-                newSurtidor.Location = new System.Drawing.Point(12 + (165 * posActual), 80 );
+                newSurtidor.Location = new System.Drawing.Point(12 , 80 + (161 * posActual));
                 newSurtidor.Name = surtidor.Descripcion;
                 this.Controls.Add(newSurtidor);
+                messageReceiver.Subscribe(newSurtidor);
                 posActual++;
             }
         }

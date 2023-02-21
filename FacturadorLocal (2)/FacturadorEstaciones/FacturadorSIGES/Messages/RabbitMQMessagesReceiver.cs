@@ -1,4 +1,5 @@
 ﻿using FactoradorEstacionesModelo;
+using FactoradorEstacionesModelo.Siges;
 using Microsoft.AspNetCore.Connections;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
@@ -12,9 +13,9 @@ using System.Threading.Tasks;
 
 namespace ControladorEstacion.Messages
 {
-    public class RabbitMQMessagesReceiver : IMessagesReceiver , IObservable<Mensaje>
+    public class RabbitMQMessagesReceiver : IMessagesReceiver , IObservable<VehiculoSuic>
     {
-        List<IObserver<Mensaje>> observers = new List<IObserver<Mensaje>>();
+        List<IObserver<VehiculoSuic>> observers = new List<IObserver<VehiculoSuic>>();
         EventingBasicConsumer consumer;
         public RabbitMQMessagesReceiver()
         {
@@ -22,7 +23,7 @@ namespace ControladorEstacion.Messages
             var connection = factory.CreateConnection();
             var channel = connection.CreateModel();
 
-            channel.QueueDeclare(queue: "hello",
+            channel.QueueDeclare(queue: "vehiculo",
                                  durable: false,
                                  exclusive: false,
                                  autoDelete: false,
@@ -32,13 +33,13 @@ namespace ControladorEstacion.Messages
             consumer.Received += (model, ea) =>
             {
                 var body = ea.Body.ToArray();
-                var mensaje = JsonConvert.DeserializeObject<Mensaje>(Encoding.UTF8.GetString(body));
+                var mensaje = JsonConvert.DeserializeObject<VehiculoSuic>(Encoding.UTF8.GetString(body));
                 foreach (var observer in observers)
                 {
                     observer.OnNext(mensaje);
                 }
             };
-            channel.BasicConsume(queue: "hello",
+            channel.BasicConsume(queue: "vehiculo",
                                  autoAck: true,
                                  consumer: consumer);
         }
@@ -47,22 +48,22 @@ namespace ControladorEstacion.Messages
             
         }
 
-        public IDisposable Subscribe(IObserver<Mensaje> observer)
+        public IDisposable Subscribe(IObserver<VehiculoSuic> observer)
         {
             // Check whether observer is already registered. If not, add it
             if (!observers.Contains(observer))
             {
                 observers.Add(observer);
             }
-            return new Unsubscriber<Mensaje>(observers, observer);
+            return new Unsubscriber<VehiculoSuic>(observers, observer);
         }
 
-        internal class Unsubscriber<Mensaje> : IDisposable
+        internal class Unsubscriber<VehiculoSuic> : IDisposable
         {
-            private List<IObserver<Mensaje>> _observers;
-            private IObserver<Mensaje> _observer;
+            private List<IObserver<VehiculoSuic>> _observers;
+            private IObserver<VehiculoSuic> _observer;
 
-            internal Unsubscriber(List<IObserver<Mensaje>> observers, IObserver<Mensaje> observer)
+            internal Unsubscriber(List<IObserver<VehiculoSuic>> observers, IObserver<VehiculoSuic> observer)
             {
                 this._observers = observers;
                 this._observer = observer;
