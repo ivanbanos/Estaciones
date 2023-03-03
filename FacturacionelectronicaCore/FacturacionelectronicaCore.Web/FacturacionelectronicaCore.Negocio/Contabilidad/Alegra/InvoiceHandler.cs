@@ -15,7 +15,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
 
             using (var client = new HttpClient())
             {
-                client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
+                client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
                 client.DefaultRequestHeaders.Authorization =
     new AuthenticationHeaderValue("Basic", alegra.Auth);
                 var path = $"{alegra.Url}invoices";

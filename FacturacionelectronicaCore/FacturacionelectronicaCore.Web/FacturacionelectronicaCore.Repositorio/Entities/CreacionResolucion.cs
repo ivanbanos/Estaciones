@@ -17,5 +17,6 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
         public string Autorizacion { get; set; }
         public bool Habilitada { get; set; }
         public string Descripcion { get; set; }
+        public int Tipo { get; set; }
     }
 }

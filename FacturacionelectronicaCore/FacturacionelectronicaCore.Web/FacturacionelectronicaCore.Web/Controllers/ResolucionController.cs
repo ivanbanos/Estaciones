@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Negocio.Resolucion;
@@ -23,7 +25,17 @@ namespace FacturacionelectronicaCore.Web.Controllers
 
 
         [HttpGet("{estacion}")]
-        public async Task<ActionResult<Resolucion>> GetResolucionActiva(Guid estacion)
+        public async Task<ActionResult<IEnumerable<Resolucion>>> GetResolucionActiva(Guid estacion)
+        {
+            var result = await _resolucionNegocio.GetResolucionActiva(estacion);
+
+            if (result == null) { return NotFound(); }
+
+            return Ok(result);
+        }
+
+        [HttpGet("resoluciones/{estacion}")]
+        public async Task<ActionResult<IEnumerable<Resolucion>>> GetResolucionesActiva(Guid estacion)
         {
             var result = await _resolucionNegocio.GetResolucionActiva(estacion);
 
@@ -40,11 +52,19 @@ namespace FacturacionelectronicaCore.Web.Controllers
             return Ok(await _resolucionNegocio.AddNuevaResolucion(resolucion));
         }
 
-        [HttpPost("HabilitarResolucion/{estacion}")]
-        public async Task<ActionResult<int>> HabilitarResolucion(Guid estacion,[FromBody] DateTime fechaVencimiento)
+        [HttpPost("HabilitarResolucion/{resolucion}")]
+        public async Task<ActionResult<int>> HabilitarResolucion(Guid resolucion,[FromBody] DateTime fechaVencimiento)
         {
 
-            return Ok(await _resolucionNegocio.HabilitarResolucion(estacion, fechaVencimiento));
+            return Ok(await _resolucionNegocio.HabilitarResolucion(resolucion, fechaVencimiento));
+        }
+
+
+        [HttpGet("AnularResolucion/{resolucion}")]
+        public async Task<ActionResult<int>> AnularResolucion(Guid resolucion)
+        {
+            await _resolucionNegocio.AnularResolucion(resolucion);
+            return Ok();
         }
     }
 }

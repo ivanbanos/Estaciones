@@ -14,11 +14,15 @@ namespace EstacionesServicio.Negocio.Mapper
             CreateMap<Resolucion, FacturacionelectronicaCore.Negocio.Modelo.Resolucion>().ReverseMap();
             CreateMap<CreacionResolucion, FacturacionelectronicaCore.Negocio.Modelo.CreacionResolucion>().ReverseMap();
             CreateMap<Tercero, FacturacionelectronicaCore.Negocio.Modelo.Tercero>().ReverseMap();
+            CreateMap<Canastilla, FacturacionelectronicaCore.Negocio.Modelo.Canastilla>().ReverseMap();
             CreateMap<FacturacionelectronicaCore.Negocio.Modelo.Tercero, TerceroInput>().ReverseMap();
             CreateMap<Modelo.OrdenesDeDespachoGuids, Repositorio.Entities.OrdenesDeDespachoGuids>();
             CreateMap<Modelo.FacturasEntity, FacturasEntity>();
             CreateMap<FacturacionelectronicaCore.Negocio.Modelo.Estacion, Estacion>().ReverseMap();
             CreateMap<FacturacionelectronicaCore.Negocio.Modelo.FacturaFechaReporte, FacturaFechaReporte>().ReverseMap();
+            CreateMap<FacturacionelectronicaCore.Negocio.Modelo.FacturaCanastilla, FacturaCanastilla>().ReverseMap();
+            CreateMap<FacturacionelectronicaCore.Negocio.Modelo.CanastillaFactura, CanastillaFactura>().ReverseMap();
+            CreateMap<FacturacionelectronicaCore.Negocio.Modelo.FormasPagos, FormasPagos>().ReverseMap();
         }
     }
 }

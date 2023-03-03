@@ -294,4 +294,28 @@
   <data name="s" xml:space="preserve">
     <value>ObtenerOrdenDespachoPorIdVentaLocal</value>
   </data>
+  <data name="GetCanastilla" xml:space="preserve">
+    <value>[dbo].[GetCanastilla]</value>
+  </data>
+  <data name="UpdateOrCreateCanastilla" xml:space="preserve">
+    <value>[dbo].[UpdateOrCreateCanastilla]</value>
+  </data>
+  <data name="AnularResolucion" xml:space="preserve">
+    <value>[dbo].[AnularResolucion]</value>
+  </data>
+  <data name="CrearFacturaCanastilla" xml:space="preserve">
+    <value>[dbo].[CrearFacturaCanastilla]</value>
+  </data>
+  <data name="CrearFacturaDetalle" xml:space="preserve">
+    <value>[dbo].[CrearFacturaDetalle]</value>
+  </data>
+  <data name="getFacturaCanatillaDetalle" xml:space="preserve">
+    <value>[dbo].[getFacturaCanatillaDetalle]</value>
+  </data>
+  <data name="getFacturasCanastilla" xml:space="preserve">
+    <value>[dbo].[getFacturasCanastilla]</value>
+  </data>
+  <data name="getFacturaCanastilla" xml:space="preserve">
+    <value>[dbo].[getFacturaCanastilla]</value>
+  </data>
 </root>

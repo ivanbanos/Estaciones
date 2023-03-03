@@ -22,5 +22,11 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         Task<IEnumerable<string>> GetTipos();
         Task<string> GetInfoFacturaElectronica(int idVentaLocal, Guid estacion);
 
+
+        Task<int> AddFacturaCanastilla(IEnumerable<FacturaCanastilla> facturas, Guid estacion);
+
+
+        Task<ResolucionElectronica> GetResolucionElectronica(); 
+
     }
 }

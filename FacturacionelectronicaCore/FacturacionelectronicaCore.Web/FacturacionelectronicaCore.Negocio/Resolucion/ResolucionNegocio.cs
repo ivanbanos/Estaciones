@@ -30,7 +30,19 @@ namespace FacturacionelectronicaCore.Negocio.Resolucion
             }
         }
 
-        public async Task<Modelo.Resolucion> GetResolucionActiva(Guid estacion)
+        public async Task AnularResolucion(Guid resolucion)
+        {
+            try
+            {
+                await _resolucionRepositorio.AnularResolucion(resolucion);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<IEnumerable<Modelo.Resolucion>> GetResolucionActiva(Guid estacion)
         {
             try
             {
@@ -40,7 +52,7 @@ namespace FacturacionelectronicaCore.Negocio.Resolucion
                 {
                     return null;
                 }
-                return _mapper.Map<Repositorio.Entities.Resolucion, Modelo.Resolucion>(resolucionEntity);
+                return _mapper.Map< IEnumerable<Repositorio.Entities.Resolucion>, IEnumerable<Modelo.Resolucion>>(resolucionEntity);
             }
             catch (Exception ex)
             {
@@ -48,12 +60,12 @@ namespace FacturacionelectronicaCore.Negocio.Resolucion
             }
         }
 
-        public async Task<Modelo.Resolucion> HabilitarResolucion(Guid estacion, DateTime fechaVencimiento)
+        public async Task<Modelo.Resolucion> HabilitarResolucion(Guid resolucion, DateTime fechaVencimiento)
         {
             try
             {
 
-                var resolucionEntity = await _resolucionRepositorio.HabilitarResolucion(estacion,fechaVencimiento);
+                var resolucionEntity = await _resolucionRepositorio.HabilitarResolucion(resolucion, fechaVencimiento);
                 if (resolucionEntity == null)
                 {
                     return null;
@@ -65,5 +77,6 @@ namespace FacturacionelectronicaCore.Negocio.Resolucion
                 throw;
             }
         }
+
     }
 }

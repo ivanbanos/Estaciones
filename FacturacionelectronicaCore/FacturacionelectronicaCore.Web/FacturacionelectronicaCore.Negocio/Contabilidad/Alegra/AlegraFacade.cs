@@ -1,7 +1,9 @@
-﻿using Microsoft.Extensions.Options;
+﻿using FacturacionelectronicaCore.Negocio.Modelo;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -15,6 +17,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
         private readonly ContactsHandler contactsHandler;
         private readonly InvoiceHandler invoiceHandler;
         private readonly ItemHandler itemHandler;
+        private readonly ResolucionesHandler resolucionesHandler;
 
         public AlegraFacade(IOptions<Alegra> alegra) {
             alegraOptions = alegra.Value;
@@ -64,6 +67,12 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
         public async Task<Item> GetItem(string name)
         {
             return await itemHandler.GetItem(name, alegraOptions);
+        }
+
+        public async Task<ResolucionElectronica> GetResolucionElectronica()
+        {
+            var resoluciones = await resolucionesHandler.GetResolucionesElectronica(alegraOptions);
+            return resoluciones.FirstOrDefault(x=>x.isDefault);
         }
 
         public async Task<IEnumerable<TerceroResponse>> GetTerceros(int start)

@@ -61,6 +61,15 @@ namespace FacturacionelectronicaCore.Repositorio.Recursos {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to [dbo].[CanastillaType].
+        /// </summary>
+        public static string Canastilla {
+            get {
+                return ResourceManager.GetString("Canastilla", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to [dbo].[Cliente].
         /// </summary>
         public static string Cliente {

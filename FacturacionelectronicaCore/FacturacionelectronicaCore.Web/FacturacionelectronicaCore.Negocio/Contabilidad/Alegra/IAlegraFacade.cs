@@ -1,5 +1,6 @@
 ﻿
 
+using FacturacionelectronicaCore.Negocio.Modelo;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -16,5 +17,6 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
         Task<string> GenerarFacturaElectronica(List<Modelo.OrdenDeDespacho> ordenes, Modelo.Tercero tercero, IEnumerable<Item> items);
         Task<string> GenerarFacturaElectronica(List<Modelo.Factura> facturas, Modelo.Tercero tercero, IEnumerable<Item> items);
         Task<ResponseInvoice> GetFacturaElectronica(string id);
+        Task<ResolucionElectronica> GetResolucionElectronica();
     }
 }

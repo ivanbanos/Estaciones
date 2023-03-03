@@ -228,124 +228,112 @@ namespace FacturacionelectronicaCore.Negocio.Factura
 
         public async Task<string> EnviarAFacturacion(Guid ordenGuid)
         {
-            if (usaAlegra)
+            if (_validadorGuidAFacturaElectronica.FacturaSiendoProceada(ordenGuid))
             {
-                if (_validadorGuidAFacturaElectronica.FacturaSiendoProceada(ordenGuid))
-                {
-                    return "Factura electrónica siendo procesada";
-                }
-                var facturaEntity = (await _facturasRepository.ObtenerFacturaPorGuid(ordenGuid)).FirstOrDefault();
-                if (facturaEntity == null)
-                {
-                    _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
-                    return "Factura no existe";
-                }
-                if (facturaEntity.idFacturaElectronica != null)
-                {
-                    _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
-                    return "Factura electrónica existente";
-                }
-                var factura = _mapper.Map<Repositorio.Entities.Factura, Modelo.Factura>(facturaEntity);
-                var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.Identificacion)).FirstOrDefault();
-                var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
-                if (tercero.idFacturacion == null)
-                {
-                    _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
-                    return "Tercero no está apto para facturación electrónica";
-                }
-                factura.Tercero = tercero;
-                var item = await _alegraFacade.GetItem(factura.Combustible);
-                if (item == null)
-                {
-                    _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
-                    return "Combustible no creado en alegra";
-                }
-                try
-                {
-                    var idFacturaElectronica = await _alegraFacade.GenerarFacturaElectronica(factura, item);
-                    await _facturasRepository.SetIdFacturaElectronicaFactura(idFacturaElectronica, factura.Guid);
-                    _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
-                    return "Ok";
-                }
-                catch (Exception e)
-                {
-                    _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
-                    return $"Fallo al crear factura electrónica Razón: {e.Message}";
-                }
+                return "Factura electrónica siendo procesada";
             }
-
-            return "No maneja factura electrónica";
+            var facturaEntity = (await _facturasRepository.ObtenerFacturaPorGuid(ordenGuid)).FirstOrDefault();
+            if (facturaEntity == null)
+            {
+                _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+                return "Factura no existe";
+            }
+            if (facturaEntity.idFacturaElectronica != null)
+            {
+                _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+                return "Factura electrónica existente";
+            }
+            var factura = _mapper.Map<Repositorio.Entities.Factura, Modelo.Factura>(facturaEntity);
+            var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.Identificacion)).FirstOrDefault();
+            var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
+            if (tercero.idFacturacion == null)
+            {
+                _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+                return "Tercero no está apto para facturación electrónica";
+            }
+            factura.Tercero = tercero;
+            var item = await _alegraFacade.GetItem(factura.Combustible);
+            if (item == null)
+            {
+                _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+                return "Combustible no creado en alegra";
+            }
+            try
+            {
+                var idFacturaElectronica = await _alegraFacade.GenerarFacturaElectronica(factura, item);
+                await _facturasRepository.SetIdFacturaElectronicaFactura(idFacturaElectronica, factura.Guid);
+                _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+                return "Ok";
+            }
+            catch (Exception e)
+            {
+                _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+                return $"Fallo al crear factura electrónica Razón: {e.Message}";
+            }
         }
 
 
         public async Task<string> CrearFacturaFacturas(IEnumerable<FacturasEntity> facturasGuids)
         {
-            if (usaAlegra)
+            var guids = facturasGuids.Select(x => x.Guid);
+            if (_validadorGuidAFacturaElectronica.FacturasSiendoProceada(guids))
             {
-                var guids = facturasGuids.Select(x => x.Guid);
-                if (_validadorGuidAFacturaElectronica.FacturasSiendoProceada(guids))
-                {
-                    return "Factura electrónica siendo procesada";
-                }
-                var facturas = new List<Modelo.Factura>();
-                foreach (var guid in facturasGuids)
-                {
-                    var facturaEntity = (await _facturasRepository.ObtenerFacturaPorGuid(guid.Guid)).FirstOrDefault();
-                    if (facturaEntity == null)
-                    {
-                        _validadorGuidAFacturaElectronica.SacarFacturas(guids);
-                        return $"Factura {guid.Guid} no existe";
-                    }
-                    if (facturaEntity.idFacturaElectronica != null)
-                    {
-                        _validadorGuidAFacturaElectronica.SacarFacturas(guids);
-                        return "Una factura ya tiene factura electrónica existente";
-                    }
-                    facturas.Add(_mapper.Map<Repositorio.Entities.Factura, Modelo.Factura>(facturaEntity));
-                }
-                if (facturas.GroupBy(x => x.Identificacion).Count() > 1)
+                return "Factura electrónica siendo procesada";
+            }
+            var facturas = new List<Modelo.Factura>();
+            foreach (var guid in facturasGuids)
+            {
+                var facturaEntity = (await _facturasRepository.ObtenerFacturaPorGuid(guid.Guid)).FirstOrDefault();
+                if (facturaEntity == null)
                 {
                     _validadorGuidAFacturaElectronica.SacarFacturas(guids);
-                    return $"Las facturas deben pertenecer al mismo tercero";
+                    return $"Factura {guid.Guid} no existe";
+                }
+                if (facturaEntity.idFacturaElectronica != null)
+                {
+                    _validadorGuidAFacturaElectronica.SacarFacturas(guids);
+                    return "Una factura ya tiene factura electrónica existente";
+                }
+                facturas.Add(_mapper.Map<Repositorio.Entities.Factura, Modelo.Factura>(facturaEntity));
+            }
+            if (facturas.GroupBy(x => x.Identificacion).Count() > 1)
+            {
+                _validadorGuidAFacturaElectronica.SacarFacturas(guids);
+                return $"Las facturas deben pertenecer al mismo tercero";
 
-                }
-                var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(facturas.First().Identificacion)).FirstOrDefault();
-                var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
-                if (tercero.idFacturacion == null)
+            }
+            var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(facturas.First().Identificacion)).FirstOrDefault();
+            var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
+            if (tercero.idFacturacion == null)
+            {
+                _validadorGuidAFacturaElectronica.SacarFacturas(guids);
+                return "Tercero no está apto para facturación electrónica";
+            }
+            var combustibles = new List<string>();
+            foreach(var factura in facturas)
+            {
+                if (!combustibles.Contains(factura.Combustible))
                 {
-                    _validadorGuidAFacturaElectronica.SacarFacturas(guids);
-                    return "Tercero no está apto para facturación electrónica";
-                }
-                var combustibles = new List<string>();
-                foreach (var factura in facturas)
-                {
-                    if (!combustibles.Contains(factura.Combustible))
-                    {
-                        combustibles.Add(factura.Combustible);
-                    }
-                }
-                var items = combustibles.Select(x => _alegraFacade.GetItem(x).Result);
-
-                try
-                {
-                    var idFacturaElectronica = await _alegraFacade.GenerarFacturaElectronica(facturas, tercero, items);
-                    var tasks = new List<Task>();
-                    foreach (var orden in facturas)
-                    {
-                        tasks.Add(_ordenDeDespachoRepositorio.SetIdFacturaElectronicaOrdenesdeDespacho(idFacturaElectronica, orden.Guid));
-                    }
-                    await Task.WhenAll(tasks);
-                    _validadorGuidAFacturaElectronica.SacarFacturas(guids);
-                    return "Ok";
-                }
-                catch (Exception e)
-                {
-                    _validadorGuidAFacturaElectronica.SacarFacturas(guids);
-                    return $"Fallo al crear factura electrónica Razón: {e.Message}";
+                    combustibles.Add(factura.Combustible);
                 }
             }
-            return "No maneja factura electrónica";
+            var items = combustibles.Select(x => _alegraFacade.GetItem(x).Result);
 
+            try
+            {
+                var idFacturaElectronica = await _alegraFacade.GenerarFacturaElectronica(facturas, tercero, items);
+                foreach (var orden in facturas)
+                {
+                    await _ordenDeDespachoRepositorio.SetIdFacturaElectronicaOrdenesdeDespacho(idFacturaElectronica, orden.Guid);
+                }
+                _validadorGuidAFacturaElectronica.SacarFacturas(guids);
+                return "Ok";
+            }
+            catch (Exception e)
+            {
+                _validadorGuidAFacturaElectronica.SacarFacturas(guids);
+                return $"Fallo al crear factura electrónica Razón: {e.Message}";
+            }
         }
 
 

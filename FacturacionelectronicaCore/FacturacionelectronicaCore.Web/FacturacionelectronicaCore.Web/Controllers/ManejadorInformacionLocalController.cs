@@ -34,7 +34,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
         public async Task<ActionResult> EnviarResolucion(RequestEnvioResolucion requestEnvioResolucion)
         {
 
-            await _manejadorInformacionLocalNegocio.EnviarResolucion(requestEnvioResolucion);
+           // await _manejadorInformacionLocalNegocio.EnviarResolucion(requestEnvioResolucion);
 
             return Ok();
         }
@@ -90,5 +90,16 @@ namespace FacturacionelectronicaCore.Web.Controllers
         [HttpGet("GetInfoFacturaElectronica/{idVentaLocal}/estacion/{estacion}")]
         public async Task<ActionResult<string>> GetInfoFacturaElectronica(int idVentaLocal, Guid estacion)
         => Ok(await _manejadorInformacionLocalNegocio.GetInfoFacturaElectronica(idVentaLocal, estacion));
+
+
+        [HttpPost("AddFacturaCanastilla")]
+        public async Task<ActionResult<int>> AddFacturaCanastilla(RequestfacturasCanastilla requestCambiarFechasReporte)
+        => Ok(await _manejadorInformacionLocalNegocio.AddFacturaCanastilla(requestCambiarFechasReporte.facturas, requestCambiarFechasReporte.estacion));
+
+
+        [HttpGet("GetResolucionElectronica")]
+        public async Task<ActionResult<ResolucionElectronica>> GetResolucionElectronica()
+        => Ok(await _manejadorInformacionLocalNegocio.GetResolucionElectronica());
+        
     }
 }

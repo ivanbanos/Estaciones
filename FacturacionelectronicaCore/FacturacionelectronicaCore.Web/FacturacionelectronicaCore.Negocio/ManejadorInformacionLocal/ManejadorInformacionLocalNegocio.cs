@@ -23,12 +23,13 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         private readonly IApiContabilidad _apiContabilidad;
         private readonly IAlegraFacade _alegraFacade;
         private readonly bool usaAlegra;
+        private readonly IFacturaCanastillaRepository _facturaCanastillaRepository;
 
         public ManejadorInformacionLocalNegocio(IFacturasRepository facturasRepository,
             ITerceroRepositorio tercerosRepositorio, IMapper mapper, IResolucionRepositorio resolucionRepositorio,
             IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio,
             IApiContabilidad apiContabilidad, ITipoIdentificacionRepositorio tipoIdentificacionRepositorio,
-            IAlegraFacade alegraFacade, IOptions<Alegra> alegra)
+            IAlegraFacade alegraFacade, IOptions<Alegra> alegra, IFacturaCanastillaRepository facturaCanastillaRepository)
         {
             _facturasRepository = facturasRepository;
             _terceroRepositorio = tercerosRepositorio;
@@ -39,6 +40,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             usaAlegra = alegra.Value.UsaAlegra;
             _alegraFacade = alegraFacade;
             _tipoIdentificacionRepositorio = tipoIdentificacionRepositorio;
+            _facturaCanastillaRepository = facturaCanastillaRepository;
         }
         public async Task EnviarFacturas(IEnumerable<Modelo.Factura> facturas, Guid estacion)
         {
@@ -211,6 +213,29 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                 return null;
             }
             return null;
+        }
+
+        public async Task<int> AddFacturaCanastilla(IEnumerable<Modelo.FacturaCanastilla> facturas, Guid estacion)
+        {
+            try
+            {
+                var facturasRepo = _mapper.Map<IEnumerable<Modelo.FacturaCanastilla>, IEnumerable<Repositorio.Entities.FacturaCanastilla>>(facturas);
+
+                foreach (var factura in facturasRepo)
+                {
+                    await _facturaCanastillaRepository.Add(factura, factura.canastillas, estacion);
+                }
+                return 1;
+            }
+            catch(Exception ex)
+            {
+                return -1;
+            }
+        }
+
+        public async Task<ResolucionElectronica> GetResolucionElectronica()
+        {
+           return await _alegraFacade.GetResolucionElectronica();
         }
     }
 }

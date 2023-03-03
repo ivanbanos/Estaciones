@@ -17,7 +17,8 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public Guid IdEstacion { get; set; }
         public string Autorizacion  { get; set; }
         public bool Habilitada{ get; set; }
-        public string Descripcion{ get; set; } 
-        
+        public string Descripcion { get; set; }
+        public int Tipo { get; set; }
+
     }
 }

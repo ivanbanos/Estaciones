@@ -10,5 +10,7 @@ namespace EstacionesServicio.Negocio.Extention
         void SacarFactura(Guid ordenGuid);
         bool FacturasSiendoProceada(IEnumerable<Guid> facturasGuids);
         void SacarFacturas(IEnumerable<Guid> facturasGuids);
+        Guid? ObtenerColaImpresionCanastilla(Guid idEstacion);
+        void AgregarAColaImpresionCanastilla(Guid guid, Guid idEstacion);
     }
 }

@@ -31,6 +31,7 @@ namespace FacturacionelectronicaCore.Negocio.Tercero
         {
             try
             {
+
                 await SincronizarTerceros();
                 var terceros = await _terceroRepositorio.GetTerceros();
                 return _mapper.Map<IEnumerable<Repositorio.Entities.Tercero>, IEnumerable<Modelo.Tercero>>(terceros);
@@ -115,7 +116,9 @@ namespace FacturacionelectronicaCore.Negocio.Tercero
             var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
             if (tercero.idFacturacion == null)
             {
-                await SincronizarTerceros();
+                
+                    await SincronizarTerceros();
+                
                 terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(identificacion)).FirstOrDefault();
                 tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
                 if (tercero.idFacturacion == null)
@@ -128,20 +131,24 @@ namespace FacturacionelectronicaCore.Negocio.Tercero
 
         public async Task SincronizarTerceros()
         {
-            if (usaAlegra) {
-                int start = 0;
-                while (true)
+            if (usaAlegra)
+            {
+                try
                 {
-                    var terceros = await _alegraFacade.GetTerceros(start);
-                    if (!terceros.Any())
+                    int start = 0;
+                    while (true)
                     {
-                        break;
+                        var terceros = await _alegraFacade.GetTerceros(start);
+                        if (!terceros.Any())
+                        {
+                            break;
+                        }
+                        await _terceroRepositorio.AddOrUpdate(terceros.ConvertToTerceros());
+                        start += 30;
                     }
-                    await _terceroRepositorio.AddOrUpdate(terceros.ConvertToTerceros());
-                    start += 30;
                 }
+                catch (Exception) { }
             }
-            
             
         }
     }

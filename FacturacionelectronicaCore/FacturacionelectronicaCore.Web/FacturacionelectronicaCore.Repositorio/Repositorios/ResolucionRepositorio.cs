@@ -30,18 +30,25 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             return resolucionEntity;
         }
 
-        public async Task<Resolucion> GetResolucionActiva(Guid estacion)
+        public async Task AnularResolucion(Guid resolucion)
+        {
+            var paramList = new DynamicParameters();
+            paramList.Add("resolucion", resolucion);
+            await _sqlHelper.InsertOrUpdateOrDeleteAsync(StoredProcedures.AnularResolucion, paramList);
+        }
+
+        public async Task<IEnumerable<Resolucion>> GetResolucionActiva(Guid estacion)
         {
             var paramList = new DynamicParameters();
             paramList.Add("estacion", estacion);
-            return (await _sqlHelper.GetsAsync<Resolucion>(StoredProcedures.GetResolucionActiva, paramList)).FirstOrDefault();
+            return (await _sqlHelper.GetsAsync<Resolucion>(StoredProcedures.GetResolucionActiva, paramList));
         }
 
         public async Task<Resolucion> HabilitarResolucion(Guid estacion, DateTime fechaVencimiento)
         {
             var paramList = new DynamicParameters();
             paramList.Add("fechaVencimiento", fechaVencimiento);
-            paramList.Add("estacion", estacion);
+            paramList.Add("resolucion", estacion);
             return (await _sqlHelper.GetsAsync<Resolucion>(StoredProcedures.HabilitarResolucion, paramList)).FirstOrDefault();
            
         }

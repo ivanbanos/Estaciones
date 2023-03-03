@@ -1,5 +1,4 @@
 ﻿CREATE PROCEDURE [dbo].[UpdateConsecutivoResolucion]
-	@consecutivo int
 AS
 	declare @maxConsecutivoTable as table (idResolucion int, maxConsecutivo int)
 
@@ -7,7 +6,7 @@ AS
 	select Resolucion.Id, max(Factura.consecutivo)
 	from Resolucion
 	inner join Estados on Resolucion.IdEstado = Estados.Id
-	inner join Facturas as Factura On Factura.IdEstacion = Resolucion.IdEstacion
+	left join Facturas as Factura On Factura.IdEstacion = Resolucion.IdEstacion
 	where Estados.Texto = 'Activo'
 	GROUP BY Resolucion.id
 

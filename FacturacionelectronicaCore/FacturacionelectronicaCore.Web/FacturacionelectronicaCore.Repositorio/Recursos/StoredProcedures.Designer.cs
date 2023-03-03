@@ -151,6 +151,15 @@ namespace FacturacionelectronicaCore.Repositorio.Recursos {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to [dbo].[AnularResolucion].
+        /// </summary>
+        public static string AnularResolucion {
+            get {
+                return ResourceManager.GetString("AnularResolucion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to [dbo].[BorrarEstacion].
         /// </summary>
         public static string BorrarEstacion {
@@ -187,6 +196,24 @@ namespace FacturacionelectronicaCore.Repositorio.Recursos {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to [dbo].[CrearFacturaCanastilla].
+        /// </summary>
+        public static string CrearFacturaCanastilla {
+            get {
+                return ResourceManager.GetString("CrearFacturaCanastilla", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [dbo].[CrearFacturaDetalle].
+        /// </summary>
+        public static string CrearFacturaDetalle {
+            get {
+                return ResourceManager.GetString("CrearFacturaDetalle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to [dbo].[DeleteClienteByGuid].
         /// </summary>
         public static string DeleteClienteByGuid {
@@ -201,6 +228,15 @@ namespace FacturacionelectronicaCore.Repositorio.Recursos {
         public static string FacturaOrdenesDeDespacho {
             get {
                 return ResourceManager.GetString("FacturaOrdenesDeDespacho", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [dbo].[GetCanastilla].
+        /// </summary>
+        public static string GetCanastilla {
+            get {
+                return ResourceManager.GetString("GetCanastilla", resourceCulture);
             }
         }
         
@@ -237,6 +273,33 @@ namespace FacturacionelectronicaCore.Repositorio.Recursos {
         public static string GetFacturaByEstado {
             get {
                 return ResourceManager.GetString("GetFacturaByEstado", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [dbo].[getFacturaCanastilla].
+        /// </summary>
+        public static string getFacturaCanastilla {
+            get {
+                return ResourceManager.GetString("getFacturaCanastilla", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [dbo].[getFacturaCanatillaDetalle].
+        /// </summary>
+        public static string getFacturaCanatillaDetalle {
+            get {
+                return ResourceManager.GetString("getFacturaCanatillaDetalle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [dbo].[getFacturasCanastilla].
+        /// </summary>
+        public static string getFacturasCanastilla {
+            get {
+                return ResourceManager.GetString("getFacturasCanastilla", resourceCulture);
             }
         }
         
@@ -570,6 +633,15 @@ namespace FacturacionelectronicaCore.Repositorio.Recursos {
         public static string UpdateConsecutivoResolucion {
             get {
                 return ResourceManager.GetString("UpdateConsecutivoResolucion", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [dbo].[UpdateOrCreateCanastilla].
+        /// </summary>
+        public static string UpdateOrCreateCanastilla {
+            get {
+                return ResourceManager.GetString("UpdateOrCreateCanastilla", resourceCulture);
             }
         }
         

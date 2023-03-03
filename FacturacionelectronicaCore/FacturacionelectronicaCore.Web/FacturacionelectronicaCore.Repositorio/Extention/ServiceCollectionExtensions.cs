@@ -21,6 +21,8 @@ namespace EstacionesServicio.Respositorio.Extention
             services.AddScoped<IResolucionRepositorio, ResolucionRepositorio>();
             services.AddScoped<ITipoIdentificacionRepositorio, TipoIdentificacionRepositorio>();
             services.AddScoped<IEstacionesRepository, EstacionesRepository>();
+            services.AddScoped<ICanastillaRepositorio, CanastillaRepositorio>();
+            services.AddScoped<IFacturaCanastillaRepository, FacturaCanastillaRepository>();
             return services;
         }
     }
