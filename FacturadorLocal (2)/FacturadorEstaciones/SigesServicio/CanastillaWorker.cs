@@ -37,7 +37,19 @@ namespace SigesServicio
         private List<LineasImprimir> lineasImprimir;
         private string impresora;
         private int vecesImpresionCanastilla;
+        public override void Dispose()
+        {
+        }
 
+        public override async Task StartAsync(CancellationToken cancellationToken)
+        {
+            await base.StartAsync(cancellationToken);
+        }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await base.StopAsync(cancellationToken);
+        }
         public CanastillaWorker(IEstacionesRepositorio estacionesRepositorio, IOptions<InformacionCuenta> informacionCuenta, IOptions<InfoEstacion> infoEstacion, IConexionEstacionRemota conexionEstacionRemota)
         {
             _estacionesRepositorio = estacionesRepositorio;

@@ -27,6 +27,19 @@ namespace ManejadorSurtidor
             _logger = logger;
             _sicomConection = sicomConection;
         }
+        public override void Dispose()
+        {
+        }
+
+        public override async Task StartAsync(CancellationToken cancellationToken)
+        {
+            await base.StartAsync(cancellationToken);
+        }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await base.StopAsync(cancellationToken);
+        }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(async () =>
         {

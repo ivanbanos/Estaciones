@@ -26,6 +26,8 @@ IHost host = Host.CreateDefaultBuilder(args)
         services.AddHostedService<FacturasWorker>();
 
     })
+
+    .UseWindowsService()
     .Build();
 
 await host.RunAsync();

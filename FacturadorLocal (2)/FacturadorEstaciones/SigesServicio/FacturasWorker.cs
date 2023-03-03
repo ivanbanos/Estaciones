@@ -17,6 +17,20 @@ namespace SigesServicio
         private readonly InfoEstacion _infoEstacion;
         private readonly InformacionCuenta _informacionCuenta;
         private readonly IConexionEstacionRemota _conexionEstacionRemota;
+
+        public override void Dispose()
+        {
+        }
+
+        public override async Task StartAsync(CancellationToken cancellationToken)
+        {
+            await base.StartAsync(cancellationToken);
+        }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await base.StopAsync(cancellationToken);
+        }
         public FacturasWorker(IEstacionesRepositorio estacionesRepositorio, IOptions<InformacionCuenta> informacionCuenta, IOptions<InfoEstacion> infoEstacion, IConexionEstacionRemota conexionEstacionRemota)
         {
             _estacionesRepositorio = estacionesRepositorio;

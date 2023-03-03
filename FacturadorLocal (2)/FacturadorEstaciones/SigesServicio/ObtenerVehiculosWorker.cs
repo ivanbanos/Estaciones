@@ -21,6 +21,20 @@ namespace ManejadorSurtidor
         private readonly IOptions<Sicom> _options;
 
         private readonly ISicomConection _sicomConection;
+
+        public override void Dispose()
+        {
+        }
+
+        public override async Task StartAsync(CancellationToken cancellationToken)
+        {
+            await base.StartAsync(cancellationToken);
+        }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await base.StopAsync(cancellationToken);
+        }
         public ObtenerVehiculosWorker(ILogger<ObtenerVehiculosWorker> logger, IEstacionesRepositorio estacionesRepositorio, IOptions<Sicom> options, ISicomConection sicomConection)
         {
             _estacionesRepositorio = estacionesRepositorio;
@@ -36,7 +50,7 @@ namespace ManejadorSurtidor
                 try
                 {
                     _logger.LogInformation("Bajando SUIC");
-                    string suic = "Fail"; //await _sicomConection.GetInfoCarros();
+                    string suic = await _sicomConection.GetInfoCarros();
                     if (suic == "Fail")
                     {
                         suic = File.ReadAllText("SUIC.txt");

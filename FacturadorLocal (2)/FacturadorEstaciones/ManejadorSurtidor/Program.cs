@@ -41,7 +41,7 @@ namespace ManejadorSurtidor
             await Task.Delay(5000, default);
             try
             {
-                CreateHostBuilder(args).Build().Run();
+                CreateHostBuilder(args).UseWindowsService().Build().Run();
             }
             catch (Exception ex)
             {

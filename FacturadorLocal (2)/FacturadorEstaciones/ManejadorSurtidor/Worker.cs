@@ -22,6 +22,20 @@ namespace ManejadorSurtidor
         private readonly ISicomConection _sicomConection;
         private readonly IMessageProducer _messageProducer;
 
+
+        public override void Dispose()
+        {
+        }
+
+        public override async Task StartAsync(CancellationToken cancellationToken)
+        {
+            await base.StartAsync(cancellationToken);
+        }
+
+        public override async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await base.StopAsync(cancellationToken);
+        }
         public Worker(ILogger<Worker> logger, IEstacionesRepositorio estacionesRepositorio, IOptions<Sicom> options, ISicomConection sicomConection, IMessageProducer messageProducer)
         {
             _estacionesRepositorio = estacionesRepositorio;

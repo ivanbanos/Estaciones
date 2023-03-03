@@ -1,3 +1,4 @@
+using ControladorEstacion.Messages;
 using EnviadorInformacionService;
 using FacturadorEstacionesPOSWinForm.Repo;
 using FacturadorEstacionesRepositorio;
@@ -37,6 +38,10 @@ namespace FacturadorEstacionesPOSWinForm
 
                 var services = host.Services;
                 var mainForm = services.GetRequiredService<Islas>();
+
+                var messageReceiver = new RabbitMQMessagesReceiver();
+                messageReceiver.ReceiveMessages();
+                messageReceiver.Subscribe(mainForm);
                 Application.Run(mainForm);
             }
             catch (Exception ex)
