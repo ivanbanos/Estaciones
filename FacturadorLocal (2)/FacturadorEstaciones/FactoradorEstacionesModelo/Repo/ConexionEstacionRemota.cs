@@ -26,6 +26,7 @@ namespace EnviadorInformacionService
     {
         public readonly InfoEstacion _infoEstacion;
 
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         public ConexionEstacionRemota(IOptions<InfoEstacion> options)
         {
             _infoEstacion = options.Value;
@@ -159,7 +160,7 @@ namespace EnviadorInformacionService
         {
             return "";
         }
-        public bool EnviarFacturas(IEnumerable<FacturaSiges> facturas, IEnumerable<FormasPagos> formas, Guid estacion, string token)
+        public bool EnviarFacturas(IEnumerable<FacturaSiges> facturas, IEnumerable<FormaPagoSiges> formas, Guid estacion, string token)
         {
             RequestEnviarFacturas request = new RequestEnviarFacturas();
             request.facturas = facturas.Where(x => x.Consecutivo != 0).Select(x => new FacturacionelectronicaCore.Negocio.Modelo.Factura(x, formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).FirstOrDefault()));
@@ -171,6 +172,7 @@ namespace EnviadorInformacionService
                 client.DefaultRequestHeaders.Authorization =
     new AuthenticationHeaderValue("Bearer", token);
                 var path = $"/api/ManejadorInformacionLocal/EnviarFacturas";
+                Logger.Info(JsonConvert.SerializeObject(request));
                 var content = new StringContent(JsonConvert.SerializeObject(request));
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
 

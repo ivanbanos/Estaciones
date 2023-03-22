@@ -3,6 +3,7 @@ using FacturadorEstacionesPOSWinForm;
 using FacturadorEstacionesPOSWinForm.Repo;
 using FacturadorEstacionesRepositorio;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,7 +41,7 @@ namespace SigesServicio
         }
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(async () =>
         {
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -57,7 +58,7 @@ namespace SigesServicio
                     Thread.Sleep(300000);
                 }
             }
-        }
+        });
 
 
 
@@ -89,7 +90,7 @@ namespace SigesServicio
             var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadasSiges();
             if (facturas.Any())
             {
-                var formas = _estacionesRepositorio.BuscarFormasPagos();
+                var formas = _estacionesRepositorio.BuscarFormasPagosSiges();
 
                 var okFacturas = _conexionEstacionRemota.EnviarFacturas(facturas, formas, Guid.Parse(_infoEstacion.EstacionFuente), token);
                 if (okFacturas)

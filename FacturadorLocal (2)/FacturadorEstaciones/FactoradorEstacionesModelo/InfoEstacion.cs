@@ -46,10 +46,10 @@ namespace FacturadorEstacionesPOSWinForm
         public string EstacionFuente { get; set; }
         public bool ImpresionAutomatica { get; set; }
         public bool ImpresionFormaDePagoOrdenDespacho { get; set; }
-        public bool GeneraFacturaElectronica { get; internal set; }
-        public bool ImpresionPDA { get; internal set; }
-        public object Url { get; internal set; }
-        public object Password { get; internal set; }
-        public object User { get; internal set; }
+        public bool GeneraFacturaElectronica { get; set; }
+        public bool ImpresionPDA { get; set; }
+        public object Url { get; set; }
+        public object Password { get; set; }
+        public object User { get; set; }
     }
 }

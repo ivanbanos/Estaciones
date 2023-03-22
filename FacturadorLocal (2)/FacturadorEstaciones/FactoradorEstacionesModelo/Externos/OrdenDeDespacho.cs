@@ -39,7 +39,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public OrdenDeDespacho(FacturaSiges x, string forma)
         {
             Guid = Guid.NewGuid();
-            Combustible = x.Manguera.Descripcion;
+            Combustible = x.Combustible;
             Cantidad = x.Cantidad;
             Precio = x.Precio;
             Total = x.Total;

@@ -62,5 +62,6 @@ namespace FacturadorEstacionesRepositorio
         void SetFacturaCanastillaImpresa(int facturasCanastillaId);
         List<FacturaSiges> BuscarFacturasNoEnviadasSiges();
         object BuscarFechasReportesNoEnviadasSiges();
+        TurnoSiges ObtenerTurnoIsla(int idIsla);
     }
 }

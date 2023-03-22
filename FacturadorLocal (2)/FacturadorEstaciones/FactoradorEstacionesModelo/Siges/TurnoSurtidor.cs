@@ -9,5 +9,6 @@ namespace FactoradorEstacionesModelo.Siges
         public MangueraSiges Manguera { get; set; }
         public double Apertura { get; set; }
         public double? Cierre { get; set; }
+        public Combustible Combustible { get; set; }
     }
 }

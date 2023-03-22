@@ -26,7 +26,7 @@ namespace FacturadorEstacionesPOSWinForm.Repo
         string getToken();
         IEnumerable<string> GetGuidsFacturasPendientes(Guid estacion, string token);
         bool EnviarTerceros(IEnumerable<Tercero> terceros, string token);
-        bool EnviarFacturas(IEnumerable<FacturaSiges> facturas, IEnumerable<FormasPagos> formas, Guid estacion, string token);
+        bool EnviarFacturas(IEnumerable<FacturaSiges> facturas, IEnumerable<FormaPagoSiges> formas, Guid estacion, string token);
         IEnumerable<Tercero> RecibirTercerosActualizados(Guid estacion, string token);
         IEnumerable<FacturacionelectronicaCore.Negocio.Modelo.Factura> RecibirFacturasImprimir(Guid estacion, string token);
         IEnumerable<FacturacionelectronicaCore.Negocio.Modelo.OrdenDeDespacho> RecibirOrdenesImprimir(Guid estacion, string token);
