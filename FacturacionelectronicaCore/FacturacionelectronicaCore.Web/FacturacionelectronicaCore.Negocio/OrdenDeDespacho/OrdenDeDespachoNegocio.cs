@@ -18,12 +18,12 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
         private readonly IOrdenDeDespachoRepositorio _ordenDeDespachoRepositorio;
         private readonly ITerceroRepositorio _terceroRepositorio;
         private readonly IMapper _mapper;
-        private readonly IAlegraFacade _alegraFacade;
+        private readonly IFacturacionElectronicaFacade _alegraFacade;
         private readonly bool usaAlegra;
         private readonly IValidadorGuidAFacturaElectronica _validadorGuidAFacturaElectronica;
 
         public OrdenDeDespachoNegocio(IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio,
-                                       IMapper mapper, IAlegraFacade alegraFacade, IOptions<Alegra> alegra, ITerceroRepositorio terceroRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica)
+                                       IMapper mapper, IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, ITerceroRepositorio terceroRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica)
         {
             _ordenDeDespachoRepositorio = ordenDeDespachoRepositorio;
             _mapper = mapper;

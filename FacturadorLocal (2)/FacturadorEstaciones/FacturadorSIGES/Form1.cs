@@ -29,6 +29,7 @@ namespace FacturadorEstacionesPOSWinForm
         private readonly IEstacionesRepositorio _estacionesRepositorio;
         private readonly IConexionEstacionRemota _conexionEstacionRemota;
         private readonly InfoEstacion _infoEstacion;
+        private readonly IFidelizacion _fidelizacion;
         private FacturaSiges _factura;
         private Tercero _tercero;
         private List<TipoIdentificacion> _tiposIdentificacion;
@@ -41,11 +42,11 @@ namespace FacturadorEstacionesPOSWinForm
         private Tercero _terceroCrear;
         private MangueraSiges _mangueras;
         private string pestanaActual = "Combustible";
-
         private System.Timers.Timer timer1;
         private System.Timers.Timer timer4;
-        public Islas(IEstacionesRepositorio estacionesRepositorio, IOptions<InfoEstacion> infoEstacion, IConexionEstacionRemota conexionEstacionRemota)
+        public Islas(IEstacionesRepositorio estacionesRepositorio, IOptions<InfoEstacion> infoEstacion, IConexionEstacionRemota conexionEstacionRemota, IFidelizacion fidelizacion)
         {
+            _fidelizacion = fidelizacion;
             _estacionesRepositorio = estacionesRepositorio;
             InitializeComponent();
             textBox1.PlaceholderText = "Identificación";
@@ -87,7 +88,7 @@ namespace FacturadorEstacionesPOSWinForm
                 _canastillas = _conexionEstacionRemota.GetCanastilla();
                 comboBox2.Items.Clear();
                 comboBox2.Items.AddRange(_canastillas.ToArray());
-                
+
 
                 this.comboBox4.Text = "Selec. Tipo Identificacion";
 
@@ -101,6 +102,7 @@ namespace FacturadorEstacionesPOSWinForm
             {
                 MessageBox.Show(e.Message);
             }
+
         }
 
 
@@ -217,6 +219,7 @@ namespace FacturadorEstacionesPOSWinForm
             var id = ((CaraSiges)comboBox3.SelectedItem).Id;
             _factura = _estacionesRepositorio.getUltimasFacturasSiges(id, 1).FirstOrDefault();
             button2.Enabled = false;
+            fidelizar.Enabled = false;
             if (_factura == null)
             {
                 MessageBox.Show("No se ha generado factura para esa cara, \n\r Verificar Resolución vencida!");
@@ -232,7 +235,8 @@ namespace FacturadorEstacionesPOSWinForm
                 button2.Enabled = true;
             }
 
-            
+            fidelizar.Enabled = true;
+
 
             _tercero = _factura.Tercero;
 
@@ -538,8 +542,16 @@ namespace FacturadorEstacionesPOSWinForm
         }
         private void fidelizar_Click(object sender, EventArgs e)
         {
-            var form = new Form4(_estacionesRepositorio, _infoEstacion);
-            form.Show();
+            var form = new Fidelizacion(_fidelizacion, _factura);
+            var result = form.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                MessageBox.Show($"Venta fidelizada");
+            }
+            else if (result == DialogResult.Abort)
+            {
+                MessageBox.Show($"No se pudofidelizar");
+            }
         }
 
 

@@ -21,7 +21,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         private readonly IResolucionRepositorio _resolucionRepositorio;
         private readonly IMapper _mapper;
         private readonly IApiContabilidad _apiContabilidad;
-        private readonly IAlegraFacade _alegraFacade;
+        private readonly IFacturacionElectronicaFacade _alegraFacade;
         private readonly bool usaAlegra;
         private readonly IFacturaCanastillaRepository _facturaCanastillaRepository;
 
@@ -29,7 +29,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             ITerceroRepositorio tercerosRepositorio, IMapper mapper, IResolucionRepositorio resolucionRepositorio,
             IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio,
             IApiContabilidad apiContabilidad, ITipoIdentificacionRepositorio tipoIdentificacionRepositorio,
-            IAlegraFacade alegraFacade, IOptions<Alegra> alegra, IFacturaCanastillaRepository facturaCanastillaRepository)
+            IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, IFacturaCanastillaRepository facturaCanastillaRepository)
         {
             _facturasRepository = facturasRepository;
             _terceroRepositorio = tercerosRepositorio;

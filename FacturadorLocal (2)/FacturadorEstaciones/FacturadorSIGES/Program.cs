@@ -67,6 +67,7 @@ namespace FacturadorEstacionesPOSWinForm
                 {
                     services.AddSingleton<IEstacionesRepositorio, EstacionesRepositorioSqlServer>();
                     services.AddSingleton<IConexionEstacionRemota, ConexionEstacionRemota>();
+                    services.AddSingleton<IFidelizacion, FidelizacionConexionApi>();
 
                     services.AddSingleton<Islas>();
                     services.Configure<ConnectionStrings>(options => hostContext.Configuration.GetSection("ConnectionStrings").Bind(options));

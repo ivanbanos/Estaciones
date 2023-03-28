@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
 {
-    public interface IAlegraFacade
+    public interface IFacturacionElectronicaFacade
     {
         public Task<string> GenerarFacturaElectronica(Modelo.Factura factura, Item item);
         public Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho factura, Item item);

@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
 {
-    public class AlegraFacade : IAlegraFacade
+    public class AlegraFacade : IFacturacionElectronicaFacade
     {
         private readonly Alegra alegraOptions;
         private readonly ContactsHandler contactsHandler;

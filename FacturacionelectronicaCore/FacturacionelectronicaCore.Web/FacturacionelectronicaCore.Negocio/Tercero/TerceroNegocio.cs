@@ -15,10 +15,10 @@ namespace FacturacionelectronicaCore.Negocio.Tercero
     {
         private readonly ITerceroRepositorio _terceroRepositorio;
         private readonly IMapper _mapper;
-        private readonly IAlegraFacade _alegraFacade;
+        private readonly IFacturacionElectronicaFacade _alegraFacade;
         private readonly bool usaAlegra;
 
-        public TerceroNegocio(ITerceroRepositorio terceroRepositorio, IMapper mapper, IAlegraFacade alegraFacade, IOptions<Alegra> alegra)
+        public TerceroNegocio(ITerceroRepositorio terceroRepositorio, IMapper mapper, IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra)
         {
             _terceroRepositorio = terceroRepositorio;
             _mapper = mapper;

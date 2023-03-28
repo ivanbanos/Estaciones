@@ -51,5 +51,9 @@ namespace FacturadorEstacionesPOSWinForm
         public object Url { get; set; }
         public object Password { get; set; }
         public object User { get; set; }
+        public string NitCentroVenta { get; set; }
+        public string UrlFidelizacion { get; set; }
+        public string UserFidelizacion { get; set; }
+        public string PasswordFidelizacion { get; set; }
     }
 }
