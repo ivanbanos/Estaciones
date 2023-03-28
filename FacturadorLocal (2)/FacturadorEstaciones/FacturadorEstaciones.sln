@@ -9,8 +9,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FacturadorEstacionesReposit
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FacturadorEstacionesPOSWinForm", "FacturadorEstacionesPOSWinForm\FacturadorEstacionesPOSWinForm.csproj", "{CC32B58B-36C9-412E-9804-75945E21A6FB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WindowsFormsApp1", "WindowsFormsApp1\WindowsFormsApp1.csproj", "{028BEE16-DBA6-42CB-8561-07AE9CC3B18A}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacturadorApi", "FacturadorApi\FacturadorApi.csproj", "{09C4FDF3-B6E8-4CC2-983B-5D4820682B81}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnviadorInformacionService", "EnviadorInformacionService\EnviadorInformacionService.csproj", "{89BC5292-04A1-42D8-BB77-098F91546C43}"
@@ -27,9 +25,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SigesServicio", "SigesServi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ControladorEstacion", "ControladorEstacion\ControladorEstacion.csproj", "{0FB1D5B0-19BE-49CB-B3B8-03EC39DD2D60}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EnviarMensaje", "EnviarMensaje\EnviarMensaje.csproj", "{9B908BD6-EF09-4FD7-911C-4DCC3C08316C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EnviarMensaje", "EnviarMensaje\EnviarMensaje.csproj", "{9B908BD6-EF09-4FD7-911C-4DCC3C08316C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Receiver", "Receiver\Receiver.csproj", "{765A6E6D-620F-4450-96A7-691EDB8D5D0F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Receiver", "Receiver\Receiver.csproj", "{765A6E6D-620F-4450-96A7-691EDB8D5D0F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -63,14 +61,6 @@ Global
 		{CC32B58B-36C9-412E-9804-75945E21A6FB}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CC32B58B-36C9-412E-9804-75945E21A6FB}.Release|x86.ActiveCfg = Release|x86
 		{CC32B58B-36C9-412E-9804-75945E21A6FB}.Release|x86.Build.0 = Release|x86
-		{028BEE16-DBA6-42CB-8561-07AE9CC3B18A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{028BEE16-DBA6-42CB-8561-07AE9CC3B18A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{028BEE16-DBA6-42CB-8561-07AE9CC3B18A}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{028BEE16-DBA6-42CB-8561-07AE9CC3B18A}.Debug|x86.Build.0 = Debug|Any CPU
-		{028BEE16-DBA6-42CB-8561-07AE9CC3B18A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{028BEE16-DBA6-42CB-8561-07AE9CC3B18A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{028BEE16-DBA6-42CB-8561-07AE9CC3B18A}.Release|x86.ActiveCfg = Release|Any CPU
-		{028BEE16-DBA6-42CB-8561-07AE9CC3B18A}.Release|x86.Build.0 = Release|Any CPU
 		{09C4FDF3-B6E8-4CC2-983B-5D4820682B81}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{09C4FDF3-B6E8-4CC2-983B-5D4820682B81}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09C4FDF3-B6E8-4CC2-983B-5D4820682B81}.Debug|x86.ActiveCfg = Debug|Any CPU

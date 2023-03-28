@@ -181,19 +181,28 @@ namespace SigesServicio
             lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Direccion, true));
             lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Telefono, true));
             lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
-            lineasImprimirTurno.Add(new LineasImprimir(turnoimprimir.Empleado, true));
-            lineasImprimirTurno.Add(new LineasImprimir(turnoimprimir.FechaApertura.ToString(), true));
+            lineasImprimirTurno.Add(new LineasImprimir("Empleado:"+turnoimprimir.Empleado, true));
+            lineasImprimirTurno.Add(new LineasImprimir("Isla: "+turnoimprimir.Isla, true));
+            lineasImprimirTurno.Add(new LineasImprimir("Fecha apertura: " + turnoimprimir.FechaApertura.ToString(), true));
             if (turnoimprimir.FechaCierre.HasValue) {
-                lineasImprimirTurno.Add(new LineasImprimir(turnoimprimir.FechaCierre.Value.ToString(), true));
+                lineasImprimirTurno.Add(new LineasImprimir("Fecha cierre: " + turnoimprimir.FechaCierre.Value.ToString(), true));
             }
-            foreach(var manguera in turnoimprimir.turnoSurtidores)
+
+
+
+
+            lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+            foreach (var turnosurtidor in turnoimprimir.turnoSurtidores)
             {
-                lineasImprimirTurno.Add(new LineasImprimir($"Manguera {manguera.Manguera.Descripcion}", true));
-                lineasImprimirTurno.Add(new LineasImprimir($"Apertura {manguera.Apertura}", true));
+                lineasImprimirTurno.Add(new LineasImprimir($"Manguera {turnosurtidor.Manguera.Descripcion}", true));
+                lineasImprimirTurno.Add(new LineasImprimir($"Combustible {turnosurtidor.Combustible.Descripcion}", true));
+                lineasImprimirTurno.Add(new LineasImprimir($"Apertura {turnosurtidor.Apertura}", true));
                 if (turnoimprimir.FechaCierre.HasValue)
                 {
-                    lineasImprimirTurno.Add(new LineasImprimir($"Cierre {manguera.Cierre}", true));
+                    lineasImprimirTurno.Add(new LineasImprimir($"Cierre {turnosurtidor.Cierre}", true));
+                    lineasImprimirTurno.Add(new LineasImprimir($"Total {(turnosurtidor.Cierre- turnosurtidor.Apertura)* turnosurtidor.Combustible.Precio}", true));
                 }
+
             }
         }
 

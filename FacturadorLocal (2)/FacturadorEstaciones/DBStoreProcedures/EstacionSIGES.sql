@@ -145,8 +145,10 @@ CREATE procedure [dbo].[ObtenerCaras]
 as
 begin try
     set nocount on;
-	select Cara.Id, Cara.descripcion
+	select Cara.Id, Cara.descripcion, Isla.descripcion as Isla, Isla.Id as IdIsla
 	from dbo.Cara 
+    inner join dbo.Surtidor on Cara.IdSurtidor = Surtidor.Id
+    inner join dbo.Isla on Isla.Id = Surtidor.IdIsla
 	where Cara.IdEstado!=1
     
     
@@ -263,7 +265,7 @@ begin try
 		begin
 		select @COd_FOr_PAg = 1
 		end
-
+		 
 		if @terceroId is null 
 		begin
 		select @terceroId = t.terceroId from terceros t
@@ -281,7 +283,7 @@ begin try
 			where ti.descripcion = 'No especificada'
 			declare @Fecha datetime
 	select @Fecha = GETDATE()
-    exec CrearFactura @VentaId= @Ventaid, @terceroId=@terceroId, @Placa='', @Kilometraje='', @COd_FOr_PAg=@COd_FOr_PAg, @Fecha=@fecha
+    exec CrearFactura @VentaId= @Ventaid, @terceroId=@terceroId, @Placa=@placa, @Kilometraje=@kilometraje, @COd_FOr_PAg=@COd_FOr_PAg, @Fecha=@fecha
 
 end try
 begin catch
@@ -979,8 +981,10 @@ begin try
       ,FacturasPOS.[reporteEnviado]
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from FacturasPOS
 	inner join venta on venta.Id = FacturasPOS.ventaId 
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	left join turno on venta.idturno = turno.id 
 	left join empleado on turno.idEmpleado = empleado.id
 	inner join Combustible on Combustible.Id = IdCombustible
@@ -1014,8 +1018,10 @@ begin try
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from OrdenesDeDespacho
 	inner join venta on venta.Id = OrdenesDeDespacho.ventaId 
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	left join turno on venta.idturno = turno.id 
 	left join empleado on turno.idEmpleado = empleado.id 
 	inner join Combustible on Combustible.Id = IdCombustible
@@ -1473,8 +1479,10 @@ begin try
       ,FacturasPOS.[reporteEnviado]
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from dbo.FacturasPOS
 	inner join venta on venta.Id = FacturasPOS.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	inner join Combustible on Combustible.Id = IdCombustible
 	inner join Manguera on Manguera.Id = IdManguera
 	inner join Cara on Cara.Id = Manguera.IdCara
@@ -1507,9 +1515,11 @@ begin try
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from dbo.OrdenesDeDespacho
 	
 	inner join venta on venta.Id = OrdenesDeDespacho.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	inner join Combustible on Combustible.Id = IdCombustible
 	inner join Manguera on Manguera.Id = IdManguera
 	inner join Cara on Cara.Id = Manguera.IdCara
@@ -1573,9 +1583,11 @@ begin try
       ,FacturasPOS.[reporteEnviado]
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from dbo.FacturasPOS
 	
 	inner join venta on venta.Id = FacturasPOS.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	inner join Combustible on Combustible.Id = IdCombustible
 	inner join Manguera on Manguera.Id = IdManguera
 	inner join Cara on Cara.Id = Manguera.IdCara
@@ -1608,9 +1620,11 @@ begin try
       ,OrdenesDeDespacho.[reporteEnviado]
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from dbo.OrdenesDeDespacho
 	
 	inner join venta on venta.Id = OrdenesDeDespacho.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	inner join Combustible on Combustible.Id = IdCombustible
 	inner join Manguera on Manguera.Id = IdManguera
 	inner join Cara on Cara.Id = Manguera.IdCara
@@ -1665,9 +1679,12 @@ begin try
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from dbo.FacturasPOS
 	
 	inner join venta on venta.Id = FacturasPOS.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	inner join Combustible on Combustible.Id = IdCombustible
 	inner join Manguera on Manguera.Id = IdManguera
 	inner join Cara on Cara.Id = Manguera.IdCara
@@ -1698,9 +1715,12 @@ begin try
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from dbo.OrdenesDeDespacho
 	
 	inner join venta on venta.Id = OrdenesDeDespacho.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	inner join Combustible on Combustible.Id = IdCombustible
 	inner join Manguera on Manguera.Id = IdManguera
 	inner join Cara on Cara.Id = Manguera.IdCara
@@ -1821,9 +1841,11 @@ begin try
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from dbo.FacturasPOS
-	
+	 
 	inner join venta on venta.Id = FacturasPOS.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	inner join Combustible on Combustible.Id = IdCombustible
 	inner join Manguera on Manguera.Id = IdManguera
 	inner join Cara on Cara.Id = Manguera.IdCara
@@ -1853,9 +1875,11 @@ begin try
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from dbo.OrdenesDeDespacho
 	
 	inner join venta on venta.Id = OrdenesDeDespacho.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	inner join Combustible on Combustible.Id = IdCombustible
 	inner join Manguera on Manguera.Id = IdManguera
 	inner join Cara on Cara.Id = Manguera.IdCara
@@ -1973,8 +1997,10 @@ begin try
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from FacturasPOS
 	inner join venta on venta.Id = FacturasPOS.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	inner join Combustible on Combustible.Id = IdCombustible
 	inner join Manguera on Manguera.Id = IdManguera
 	inner join Cara on Cara.Id = Manguera.IdCara
@@ -2005,8 +2031,10 @@ begin try
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from OrdenesDeDespacho
 	inner join venta on venta.Id = OrdenesDeDespacho.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	inner join Combustible on Combustible.Id = IdCombustible
 	inner join Manguera on Manguera.Id = IdManguera
 	inner join Cara on Cara.Id = Manguera.IdCara
@@ -2206,8 +2234,10 @@ begin try
       ,FacturasPOS.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from dbo.FacturasPOS
 	inner join venta on venta.Id = FacturasPOS.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	inner join Combustible on Combustible.Id = IdCombustible
 	inner join Manguera on Manguera.Id = IdManguera
 	inner join Cara on Cara.Id = Manguera.IdCara
@@ -2237,8 +2267,10 @@ begin try
       ,OrdenesDeDespacho.[enviadaFacturacion], terceros.*, TipoIdentificaciones.*
 	
 	,venta.*, empleado.Nombre as Empleado, Combustible.descripcion as Combustible, Manguera.Descripcion as Manguera, Cara.descripcion as Cara, Surtidor.descripcion as Surtidor
+	,Vehiculos.fechafin as fechaProximoMantenimiento
 	from dbo.OrdenesDeDespacho
 	inner join venta on venta.Id = OrdenesDeDespacho.ventaId left join turno on venta.idturno = turno.id left join empleado on turno.idEmpleado = empleado.id
+	left join vehiculos on Venta.Ibutton = Vehiculos.idrom
 	inner join Combustible on Combustible.Id = IdCombustible
 	inner join Manguera on Manguera.Id = IdManguera
 	inner join Cara on Cara.Id = Manguera.IdCara
@@ -2681,7 +2713,7 @@ CREATE procedure [dbo].[ObtenerTurnoSurtidor]
 as
 begin try
     set nocount on;
-	select turno.Id, Empleado.Nombre, turno.FechaApertura, turno.FechaCierre, turno.IdEstado
+	select turno.Id, Empleado.Nombre, turno.FechaApertura, turno.FechaCierre, turno.IdEstado, Isla.Descripcion as Isla
 	from dbo.Turno 
 	inner join isla on  Turno.IdIsla = Isla.Id
 	inner join surtidor on  surtidor.IdIsla = Isla.Id
@@ -2705,7 +2737,36 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
+drop procedure [dbo].[ObtenerTurnoIsla]
+GO
+CREATE procedure [dbo].[ObtenerTurnoIsla]
+(@idIsla int)
+as
+begin try
+    set nocount on;
+	select turno.Id, Empleado.Nombre, turno.FechaApertura, turno.FechaCierre, turno.IdEstado, Isla.Descripcion as Isla
+	from dbo.Turno 
+	inner join isla on  Turno.IdIsla = Isla.Id
+		inner join Empleado on IdEmpleado = EMpleado.Id
+	where (Turno.IdEstado=1 or Turno.IdEstado=2 or Turno.IdEstado=3)
+	and isla.Id = @idIsla
+    
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
 
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
 drop procedure [dbo].[SetTotalizadorTurnoSurtidorApertura]
 GO
 CREATE procedure [dbo].[SetTotalizadorTurnoSurtidorApertura]
@@ -2958,8 +3019,9 @@ CREATE procedure [dbo].GetTurnoImprimir
 as
 begin try
     set nocount on;
-	select top(1)turno.Id, Empleado.Nombre, turno.FechaApertura, turno.FechaCierre, turno.IdEstado
+	select top(1)turno.Id, Empleado.Nombre, turno.FechaApertura, turno.FechaCierre, turno.IdEstado, Isla.Descripcion as Isla
 	from dbo.turno 
+	inner join isla on  Turno.IdIsla = Isla.Id
 	left join empleado on turno.IdEmpleado = empleado.Id
 	where turno.impreso=0 and turno.Idestado=2
 	or (turno.impreso=1 and turno.Idestado=4)
@@ -2987,9 +3049,10 @@ CREATE procedure [dbo].GetTurnoSurtidorInfo
 as
 begin try
     set nocount on;
-	select TurnoSurtidor.Apertura, TurnoSurtidor.Cierre, Manguera.*
+	select TurnoSurtidor.Apertura, TurnoSurtidor.Cierre, Manguera.*,combustible.Descripcion as combustible, combustible.Id as IdCombustible, combustible.precio as precio
 	from dbo.TurnoSurtidor 
 	left join Manguera on TurnoSurtidor.idManguera = Manguera.Id
+	left join Combustible on Combustible.Id = Manguera.IdCombustible
 	where TurnoSurtidor.idTurno = @Id
     
     

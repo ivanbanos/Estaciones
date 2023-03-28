@@ -5,6 +5,7 @@ using FactoradorEstacionesModelo.Objetos;
 using FactoradorEstacionesModelo.Siges;
 using FacturadorEstacionesPOSWinForm.Repo;
 using FacturadorEstacionesRepositorio;
+using Google.Protobuf.WellKnownTypes;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
@@ -16,6 +17,7 @@ using System.Drawing.Printing;
 using System.Globalization;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -33,6 +35,7 @@ namespace FacturadorEstacionesPOSWinForm
         private List<Canastilla> _canastillas;
         private int _charactersPerPage;
         private List<FormaPagoSiges> formas;
+        private List<CaraSiges> caras;
         private FacturaCanastilla facturaCanastilla;
         private Tercero _terceroCanastilla;
         private Tercero _terceroCrear;
@@ -58,9 +61,15 @@ namespace FacturadorEstacionesPOSWinForm
             {
                 _tiposIdentificacion = _estacionesRepositorio.getTiposIdentifiaciones();
                 formas = _estacionesRepositorio.BuscarFormasPagosSiges();
-                var caras = _estacionesRepositorio.GetCarasSiges().ToArray();
+                caras = _estacionesRepositorio.GetCarasSiges();
+
                 comboBox3.Items.Clear();
-                comboBox3.Items.AddRange(caras);
+                comboBox3.Items.AddRange(caras.ToArray());
+                comboBoxIslas.Items.Clear();
+                var islas = caras.GroupBy(x => x.IdIsla).Select(p => p.FirstOrDefault());
+                comboBoxIslas.Items.AddRange(islas.ToArray());
+
+
                 _infoEstacion = infoEstacion.Value;
                 _charactersPerPage = _infoEstacion.CaracteresPorPagina;
                 if (_charactersPerPage == 0)
@@ -347,6 +356,30 @@ namespace FacturadorEstacionesPOSWinForm
             
         }
 
+
+
+        private void comboBoxIslas_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+            comboBox3.Items.Clear();
+            var cara = ((CaraSiges)comboBoxIslas.SelectedItem);
+            var turno = _estacionesRepositorio.ObtenerTurnoIsla(cara.IdIsla);
+            if (turno != null)
+            {
+
+                comboBox3.Items.AddRange(caras.Where(x => x.IdIsla == cara.IdIsla).ToArray());
+
+                label17.Text = "Turno: " + turno.FechaApertura.ToString();
+                label18.Text = "Empleado: " + turno.Empleado;
+            }
+            else
+            {
+
+                label17.Text = "Turno: No seleccionado " ;
+                label18.Text = "Empleado: ";
+            }
+        }
+
         private void cleanVenta()
         {
 
@@ -478,15 +511,31 @@ namespace FacturadorEstacionesPOSWinForm
         private void abrir_Click(object sender, EventArgs e)
         {
             var form = new Form2(_estacionesRepositorio, _infoEstacion);
-            form.Show();
+            var result = form.ShowDialog();
+            if(result == DialogResult.OK)
+            {
+
+                MessageBox.Show($"Abriendo turno");
+            } else if (result == DialogResult.Abort)
+            {
+                MessageBox.Show($"No se pudo abrir turno");
+
+            }
         }
 
         private void cerrar_Click(object sender, EventArgs e)
         {
             var form = new Form3(_estacionesRepositorio, _infoEstacion);
-            form.Show();
+            var result = form.ShowDialog();
+            if (result == DialogResult.OK)
+            {
+                MessageBox.Show($"Cerrando turno");
+            }
+            else if (result == DialogResult.Abort)
+            {
+                MessageBox.Show($"No se pudo cerrar turno");
+            }
         }
-
         private void fidelizar_Click(object sender, EventArgs e)
         {
             var form = new Form4(_estacionesRepositorio, _infoEstacion);
@@ -737,7 +786,16 @@ namespace FacturadorEstacionesPOSWinForm
 
         public void OnNext(VehiculoSuic value)
         {
-            MessageBox.Show($"Tanqueando vehiculo {JsonConvert.SerializeObject(value)}");
+            if(value.estado == 0)
+            {
+
+                MessageBox.Show($"Vehicuilo {value.placa} idrom {value.idrom} fecha de vencimiento {value.fechaFin}");
+            }
+            else
+            {
+
+                MessageBox.Show($"Vehicuilo {value.placa} idrom {value.idrom} fecha de vencimiento {value.fechaFin} No autorizado motivo {value.motivoTexto}");
+            }
         }
     }
 }

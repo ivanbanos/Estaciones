@@ -41,9 +41,13 @@ namespace FacturadorEstacionesPOSWinForm
                 var isla = (Isla)comboBox3.SelectedItem;
                 var codigo = textBox1.Text;
                 _estacionesRepositorio.AbrirTurno(isla, codigo, 0);
+
+                this.DialogResult = DialogResult.OK;
                 this.Close();
             } catch(Exception)
             {
+
+                this.DialogResult = DialogResult.Abort;
                 MessageBox.Show("Código de empleado no existe o turno abierto");
             }
             //var respuesta = send_cmd($"000000ABR0{isla.idIsla}{codigo}*");
@@ -62,6 +66,7 @@ namespace FacturadorEstacionesPOSWinForm
 
         private void button1_Click(object sender, EventArgs e)
         {
+            this.DialogResult = DialogResult.Cancel;
             this.Close();
         }
 

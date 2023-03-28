@@ -316,7 +316,9 @@ namespace FactoradorEstacionesModelo.Convertidor
                 new CaraSiges()
                 {
                     Id = dr.Field<int>("Id"),
-                    Descripcion = dr.Field<string>("descripcion")
+                    Descripcion = dr.Field<string>("descripcion"),
+                    Isla = dr.Field<string>("Isla"),
+                    IdIsla = dr.Field<int>("IdIsla")
                 });
             }
             return response;
@@ -400,6 +402,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                 {
                     Id = dr.Field<int>("Id"),
                     Empleado = dr.Field<string>("Nombre"),
+                    Isla = dr.Field<string>("Isla"),
                     IdEstado = dr.Field<int>("IdEstado"),
                     FechaApertura = dr.Field<DateTime>("FechaApertura"),
                     FechaCierre = dr.Field<DateTime?>("FechaCierre")
@@ -437,7 +440,12 @@ namespace FactoradorEstacionesModelo.Convertidor
 
                     Cierre = dr.Field<double?>("Cierre"),
 
-
+                    Combustible = new Combustible()
+                    {
+                        Id = dr.Field<int>("IdCombustible"),
+                        Descripcion = dr.Field<string>("combustible"),
+                        Precio = dr.Field<double>("precio")
+                    },
                     Manguera = new MangueraSiges()
                     {
                         Id = dr.Field<int>("Id"),

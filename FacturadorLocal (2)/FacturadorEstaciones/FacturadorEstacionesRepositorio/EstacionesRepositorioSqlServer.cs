@@ -955,5 +955,15 @@ namespace FacturadorEstacionesRepositorio
         {
             throw new NotImplementedException();
         }
+
+        public TurnoSiges ObtenerTurnoIsla(int idIsla)
+        {
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.EstacionSiges, "ObtenerTurnoIsla",
+                            new Dictionary<string, object>{
+
+                    {"@idIsla", idIsla }
+                            });
+            return _convertidor.ConvertirTurnoSiges(dt).FirstOrDefault();
+        }
     }
 }

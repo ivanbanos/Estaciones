@@ -4,9 +4,33 @@ using FacturadorEstacionesPOSWinForm.Repo;
 using ManejadorSurtidor;
 using ManejadorSurtidor.Messages;
 using ManejadorSurtidor.SICOM;
+using NLog.Targets;
 using SigesServicio;
 
-IHost host = Host.CreateDefaultBuilder(args)
+var config = new NLog.Config.LoggingConfiguration();
+
+// Targets where to log to: File and Console
+var logfile = new NLog.Targets.FileTarget("logfile")
+{
+    Layout = "${longdate} ${logger} ${message} ${exception}",
+    FileName = "${basedir}/logs/${shortdate}.log",
+    ArchiveNumbering = ArchiveNumberingMode.DateAndSequence,
+    ArchiveAboveSize = 5000000,
+};
+var logconsole = new NLog.Targets.ConsoleTarget("logconsole");
+// Rules for mapping loggers to targets            
+config.AddRule(NLog.LogLevel.Trace, NLog.LogLevel.Error, logconsole);
+config.AddRule(NLog.LogLevel.Trace, NLog.LogLevel.Error, logfile);
+
+// Apply config           
+NLog.LogManager.Configuration = config;
+var logger = NLog.LogManager.GetCurrentClassLogger();
+logger.Info("Iniciando");
+
+await Task.Delay(5000, default);
+try
+{
+    IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices((hostContext, services) =>
     {
         services.Configure<FacturadorEstacionesPOSWinForm.InfoEstacion>(options => hostContext.Configuration.GetSection("InfoEstacion").Bind(options));
@@ -30,4 +54,14 @@ IHost host = Host.CreateDefaultBuilder(args)
     .UseWindowsService()
     .Build();
 
-await host.RunAsync();
+    await host.RunAsync();
+}
+catch (Exception ex)
+{
+    //NLog: catch setup errors
+    Console.WriteLine(ex.Message);
+    Console.WriteLine(ex.StackTrace);
+    Environment.Exit(1);
+}
+
+

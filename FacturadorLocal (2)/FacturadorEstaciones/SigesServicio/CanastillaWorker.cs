@@ -66,7 +66,7 @@ namespace SigesServicio
         }
 
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(async () =>
         {
             formasDePago = _estacionesRepositorio.BuscarFormasPagosSiges();
             imprimiendo = 0;
@@ -90,7 +90,7 @@ namespace SigesServicio
                             }
                             catch (Exception e)
                             {
-                               
+
 
                             }
                         }
@@ -141,7 +141,7 @@ namespace SigesServicio
 
                 Thread.Sleep(5000);
             }
-        }
+        });
 
         public void WebCanastilla()
         {

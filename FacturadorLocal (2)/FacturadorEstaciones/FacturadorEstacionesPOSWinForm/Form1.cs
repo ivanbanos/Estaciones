@@ -1,5 +1,6 @@
 ﻿using EnviadorInformacionService.Models;
 using FactoradorEstacionesModelo.Objetos;
+using FactoradorEstacionesModelo.Siges;
 using FacturadorEstacionesPOSWinForm.Repo;
 using FacturadorEstacionesRepositorio;
 using Microsoft.Extensions.Options;
@@ -625,7 +626,7 @@ namespace FacturadorEstacionesPOSWinForm
             }
             facturaCanastilla.terceroId = _terceroCanastilla;
             facturaCanastilla.descuento = 0;
-            facturaCanastilla.codigoFormaPago = new FormasPagos() { Id = 4 };
+            facturaCanastilla.codigoFormaPago = new FormaPagoSiges() { Id = 4 };
             try
             {
                 var consecutivo = _conexionEstacionRemota.GenerarFacturaCanastilla(facturaCanastilla);
