@@ -44,12 +44,14 @@ namespace Tramas
             Console.Write("Name: ");
             name = Console.ReadLine();
 
-            Console.WriteLine("Type QUIT to exit");
 
             while (_continue)
             {
-                message = Console.ReadLine();
-
+                Console.WriteLine("Colocar isla\n");
+                var isla = Console.ReadLine();
+                Console.WriteLine("Colocar empleado\n");
+                var empleado = Console.ReadLine();
+                message = "000000EQU" + isla + empleado + "*$";
                 if (stringComparer.Equals("quit", message))
                 {
                     _continue = false;

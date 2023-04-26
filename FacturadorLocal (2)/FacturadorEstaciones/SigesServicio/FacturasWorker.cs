@@ -3,6 +3,7 @@ using FacturadorEstacionesPOSWinForm;
 using FacturadorEstacionesPOSWinForm.Repo;
 using FacturadorEstacionesRepositorio;
 using Microsoft.Extensions.Options;
+using Modelo;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -18,6 +19,7 @@ namespace SigesServicio
         private readonly InfoEstacion _infoEstacion;
         private readonly InformacionCuenta _informacionCuenta;
         private readonly IConexionEstacionRemota _conexionEstacionRemota;
+        private readonly IFidelizacion _fidelizacon;
 
         public override void Dispose()
         {
@@ -32,12 +34,13 @@ namespace SigesServicio
         {
             await base.StopAsync(cancellationToken);
         }
-        public FacturasWorker(IEstacionesRepositorio estacionesRepositorio, IOptions<InformacionCuenta> informacionCuenta, IOptions<InfoEstacion> infoEstacion, IConexionEstacionRemota conexionEstacionRemota)
+        public FacturasWorker(IEstacionesRepositorio estacionesRepositorio, IOptions<InformacionCuenta> informacionCuenta, IOptions<InfoEstacion> infoEstacion, IConexionEstacionRemota conexionEstacionRemota, IFidelizacion fidelizacon)
         {
             _estacionesRepositorio = estacionesRepositorio;
             _infoEstacion = infoEstacion.Value;
             _informacionCuenta = informacionCuenta.Value;
             _conexionEstacionRemota = conexionEstacionRemota;
+            _fidelizacon = fidelizacon;
         }
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
@@ -75,7 +78,6 @@ namespace SigesServicio
             {
                 terceros = terceros.Where(t => t.identificacion != null).ToList();
 
-                Logger.Info($"Subiendo {terceros.Count} terceros");
                 var okTercero = _conexionEstacionRemota.EnviarTerceros(terceros, token);
                 if (okTercero)
                 {
@@ -110,7 +112,6 @@ namespace SigesServicio
 
                 _estacionesRepositorio.ActuralizarTerceros(tercero);
 
-                Logger.Info($"Tercero {tercero.identificacion} agregado");
             }
             var facturasIdImprimir = _conexionEstacionRemota.RecibirFacturasImprimir(Guid.Parse(_infoEstacion.EstacionFuente), token);
             var ordenesIdImprimir = _conexionEstacionRemota.RecibirOrdenesImprimir(Guid.Parse(_infoEstacion.EstacionFuente), token);
@@ -125,6 +126,11 @@ namespace SigesServicio
                 _estacionesRepositorio.MandarImprimir(factura.IdVentaLocal);
             }
 
+            var fidelizados = _fidelizacon.GetFidelizados().Result;
+            foreach(var fidelizado in fidelizados)
+            {
+                _estacionesRepositorio.AddFidelizado(fidelizado.Documento, fidelizado.Puntos??0);
+            }
         }
     }
 

@@ -1,11 +1,14 @@
 using ControladorEstacion.Messages;
 using EnviadorInformacionService;
+using FactoradorEstacionesModelo.Siges;
 using FacturadorEstacionesPOSWinForm.Repo;
 using FacturadorEstacionesRepositorio;
+using ManejadorSurtidor.Messages;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Modelo;
 using NLog.Web;
 using System;
 using System.Collections.Generic;
@@ -39,9 +42,8 @@ namespace FacturadorEstacionesPOSWinForm
                 var services = host.Services;
                 var mainForm = services.GetRequiredService<Islas>();
 
-                var messageReceiver = new RabbitMQMessagesReceiver();
-                messageReceiver.ReceiveMessages();
-                messageReceiver.Subscribe(mainForm);
+                var messageReceiver = services.GetRequiredService<IMessagesReceiver>();
+                ((IObservable<string>)messageReceiver).Subscribe(mainForm);
                 Application.Run(mainForm);
             }
             catch (Exception ex)
@@ -68,7 +70,9 @@ namespace FacturadorEstacionesPOSWinForm
                     services.AddSingleton<IEstacionesRepositorio, EstacionesRepositorioSqlServer>();
                     services.AddSingleton<IConexionEstacionRemota, ConexionEstacionRemota>();
                     services.AddSingleton<IFidelizacion, FidelizacionConexionApi>();
+                    services.AddSingleton<IMessagesReceiver, RabbitMQMessagesReceiver>();
 
+                    services.AddSingleton<IMessageProducer, RabbitMQProducer>();
                     services.AddSingleton<Islas>();
                     services.Configure<ConnectionStrings>(options => hostContext.Configuration.GetSection("ConnectionStrings").Bind(options));
                     services.Configure<InfoEstacion>(options => hostContext.Configuration.GetSection("InfoEstacion").Bind(options));

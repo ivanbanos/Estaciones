@@ -5,6 +5,7 @@ using FacturadorEstacionesPOSWinForm;
 using FacturadorEstacionesPOSWinForm.Repo;
 using FacturadorEstacionesRepositorio;
 using Microsoft.Extensions.Options;
+using Modelo;
 using System;
 using System.Collections.Generic;
 using System.Drawing;

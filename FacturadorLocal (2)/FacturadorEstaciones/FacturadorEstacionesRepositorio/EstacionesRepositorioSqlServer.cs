@@ -1,6 +1,8 @@
-﻿using EnviadorInformacionService.Models;
+﻿using Dominio.Entidades;
+using EnviadorInformacionService.Models;
 using FactoradorEstacionesModelo.Convertidor;
 using FactoradorEstacionesModelo.Extensions;
+using FactoradorEstacionesModelo.Fidelizacion;
 using FactoradorEstacionesModelo.Objetos;
 using FactoradorEstacionesModelo.Siges;
 using FacturacionelectronicaCore.Repositorio.Entities;
@@ -964,6 +966,37 @@ namespace FacturadorEstacionesRepositorio
                     {"@idIsla", idIsla }
                             });
             return _convertidor.ConvertirTurnoSiges(dt).FirstOrDefault();
+        }
+
+        public void AddFidelizado(string documento, float? puntos)
+        {
+            var parameters2 = new Dictionary<string, object>
+            {
+                {"@documento",documento },
+                {"@puntos",puntos }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "AddFidelizado",
+                         parameters2);
+        }
+
+        public Puntos GetVentaFidelizarAutomatica(int id)
+        {
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.EstacionSiges, "GetVentaFidelizarAutomatica",
+                            new Dictionary<string, object>{
+
+                    {"@idManguera", id }
+                            });
+            return _convertidor.ConvertirPuntos(dt).FirstOrDefault();
+        }
+
+        public Fidelizado getFidelizado(string identificacion)
+        {
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.EstacionSiges, "GetFidelizado",
+                            new Dictionary<string, object>{
+
+                    {"@documento", identificacion }
+                            });
+            return _convertidor.ConvertirFidelizado(dt).FirstOrDefault();
         }
     }
 }

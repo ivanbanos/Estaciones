@@ -6,6 +6,7 @@ using FacturadorEstacionesRepositorio;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Modelo;
 using NLog.Web;
 using System.Reflection.Metadata;
 

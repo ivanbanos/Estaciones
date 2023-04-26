@@ -3,6 +3,7 @@ using EnviadorInformacionService.Models.Externos;
 using FactoradorEstacionesModelo.Objetos;
 using FactoradorEstacionesModelo.Siges;
 using FacturacionelectronicaCore.Repositorio.Entities;
+using Modelo;
 using System;
 using System.Collections.Generic;
 

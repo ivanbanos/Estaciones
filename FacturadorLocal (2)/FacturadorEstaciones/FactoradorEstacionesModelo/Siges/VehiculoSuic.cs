@@ -14,7 +14,8 @@ namespace FactoradorEstacionesModelo.Siges
         public string servicio { get;set;}
         public string capacidad { get;set;}
         public int estado { get;set;}
-        public string motivo { get;set;}
+        public string motivo { get;set; }
         public string motivoTexto { get; set; }
+        public int surtidor { get; set; }
     }
 }

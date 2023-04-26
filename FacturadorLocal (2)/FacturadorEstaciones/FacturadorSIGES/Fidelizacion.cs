@@ -1,6 +1,7 @@
 ﻿using FactoradorEstacionesModelo.Objetos;
 using FactoradorEstacionesModelo.Siges;
 using FacturadorEstacionesRepositorio;
+using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -22,11 +23,13 @@ namespace FacturadorEstacionesPOSWinForm
     {
         private readonly IFidelizacion _fidelizacion;
         private readonly FacturaSiges _factura;
-        public Fidelizacion(IFidelizacion fidelizacion, FacturaSiges factura)
+        private readonly IEstacionesRepositorio _estacionesRepositorio;
+        public Fidelizacion(IFidelizacion fidelizacion, FacturaSiges factura, IEstacionesRepositorio estacionesRepositorio)
         {
             InitializeComponent();
             textBox1.PlaceholderText = "Documento";
             _fidelizacion = fidelizacion;
+            _estacionesRepositorio = estacionesRepositorio;
         }
 
         private void abrir_Click(object sender, EventArgs e)
@@ -38,6 +41,11 @@ namespace FacturadorEstacionesPOSWinForm
                     MessageBox.Show("Debe diligenciar documento");
                 }
                 _fidelizacion.SubirPuntops((float)_factura.Total, textBox1.Text, _factura.DescripcionResolucion + "-" + _factura.Consecutivo).Wait();
+                var fidelizados =  _fidelizacion.GetFidelizados().Result;
+                foreach (var fidelizado in fidelizados)
+                {
+                    _estacionesRepositorio.AddFidelizado(fidelizado.Documento, fidelizado.Puntos);
+                }
                 this.DialogResult = DialogResult.OK;
                 this.Close();
             } catch(Exception)

@@ -1,6 +1,9 @@
 ﻿using FactoradorEstacionesModelo;
 using FactoradorEstacionesModelo.Siges;
+using FacturadorEstacionesPOSWinForm;
 using Microsoft.AspNetCore.Connections;
+using Microsoft.Extensions.Options;
+using Modelo;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -13,17 +16,19 @@ using System.Threading.Tasks;
 
 namespace ControladorEstacion.Messages
 {
-    public class RabbitMQMessagesReceiver : IMessagesReceiver , IObservable<VehiculoSuic>
+    public class RabbitMQMessagesReceiver : IMessagesReceiver , IObservable<string>
     {
-        List<IObserver<VehiculoSuic>> observers = new List<IObserver<VehiculoSuic>>();
+        List<IObserver<string>> observers = new List<IObserver<string>>();
         EventingBasicConsumer consumer;
-        public RabbitMQMessagesReceiver()
+        private readonly InfoEstacion _infoEstacion;
+        public RabbitMQMessagesReceiver(IOptions<InfoEstacion> infoEstacion)
         {
-            var factory = new ConnectionFactory() { HostName = "localhost" };
+            _infoEstacion = infoEstacion.Value;
+            var factory = new ConnectionFactory() { HostName = _infoEstacion.RabbitHost, UserName="siges", Password="siges", Port = Protocols.DefaultProtocol.DefaultPort };
             var connection = factory.CreateConnection();
             var channel = connection.CreateModel();
 
-            channel.QueueDeclare(queue: "vehiculo",
+            channel.QueueDeclare(queue:_infoEstacion.Isla,
                                  durable: false,
                                  exclusive: false,
                                  autoDelete: false,
@@ -33,37 +38,37 @@ namespace ControladorEstacion.Messages
             consumer.Received += (model, ea) =>
             {
                 var body = ea.Body.ToArray();
-                var mensaje = JsonConvert.DeserializeObject<VehiculoSuic>(Encoding.UTF8.GetString(body));
+                var mensaje = Encoding.UTF8.GetString(body);
                 foreach (var observer in observers)
                 {
                     observer.OnNext(mensaje);
                 }
             };
-            channel.BasicConsume(queue: "vehiculo",
+            channel.BasicConsume(queue: _infoEstacion.Isla,
                                  autoAck: true,
                                  consumer: consumer);
         }
-        public void ReceiveMessages()
+        public void ReceiveMessages(string queue)
         {
             
         }
 
-        public IDisposable Subscribe(IObserver<VehiculoSuic> observer)
+        public IDisposable Subscribe(IObserver<string> observer)
         {
             // Check whether observer is already registered. If not, add it
             if (!observers.Contains(observer))
             {
                 observers.Add(observer);
             }
-            return new Unsubscriber<VehiculoSuic>(observers, observer);
+            return new Unsubscriber(observers, observer);
         }
 
-        internal class Unsubscriber<VehiculoSuic> : IDisposable
+        internal class Unsubscriber : IDisposable
         {
-            private List<IObserver<VehiculoSuic>> _observers;
-            private IObserver<VehiculoSuic> _observer;
+            private List<IObserver<string>> _observers;
+            private IObserver<string> _observer;
 
-            internal Unsubscriber(List<IObserver<VehiculoSuic>> observers, IObserver<VehiculoSuic> observer)
+            internal Unsubscriber(List<IObserver<string>> observers, IObserver<string> observer)
             {
                 this._observers = observers;
                 this._observer = observer;

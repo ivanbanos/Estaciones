@@ -7,12 +7,13 @@ using System.Drawing;
 using System.Text;
 using ServicioSIGES;
 using System.Net.NetworkInformation;
+using Modelo;
 
 namespace SigesServicio
 {
     public class WorkerImpresion : BackgroundService
     {
-        private readonly ILogger<WorkerImpresion> _logger;
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private int imprimiendo = 0;
         private bool ImpresionAutomatica = false;
         private bool impresionFormaDePagoOrdenDespacho = false;
@@ -23,13 +24,12 @@ namespace SigesServicio
         private readonly bool generaFacturaElectronica;
         private readonly InfoEstacion _infoEstacion;
         private readonly List<CaraImpresora> _caraImpresoras;
-        public WorkerImpresion(ILogger<WorkerImpresion> logger, IEstacionesRepositorio estacionesRepositorio, IOptions<InfoEstacion> infoEstacion, IOptions<List<CaraImpresora>> caraImpresoras)
+        public WorkerImpresion( IEstacionesRepositorio estacionesRepositorio, IOptions<InfoEstacion> infoEstacion, IOptions<List<CaraImpresora>> caraImpresoras)
         {
             _estacionesRepositorio = estacionesRepositorio;
             _infoEstacion = infoEstacion.Value;
             _caraImpresoras = caraImpresoras.Value;
 
-            _logger = logger; 
             firstMacAddress = NetworkInterface
         .GetAllNetworkInterfaces()
         .Where(nic => nic.OperationalStatus == OperationalStatus.Up && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
@@ -42,7 +42,7 @@ namespace SigesServicio
             var estacionFuente = new Guid(_infoEstacion.EstacionFuente);
 
 
-            _logger.LogInformation(_infoEstacion.Razon);
+             Logger.Info(_infoEstacion.Razon);
             ImpresionAutomatica = _infoEstacion.ImpresionAutomatica;
             impresionFormaDePagoOrdenDespacho = _infoEstacion.ImpresionFormaDePagoOrdenDespacho;
             var generaFacturaElectronica = _infoEstacion.GeneraFacturaElectronica;
@@ -50,7 +50,7 @@ namespace SigesServicio
 
             formas = _estacionesRepositorio.BuscarFormasPagosSiges();
 
-            _logger.LogInformation("formas");
+             Logger.Info("formas");
             imprimiendo = 0;
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -121,8 +121,8 @@ namespace SigesServicio
                 {
 
                     imprimiendo = 0;
-                    _logger.LogInformation("Error " + ex.Message);
-                    _logger.LogInformation("Error " + ex.StackTrace);
+                     Logger.Info("Error " + ex.Message);
+                     Logger.Info("Error " + ex.StackTrace);
                     Thread.Sleep(1000);
                 }
 
@@ -144,7 +144,8 @@ namespace SigesServicio
                     PrintDocument pd = new PrintDocument();
                     pd.PrintPage += new PrintPageEventHandler(pd_PrintTurno);
                     pd.DefaultPageSettings.Margins.Bottom = 20;
-                    
+
+                    pd.PrinterSettings.PrinterName = _caraImpresoras.First().Impresora.Trim();
                     pd.Print();
 
                 }
@@ -162,8 +163,8 @@ namespace SigesServicio
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                _logger.LogInformation("Error " + ex.Message);
-                _logger.LogInformation("Error " + ex.StackTrace);
+                 Logger.Info("Error " + ex.Message);
+                 Logger.Info("Error " + ex.StackTrace);
                 Thread.Sleep(5000);
             }
         }
@@ -200,7 +201,7 @@ namespace SigesServicio
                 if (turnoimprimir.FechaCierre.HasValue)
                 {
                     lineasImprimirTurno.Add(new LineasImprimir($"Cierre {turnosurtidor.Cierre}", true));
-                    lineasImprimirTurno.Add(new LineasImprimir($"Total {(turnosurtidor.Cierre- turnosurtidor.Apertura)* turnosurtidor.Combustible.Precio}", true));
+                    lineasImprimirTurno.Add(new LineasImprimir($"Total {string.Format("{0:N2}%", (turnosurtidor.Cierre - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio)}", true));
                 }
 
             }
@@ -232,7 +233,7 @@ namespace SigesServicio
                     if (_caraImpresoras.Any(x => x.Cara == factura.Cara))
                     {
 
-                        _logger.LogInformation("Selecionando impresora " + _caraImpresoras.First(x => x.Cara == factura.Cara).Impresora.Trim());
+                         Logger.Info("Selecionando impresora " + _caraImpresoras.First(x => x.Cara == factura.Cara).Impresora.Trim());
                         pd.PrinterSettings.PrinterName = _caraImpresoras.First(x => x.Cara == factura.Cara).Impresora.Trim();
                     }
 
@@ -253,8 +254,8 @@ namespace SigesServicio
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                _logger.LogInformation("Error " + ex.Message);
-                _logger.LogInformation("Error " + ex.StackTrace);
+                 Logger.Info("Error " + ex.Message);
+                 Logger.Info("Error " + ex.StackTrace);
                 Thread.Sleep(5000);
             }
         }
@@ -324,6 +325,8 @@ namespace SigesServicio
                 else
                 {
                     lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", _factura.Tercero.Nombre.Trim()) + "", false));
+
+                    lineasImprimir.Add(getPuntos(_factura.Tercero.identificacion));
                 }
                 if (string.IsNullOrEmpty(_factura.Tercero.identificacion))
                 {
@@ -444,9 +447,22 @@ namespace SigesServicio
             lineasImprimir.Add(new LineasImprimir("Fabricado por:" + " SIGES SOLUCIONES SAS ", true));
             lineasImprimir.Add(new LineasImprimir("Nit:" + " 901430393-2 ", true));
             lineasImprimir.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress??""), false));
             lineasImprimir.Add(new LineasImprimir(".", true));
 
+        }
+
+        private LineasImprimir getPuntos(string identificacion)
+        {
+            var fidelizado = _estacionesRepositorio.getFidelizado(identificacion);
+            if (fidelizado != null)
+            {
+                return new LineasImprimir("Puntos: " + fidelizado.Puntos, false);
+            }
+            else
+            {
+                return new LineasImprimir("Usuario no fidelizado" , false);
+            }
         }
 
         private void pd_PrintPageOnly(object sender, PrintPageEventArgs ev)
@@ -488,8 +504,8 @@ namespace SigesServicio
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                _logger.LogInformation("Error " + ex.Message);
-                _logger.LogInformation("Error " + ex.StackTrace);
+                 Logger.Info("Error " + ex.Message);
+                 Logger.Info("Error " + ex.StackTrace);
                 Thread.Sleep(5000);
             }
 
@@ -534,8 +550,8 @@ namespace SigesServicio
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                _logger.LogInformation("Error " + ex.Message);
-                _logger.LogInformation("Error " + ex.StackTrace);
+                 Logger.Info("Error " + ex.Message);
+                 Logger.Info("Error " + ex.StackTrace);
                 Thread.Sleep(5000);
             }
 

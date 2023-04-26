@@ -8,8 +8,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
 {
     public interface IFacturacionElectronicaFacade
     {
-        public Task<string> GenerarFacturaElectronica(Modelo.Factura factura, Item item);
-        public Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho factura, Item item);
+        public Task<string> GenerarFacturaElectronica(Modelo.Factura factura);
+        public Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho factura);
         public Task<int> GenerarTercero(Modelo.Tercero tercero);
         Task ActualizarTercero(Modelo.Tercero t, string idFacturacion);
         Task<Item> GetItem(string name);

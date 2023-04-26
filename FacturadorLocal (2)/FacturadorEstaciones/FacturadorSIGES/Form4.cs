@@ -1,6 +1,7 @@
 ﻿using FactoradorEstacionesModelo.Objetos;
 using FacturadorEstacionesRepositorio;
 using Microsoft.Extensions.Options;
+using Modelo;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

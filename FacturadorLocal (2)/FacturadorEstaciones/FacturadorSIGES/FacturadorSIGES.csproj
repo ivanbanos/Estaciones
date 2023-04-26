@@ -45,6 +45,9 @@
     <Compile Update="AgregarTercero.Designer.cs">
       <DependentUpon>AgregarTercero.cs</DependentUpon>
     </Compile>
+    <Compile Update="SICOM.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Update="Form1.cs">
       <SubType>Form</SubType>
     </Compile>

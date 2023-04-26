@@ -20,7 +20,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
         private readonly ITerceroRepositorio _terceroRepositorio;
         private readonly IMapper _mapper;
         private readonly IFacturacionElectronicaFacade _alegraFacade;
-        private readonly bool usaAlegra;
+        private readonly Alegra _alegra;
         private readonly IValidadorGuidAFacturaElectronica _validadorGuidAFacturaElectronica;
         public FacturaNegocio(IFacturasRepository facturasRepository, IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio, IMapper mapper, IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, ITerceroRepositorio terceroRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica)
         {
@@ -28,7 +28,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             _ordenDeDespachoRepositorio = ordenDeDespachoRepositorio;
             _mapper = mapper;
             _alegraFacade = alegraFacade;
-            usaAlegra = alegra.Value.UsaAlegra;
+            _alegra = alegra.Value;
             _terceroRepositorio = terceroRepositorio;
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
         }
@@ -246,22 +246,22 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             var factura = _mapper.Map<Repositorio.Entities.Factura, Modelo.Factura>(facturaEntity);
             var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.Identificacion)).FirstOrDefault();
             var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
-            if (tercero.idFacturacion == null)
+            if (_alegra.ValidaTercero && tercero.idFacturacion == null)
             {
+
                 _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
                 return "Tercero no está apto para facturación electrónica";
             }
             factura.Tercero = tercero;
-            var item = await _alegraFacade.GetItem(factura.Combustible);
-            if (item == null)
-            {
-                _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
-                return "Combustible no creado en alegra";
-            }
+            
             try
             {
-                var idFacturaElectronica = await _alegraFacade.GenerarFacturaElectronica(factura, item);
-                await _facturasRepository.SetIdFacturaElectronicaFactura(idFacturaElectronica, factura.Guid);
+                var response = await _alegraFacade.GenerarFacturaElectronica(factura);
+                if (response != "Combustible no creado")
+                {
+
+                    await _facturasRepository.SetIdFacturaElectronicaFactura(response, factura.Guid);
+                }
                 _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
                 return "Ok";
             }

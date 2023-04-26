@@ -19,7 +19,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
         private readonly ITerceroRepositorio _terceroRepositorio;
         private readonly IMapper _mapper;
         private readonly IFacturacionElectronicaFacade _alegraFacade;
-        private readonly bool usaAlegra;
+        private readonly Alegra _alegra;
         private readonly IValidadorGuidAFacturaElectronica _validadorGuidAFacturaElectronica;
 
         public OrdenDeDespachoNegocio(IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio,
@@ -28,7 +28,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             _ordenDeDespachoRepositorio = ordenDeDespachoRepositorio;
             _mapper = mapper;
             _alegraFacade = alegraFacade;
-            usaAlegra = alegra.Value.UsaAlegra;
+            _alegra = alegra.Value;
             _terceroRepositorio = terceroRepositorio;
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
         }
@@ -53,24 +53,22 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             var ordenDeDespacho = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity);
             var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(ordenDeDespacho.Identificacion)).FirstOrDefault();
             var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
-            if (tercero.idFacturacion == null)
+            if (_alegra.ValidaTercero && tercero.idFacturacion == null)
             {
 
                 _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
                 return "Tercero no está apto para facturación electrónica";
             }
             ordenDeDespacho.Tercero = tercero;
-            var item = await _alegraFacade.GetItem(ordenDeDespacho.Combustible);
-            if(item == null)
-            {
-                _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
-                return "Combustible no creado en alegra";
-            }
+            
             try
             {
-                var idFacturaElectronica = await _alegraFacade.GenerarFacturaElectronica(ordenDeDespacho, item);
-                await _ordenDeDespachoRepositorio.SetIdFacturaElectronicaOrdenesdeDespacho(idFacturaElectronica, ordenDeDespacho.guid);
+                var response = await _alegraFacade.GenerarFacturaElectronica(ordenDeDespacho);
+                if (response != "Combustible no creado")
+                {
 
+                    await _ordenDeDespachoRepositorio.SetIdFacturaElectronicaOrdenesdeDespacho(response, ordenDeDespacho.guid);
+                }
                 _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid); 
                 return "Ok";
             }catch(Exception e)

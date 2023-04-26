@@ -15,5 +15,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
                 var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(authToken);
                 return System.Convert.ToBase64String(plainTextBytes);
             } }
+
+        public bool ValidaTercero { get; set; }
     }
 }

@@ -121,7 +121,7 @@ namespace ManejadorSurtidor.SICOM
                 byte[] tramaByte = FromHex(trama);
                 //_logger.LogInformation( $"Enviando trama {trama}");
                 serialPort1.Write(tramaByte, 0, tramaByte.Length); //ENVIO DE LA TRAMA
-                Thread.Sleep(1000);
+                Thread.Sleep(2000);
             }
         }
 
@@ -144,7 +144,7 @@ namespace ManejadorSurtidor.SICOM
 
                 cant = 0;
                 resultado = "";
-                while ((resultado.ToLower().Contains("4e-42") || resultado.Length < 8) && cant++ < 5)
+                while (resultado.ToLower().Contains("4e-42") || resultado.Length < 16)
                 {
                     if (sp.BytesToRead > 0)
                     {
@@ -157,8 +157,9 @@ namespace ManejadorSurtidor.SICOM
                         resultado += hexString;
 
                         resultado = resultado.Replace("4e-42-", "");
+                        resultado = resultado.Replace("4E-42-", "");
                         _logger.Log(NLog.LogLevel.Info, $"Leyendo boton {resultado}");
-                        if (resultado.Length >= 8)
+                        if (resultado.Length >= 16)
                         {
                             leido = true;
                         }

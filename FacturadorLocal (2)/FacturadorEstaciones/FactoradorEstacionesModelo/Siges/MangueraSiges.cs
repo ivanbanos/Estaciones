@@ -20,5 +20,6 @@ namespace FactoradorEstacionesModelo.Siges
         public DateTime Date { get; set; }
         public double NuevaVenta { get; set; }
         public bool CambioVenta { get; set; }
+        public int tiempoOcio { get; set; }
     }
 }

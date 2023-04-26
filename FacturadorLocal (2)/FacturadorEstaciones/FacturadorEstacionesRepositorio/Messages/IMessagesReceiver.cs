@@ -8,6 +8,6 @@ namespace ControladorEstacion.Messages
 {
     public interface IMessagesReceiver
     {
-        void ReceiveMessages();
+        void ReceiveMessages(string queue);
     }
 }

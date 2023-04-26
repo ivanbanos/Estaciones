@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace FacturadorEstacionesPOSWinForm
+namespace Modelo
 {
     public class InfoEstacion
     {
@@ -39,6 +39,7 @@ namespace FacturadorEstacionesPOSWinForm
         public string ip { get; set; }
         public string puerto { get; set; }
         public int vecesImprimir { get; set; }
+        public List<int> Surtidores { get; set; }
         public string ArchivoMovimientoContable { get; set; }
         public bool ConvertirAFactura { get; set; }
         public bool CreaMovimientoContable { get; set; }
@@ -55,5 +56,8 @@ namespace FacturadorEstacionesPOSWinForm
         public string UrlFidelizacion { get; set; }
         public string UserFidelizacion { get; set; }
         public string PasswordFidelizacion { get; set; }
+        public string CentroVenta { get; set; }
+        public string RabbitHost { get; set; }
+        public string Isla { get; set; }
     }
 }

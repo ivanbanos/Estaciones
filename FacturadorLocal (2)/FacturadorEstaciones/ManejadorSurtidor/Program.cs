@@ -11,6 +11,9 @@ using System.Threading.Tasks;
 using ManejadorSurtidor.SICOM;
 using ManejadorSurtidor.Messages;
 using System.Collections.Generic;
+using ControladorEstacion.Messages;
+using FactoradorEstacionesModelo.Siges;
+using Modelo;
 
 namespace ManejadorSurtidor
 {
@@ -41,7 +44,10 @@ namespace ManejadorSurtidor
             await Task.Delay(5000, default);
             try
             {
-                CreateHostBuilder(args).UseWindowsService().Build().Run();
+                var host = CreateHostBuilder(args).UseWindowsService().Build();
+
+
+                host.Run();
             }
             catch (Exception ex)
             {
@@ -66,11 +72,14 @@ namespace ManejadorSurtidor
                     services.Configure<ConnectionStrings>(options => hostContext.Configuration.GetSection("ConnectionStrings").Bind(options));
                     services.AddSingleton<ISicomConection, SicomConection>();
                     services.AddSingleton<IMessageProducer, RabbitMQProducer>();
+                    services.AddSingleton<IMessagesReceiver, RabbitMQMessagesReceiver>();
+                    services.AddSingleton<IFidelizacion, FidelizacionConexionApi>();
+                    services.AddSingleton<Islas>();
                     services.Configure<Sicom>(options => hostContext.Configuration.GetSection("Sicom").Bind(options));
                     services.AddHostedService<Worker>();
-                    services.Configure<FacturadorEstacionesPOSWinForm.InfoEstacion>(options => hostContext.Configuration.GetSection("InfoEstacion").Bind(options));
+                    services.Configure<InfoEstacion>(options => hostContext.Configuration.GetSection("InfoEstacion").Bind(options));
                     services.Configure<List<ServicioSIGES.CaraImpresora>>(options => hostContext.Configuration.GetSection("CarasImpresoras").Bind(options));
 
-                });
+                }).UseWindowsService();
     }
 }

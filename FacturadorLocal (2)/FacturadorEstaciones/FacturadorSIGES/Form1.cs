@@ -5,8 +5,11 @@ using FactoradorEstacionesModelo.Objetos;
 using FactoradorEstacionesModelo.Siges;
 using FacturadorEstacionesPOSWinForm.Repo;
 using FacturadorEstacionesRepositorio;
+using FacturadorSIGES;
 using Google.Protobuf.WellKnownTypes;
+using ManejadorSurtidor.Messages;
 using Microsoft.Extensions.Options;
+using Modelo;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -24,7 +27,7 @@ using System.Windows.Forms;
 
 namespace FacturadorEstacionesPOSWinForm
 {
-    public partial class Islas : Form, IObserver<VehiculoSuic>
+    public partial class Islas : Form, IObserver<string>
     {
         private readonly IEstacionesRepositorio _estacionesRepositorio;
         private readonly IConexionEstacionRemota _conexionEstacionRemota;
@@ -41,10 +44,11 @@ namespace FacturadorEstacionesPOSWinForm
         private Tercero _terceroCanastilla;
         private Tercero _terceroCrear;
         private MangueraSiges _mangueras;
+        private IMessageProducer _messageProducer;
         private string pestanaActual = "Combustible";
         private System.Timers.Timer timer1;
         private System.Timers.Timer timer4;
-        public Islas(IEstacionesRepositorio estacionesRepositorio, IOptions<InfoEstacion> infoEstacion, IConexionEstacionRemota conexionEstacionRemota, IFidelizacion fidelizacion)
+        public Islas(IEstacionesRepositorio estacionesRepositorio, IOptions<InfoEstacion> infoEstacion, IConexionEstacionRemota conexionEstacionRemota, IFidelizacion fidelizacion, IMessageProducer messageProducer)
         {
             _fidelizacion = fidelizacion;
             _estacionesRepositorio = estacionesRepositorio;
@@ -70,8 +74,10 @@ namespace FacturadorEstacionesPOSWinForm
                 var islas = caras.GroupBy(x => x.IdIsla).Select(p => p.FirstOrDefault());
                 comboBoxIslas.Items.AddRange(islas.ToArray());
 
+                _messageProducer = messageProducer;
 
                 _infoEstacion = infoEstacion.Value;
+                _messageProducer.SendMessage(_infoEstacion.Isla, "islas");
                 _charactersPerPage = _infoEstacion.CaracteresPorPagina;
                 if (_charactersPerPage == 0)
                 {
@@ -83,12 +89,6 @@ namespace FacturadorEstacionesPOSWinForm
                     canastillas = new List<CanastillaFactura>()
                 };
 
-                _conexionEstacionRemota = conexionEstacionRemota;
-
-                _canastillas = _conexionEstacionRemota.GetCanastilla();
-                comboBox2.Items.Clear();
-                comboBox2.Items.AddRange(_canastillas.ToArray());
-
 
                 this.comboBox4.Text = "Selec. Tipo Identificacion";
 
@@ -97,12 +97,19 @@ namespace FacturadorEstacionesPOSWinForm
                 comboBox4.Items.Clear();
 
                 comboBox4.Items.AddRange(_tiposIdentificacion.ToArray());
+
+                _conexionEstacionRemota = conexionEstacionRemota;
+
+                _canastillas = _conexionEstacionRemota.GetCanastilla();
+                comboBox2.Items.Clear();
+                comboBox2.Items.AddRange(_canastillas.ToArray());
+
+
             }
             catch (Exception e)
             {
                 MessageBox.Show(e.Message);
             }
-
         }
 
 
@@ -542,7 +549,7 @@ namespace FacturadorEstacionesPOSWinForm
         }
         private void fidelizar_Click(object sender, EventArgs e)
         {
-            var form = new Fidelizacion(_fidelizacion, _factura);
+            var form = new Fidelizacion(_fidelizacion, _factura, _estacionesRepositorio);
             var result = form.ShowDialog();
             if (result == DialogResult.OK)
             {
@@ -796,17 +803,14 @@ namespace FacturadorEstacionesPOSWinForm
             throw new NotImplementedException();
         }
 
-        public void OnNext(VehiculoSuic value)
+        public void OnNext(string value)
         {
-            if(value.estado == 0)
-            {
 
-                MessageBox.Show($"Vehicuilo {value.placa} idrom {value.idrom} fecha de vencimiento {value.fechaFin}");
-            }
-            else
+            var vehiculo = JsonConvert.DeserializeObject<VehiculoSuic>(value);
+            if (_infoEstacion.Surtidores.Contains(vehiculo.surtidor))
             {
-
-                MessageBox.Show($"Vehicuilo {value.placa} idrom {value.idrom} fecha de vencimiento {value.fechaFin} No autorizado motivo {value.motivoTexto}");
+                var sicom = new Sicom(vehiculo);
+                sicom.ShowDialog();
             }
         }
     }

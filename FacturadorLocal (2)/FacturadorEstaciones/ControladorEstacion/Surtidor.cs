@@ -1,5 +1,6 @@
 ﻿using FactoradorEstacionesModelo;
 using FactoradorEstacionesModelo.Siges;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -12,7 +13,7 @@ using System.Windows.Forms;
 
 namespace ControladorEstacion
 {
-    public partial class Surtidor : UserControl, IObserver<Mensaje>
+    public partial class Surtidor : UserControl, IObserver<string>
     {
         public Surtidor(FactoradorEstacionesModelo.Siges.SurtidorSiges surtidor)
         {
@@ -90,19 +91,20 @@ namespace ControladorEstacion
             }
         }
 
-        public void OnNext(Mensaje value)
+        public void OnNext(string value)
         {
-            if (SurtidorControl.Id == value.SurtidorId)
+            var mensaje = JsonConvert.DeserializeObject<Mensaje>(value);
+            if (SurtidorControl.Id == mensaje.SurtidorId)
             {
-                SetTurno(value.Turno);
-                SetIslero(value.Empleado);
-                if (value.Ubicacion == "Par")
+                SetTurno(mensaje.Turno);
+                SetIslero(mensaje.Empleado);
+                if (mensaje.Ubicacion == "Par")
                 {
-                    SetEstadoPar(value.Estado);
+                    SetEstadoPar(mensaje.Estado);
                 }
                 else
                 {
-                    SetEstadoImpar(value.Estado);
+                    SetEstadoImpar(mensaje.Estado);
                 }
             }
         }

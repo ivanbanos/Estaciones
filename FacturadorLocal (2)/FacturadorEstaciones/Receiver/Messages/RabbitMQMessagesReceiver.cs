@@ -17,11 +17,11 @@ namespace ControladorEstacion.Messages
         EventingBasicConsumer consumer;
         public RabbitMQMessagesReceiver()
         {
-            var factory = new ConnectionFactory() { HostName = "localhost" };
+            var factory = new ConnectionFactory() { HostName = "LAPTOP-7BMLM7UO", UserName = "siges", Password = "siges", Port = Protocols.DefaultProtocol.DefaultPort };
             var connection = factory.CreateConnection();
             var channel = connection.CreateModel();
             
-                channel.QueueDeclare(queue: "hello",
+                channel.QueueDeclare(queue: "controlador",
                                      durable: false,
                                      exclusive: false,
                                      autoDelete: false,
@@ -37,7 +37,7 @@ namespace ControladorEstacion.Messages
                         observer.OnNext(mensaje);
                     }
                 };
-                channel.BasicConsume(queue: "hello",
+                channel.BasicConsume(queue: "controlador",
                                      autoAck: true,
                                      consumer: consumer);
         }

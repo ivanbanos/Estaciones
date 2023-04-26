@@ -24,6 +24,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
             contactsHandler = new ContactsHandler();
             invoiceHandler = new InvoiceHandler();
             itemHandler = new ItemHandler();
+            resolucionesHandler = new ResolucionesHandler();
         }
 
         public async Task ActualizarTercero(Modelo.Tercero tercero, string idFacturacion)
@@ -31,14 +32,24 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
             await contactsHandler.ActualizarCliente(idFacturacion, tercero.ConvertirAContact(), alegraOptions);
         }
 
-        public async Task<string> GenerarFacturaElectronica(Modelo.Factura factura, Item item)
+        public async Task<string> GenerarFacturaElectronica(Modelo.Factura factura)
         {
+            var item = await GetItem(factura.Combustible);
+            if (item == null)
+            {
+                return "Combustible no creado";
+            }
             var invoice = await invoiceHandler.CrearFatura(factura.ConvertirAInvoice(item), alegraOptions);
                 return invoice.numberTemplate.prefix+ invoice.numberTemplate.number + ":" + invoice.id;
         }
 
-        public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Item item)
+        public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden)
         {
+            var item = await GetItem(factura.Combustible);
+            if (item == null)
+            {
+                return "Combustible no creado";
+            }
             var invoice = await invoiceHandler.CrearFatura(orden.ConvertirAInvoice(item), alegraOptions);
             return invoice.numberTemplate.prefix + invoice.numberTemplate.number + ":" + invoice.id;
         }

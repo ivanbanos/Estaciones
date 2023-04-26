@@ -9,6 +9,7 @@ using FacturacionelectronicaCore.Web.Controllers;
 using FacturadorEstacionesPOSWinForm;
 using FacturadorEstacionesPOSWinForm.Repo;
 using Microsoft.Extensions.Options;
+using Modelo;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;

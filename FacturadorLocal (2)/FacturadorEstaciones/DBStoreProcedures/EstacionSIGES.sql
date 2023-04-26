@@ -237,7 +237,9 @@ begin try
 	
 	select @turnoAbierto = Turno.Id from Turno
 	inner join turnoSurtidor on turnoSurtidor.idTurno = turno.Id
-	 where idManguera=@IdManguera and (Turno.IdEstado=1 or Turno.IdEstado=2)
+	 where idManguera=@IdManguera 
+	 order by Turno.ID desc
+
 
 	insert into Venta (IdCombustible,precio,cantidad,Idmanguera,IdEstado, iva, descuento, subtotal, 
 	total,fecha, idTurno, Ibutton)
@@ -284,7 +286,6 @@ begin try
 			declare @Fecha datetime
 	select @Fecha = GETDATE()
     exec CrearFactura @VentaId= @Ventaid, @terceroId=@terceroId, @Placa=@placa, @Kilometraje=@kilometraje, @COd_FOr_PAg=@COd_FOr_PAg, @Fecha=@fecha
-
 end try
 begin catch
     declare 
@@ -364,9 +365,6 @@ BEGIN
     estado CHAR(2),
 	COD_CLI char(15)
 );
-END
-
-GO
 ALTER TABLE
   Terceros
 ALTER COLUMN
@@ -402,7 +400,11 @@ ALTER TABLE
 ALTER COLUMN
   direccion
     VARCHAR(50) NULL;
+END
+
 GO
+
+
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='TipoIdentificaciones' and xtype='U')
 BEGIN
     create table dbo.TipoIdentificaciones(
@@ -2679,6 +2681,7 @@ begin try
 		from Turno
 		inner join Empleado on IdEmpleado = EMpleado.Id
 		where Codigo = @codigo and  (Turno.IdEstado=1 or Turno.IdEstado=2)
+		and Turno.IdIsla = @IdIsla
 	end
 	else
 	begin
@@ -2899,7 +2902,8 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Vehiculos' and xtype='U')
+BEGIN
 CREATE table [dbo].[Vehiculos] (
 
     Id INT PRIMARY KEY IDENTITY (1, 1),
@@ -2918,17 +2922,21 @@ CREATE table [dbo].[Vehiculos] (
 	terceroId int NULL,
 	kilometraje [varchar](max) NULL,
 )
-GO
+
 alter table [Vehiculos] add  terceroId int NULL
 alter table [Vehiculos] add  kilometraje [varchar](max) NULL
+
 ALTER TABLE
   [Vehiculos]
 add 
   IdFormaDePago
     int NULL;
+ END
 GO
 
 /****** Object:  UserDefinedTableType [dbo].[VehiculosType]    Script Date: 02/01/23 14:27:06 ******/
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name like '%VehiculosType%' and xtype='TT')
+BEGIN
 CREATE TYPE [dbo].[VehiculosType] AS TABLE(
 	[idrom] [varchar](100) NULL,
 	[fechaInicio] [datetime] NULL,
@@ -2941,6 +2949,7 @@ CREATE TYPE [dbo].[VehiculosType] AS TABLE(
 	[motivo] [varchar](max) NULL,
 	[motivoTexto] [varchar](max) NULL
 )
+END
 GO
 
 
@@ -3098,9 +3107,115 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name like '%vehiculos_idRom%' )
+begin
 create index vehiculos_idRom
 on [Vehiculos]([idrom]);
+end
+GO
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Fidelizado' and xtype='U')
+BEGIN
+    create table dbo.Fidelizado(
+    Id INT PRIMARY KEY IDENTITY (1, 1),
+    documento VARCHAR (50) NOT NULL,
+    puntos float NOT NULL
+);
+END
+
+GO
+drop procedure [dbo].GetFidelizado
+GO
+CREATE procedure [dbo].GetFidelizado
+(@documento varchar(50))
+as
+begin try
+    set nocount on;
+	select *
+	from dbo.Fidelizado 
+	where Fidelizado.documento = @documento
+    
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+drop procedure [dbo].AddFidelizado
+GO
+CREATE procedure [dbo].AddFidelizado
+(@documento varchar(50),@puntos float)
+as
+begin try
+    set nocount on;
+	declare @Id int;
+	select @Id=Id from fidelizado where @documento = documento
+	if @Id is null
+	begin
+	insert into dbo.Fidelizado (documento, puntos) values(@documento, @puntos)
+
+    end
+	
+	select @Id=Id from fidelizado where @documento = documento
+
+	update Fidelizado set puntos=@puntos from Fidelizado where  @documento = documento
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+drop procedure [dbo].GetVentaFidelizarAutomatica
+GO
+CREATE procedure [dbo].GetVentaFidelizarAutomatica
+(@idManguera int)
+as
+begin try
+    set nocount on;
+	select TOP (1) Venta.total as ValorVenta, Fidelizado.documento as DocumentoFidelizado, Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo)   from Venta
+	inner join FacturasPOS on FacturasPOS.ventaId = Venta.Id
+	inner join Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
+	inner join Vehiculos on Vehiculos.idrom = Venta.Ibutton
+	inner join terceros on Vehiculos.terceroId = terceros.terceroId
+	inner join Fidelizado on Fidelizado.documento = terceros.identificacion
+	where venta.Idmanguera = @idManguera
+	order by venta.id desc
+
+
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
 GO
 
 --select * from eds.dbo.CLIENTES
@@ -3121,3 +3236,10 @@ GO
 
 --select * from vehiculos where terceroId != 4
 --select* from eds.dbo.automoto where COD_CLI not like '222222222222'
+
+
+--select '('+IdFidelizado+',"'+Fidelizado+'",'+convert(varchar,Puntos)+'),' from Fidelizado
+--use EstacionSIGEs
+--DBCC CHECKIDENT ('EstacionSiges.dbo.OrdenesDeDespacho', RESEED, 10000);
+--GO
+--5	SJ	58930	200000	64665	2023-01-27 00:00:00.000	2024-01-27 00:00:00.000	VE	S	0	False 18764043446521

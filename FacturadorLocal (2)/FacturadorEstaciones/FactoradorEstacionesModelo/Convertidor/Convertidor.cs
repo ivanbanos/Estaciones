@@ -1,4 +1,6 @@
-﻿using EnviadorInformacionService.Models;
+﻿using Dominio.Entidades;
+using EnviadorInformacionService.Models;
+using FactoradorEstacionesModelo.Fidelizacion;
 using FactoradorEstacionesModelo.Objetos;
 using FactoradorEstacionesModelo.Siges;
 using FacturacionelectronicaCore.Repositorio.Entities;
@@ -587,6 +589,33 @@ namespace FactoradorEstacionesModelo.Convertidor
                     }
                 })
             );
+            return response;
+        }
+
+        public IEnumerable<Puntos> ConvertirPuntos(DataTable dt)
+        {
+            List<Puntos> response = new List<Puntos>();
+
+            response.AddRange(
+                dt.AsEnumerable().Select(dr => new Puntos((float)dr.Field<double>("ValorVenta"),
+                     dr.Field<string>("Factura"),
+                   dr.Field<string>("DocumentoFidelizado"),
+                    ""))
+            );
+            return response;
+        }
+
+        public IEnumerable<Fidelizado> ConvertirFidelizado(DataTable dt)
+        {
+            List<Fidelizado> response = new List<Fidelizado>();
+
+            response.AddRange(
+                dt.AsEnumerable().Select(dr => new Fidelizado()
+                {
+                    Puntos = (float)dr.Field<double>("puntos"),
+                    Documento = dr.Field<string>("documento"),
+                }
+            ));
             return response;
         }
     }

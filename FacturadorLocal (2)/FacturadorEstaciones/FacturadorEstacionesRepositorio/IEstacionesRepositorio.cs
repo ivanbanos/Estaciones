@@ -1,4 +1,6 @@
-﻿using EnviadorInformacionService.Models;
+﻿using Dominio.Entidades;
+using EnviadorInformacionService.Models;
+using FactoradorEstacionesModelo.Fidelizacion;
 using FactoradorEstacionesModelo.Objetos;
 using FactoradorEstacionesModelo.Siges;
 using FacturacionelectronicaCore.Repositorio.Entities;
@@ -63,5 +65,8 @@ namespace FacturadorEstacionesRepositorio
         List<FacturaSiges> BuscarFacturasNoEnviadasSiges();
         object BuscarFechasReportesNoEnviadasSiges();
         TurnoSiges ObtenerTurnoIsla(int idIsla);
+        void AddFidelizado(string documento, float? puntos);
+        Puntos GetVentaFidelizarAutomatica(int id);
+        Fidelizado getFidelizado(string identificacion);
     }
 }
