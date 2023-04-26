@@ -198,7 +198,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                 if(facturaEntity.idFacturaElectronica != null)
                 {
                     var factura = await _alegraFacade.GetFacturaElectronica(facturaEntity.idFacturaElectronica.Split(':')[1]);
-                    return $"Factura electrónica {factura.numberTemplate.fullNumber}\n\rCUFE: {factura.stamp.cufe}";
+                    return $"Factura electrónica\n\r{factura.numberTemplate.fullNumber}\n\rCUFE:\n\r{factura.stamp.cufe}";
                 }
                 return null;
             }

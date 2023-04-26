@@ -45,7 +45,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
 
         public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden)
         {
-            var item = await GetItem(factura.Combustible);
+            var item = await GetItem(orden.Combustible);
             if (item == null)
             {
                 return "Combustible no creado";

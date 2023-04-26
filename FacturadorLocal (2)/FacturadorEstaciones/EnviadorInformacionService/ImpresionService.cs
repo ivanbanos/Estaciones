@@ -285,7 +285,7 @@ namespace EnviadorInformacionService
 
                 var facturaElectronica = infoTemp.Split(' ');
 
-                lineasImprimir.Add(new LineasImprimir("Factura Electrónica" + facturaElectronica[2], true));
+                lineasImprimir.Add(new LineasImprimir("Factura Electrónica " + facturaElectronica[2], true));
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[3], true));
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[4], true));
             }

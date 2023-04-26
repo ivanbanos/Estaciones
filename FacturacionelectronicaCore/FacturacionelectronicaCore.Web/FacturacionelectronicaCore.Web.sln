@@ -1,15 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30517.126
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FacturacionelectronicaCore.Web", "FacturacionelectronicaCore.Web\FacturacionelectronicaCore.Web.csproj", "{30A42DA2-7E52-4C0D-B0FA-E30B16846417}"
 EndProject
-Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "FacturacionelectronicaCore.Database", "..\FacturacionelectronicaCore.Database\FacturacionelectronicaCore.Database.sqlproj", "{16F3443B-BD09-4F16-9EA8-AA79D5F04555}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FacturacionelectronicaCore.Repositorio", "FacturacionelectronicaCore.Repositorio\FacturacionelectronicaCore.Repositorio.csproj", "{31AF35C5-9AA6-4624-B48F-58F41E29D057}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacturacionelectronicaCore.Repositorio", "FacturacionelectronicaCore.Repositorio\FacturacionelectronicaCore.Repositorio.csproj", "{31AF35C5-9AA6-4624-B48F-58F41E29D057}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FacturacionelectronicaCore.Negocio", "FacturacionelectronicaCore.Negocio\FacturacionelectronicaCore.Negocio.csproj", "{858A0604-786E-44AA-A9A9-4E157A2A4D6D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FacturacionelectronicaCore.Negocio", "FacturacionelectronicaCore.Negocio\FacturacionelectronicaCore.Negocio.csproj", "{858A0604-786E-44AA-A9A9-4E157A2A4D6D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,12 +19,6 @@ Global
 		{30A42DA2-7E52-4C0D-B0FA-E30B16846417}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30A42DA2-7E52-4C0D-B0FA-E30B16846417}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30A42DA2-7E52-4C0D-B0FA-E30B16846417}.Release|Any CPU.Build.0 = Release|Any CPU
-		{16F3443B-BD09-4F16-9EA8-AA79D5F04555}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{16F3443B-BD09-4F16-9EA8-AA79D5F04555}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{16F3443B-BD09-4F16-9EA8-AA79D5F04555}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{16F3443B-BD09-4F16-9EA8-AA79D5F04555}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{16F3443B-BD09-4F16-9EA8-AA79D5F04555}.Release|Any CPU.Build.0 = Release|Any CPU
-		{16F3443B-BD09-4F16-9EA8-AA79D5F04555}.Release|Any CPU.Deploy.0 = Release|Any CPU
 		{31AF35C5-9AA6-4624-B48F-58F41E29D057}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{31AF35C5-9AA6-4624-B48F-58F41E29D057}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{31AF35C5-9AA6-4624-B48F-58F41E29D057}.Release|Any CPU.ActiveCfg = Release|Any CPU
