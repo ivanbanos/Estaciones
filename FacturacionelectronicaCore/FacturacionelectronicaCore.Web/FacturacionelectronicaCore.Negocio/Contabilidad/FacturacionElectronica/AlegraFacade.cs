@@ -9,7 +9,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
+namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
     public class AlegraFacade : IFacturacionElectronicaFacade
     {
@@ -32,7 +32,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
             await contactsHandler.ActualizarCliente(idFacturacion, tercero.ConvertirAContact(), alegraOptions);
         }
 
-        public async Task<string> GenerarFacturaElectronica(Modelo.Factura factura)
+        public async Task<string> GenerarFacturaElectronica(Modelo.Factura factura, Modelo.Tercero tercero)
         {
             var item = await GetItem(factura.Combustible);
             if (item == null)
@@ -43,7 +43,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
                 return invoice.numberTemplate.prefix+ invoice.numberTemplate.number + ":" + invoice.id;
         }
 
-        public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden)
+        public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero)
         {
             var item = await GetItem(orden.Combustible);
             if (item == null)

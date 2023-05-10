@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 
-namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
+namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
     public static class AlegraExtensions
     {

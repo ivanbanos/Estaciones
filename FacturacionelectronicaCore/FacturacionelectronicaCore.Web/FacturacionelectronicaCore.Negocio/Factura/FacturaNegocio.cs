@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using EstacionesServicio.Modelo;
 using EstacionesServicio.Negocio.Extention;
-using FacturacionelectronicaCore.Negocio.Contabilidad.Alegra;
+using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
 using FacturacionelectronicaCore.Negocio.Extention;
 using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Repositorios;
@@ -256,7 +256,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             
             try
             {
-                var response = await _alegraFacade.GenerarFacturaElectronica(factura);
+                var response = await _alegraFacade.GenerarFacturaElectronica(factura, factura.Tercero);
                 if (response != "Combustible no creado")
                 {
 

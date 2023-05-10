@@ -42,7 +42,7 @@ namespace FacturadorEstacionesPOSWinForm
                 Autorizado.Text =  $"No autorizado, motivo {value.motivoTexto}";
             }
             var _timer = new Timer();
-            _timer.Interval = 15000; // interval in milliseconds here.
+            _timer.Interval = 30000; // interval in milliseconds here.
             _timer.Tick += (s, e) => this.Close();
             _timer.Start();
         }

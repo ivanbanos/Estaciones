@@ -117,7 +117,7 @@ namespace ManejadorSurtidor.SICOM
                     response.EnsureSuccessStatusCode();
                     string responseBody = await response.Content.ReadAsStringAsync();
 
-                    _logger.LogInformation( $"Sicom respuesta {responseBody}");
+                    //_logger.LogInformation( $"Sicom respuesta {responseBody}");
 
                     File.WriteAllText("SUIC.txt", responseBody);
                     return responseBody;

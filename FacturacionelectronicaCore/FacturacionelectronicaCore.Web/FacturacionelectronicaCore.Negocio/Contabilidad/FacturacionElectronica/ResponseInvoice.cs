@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
+namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
     // Root myDeserializedClass = JsonConvert.DeserializeObject<Root>(myJsonResponse); 
     public class AddressResposne

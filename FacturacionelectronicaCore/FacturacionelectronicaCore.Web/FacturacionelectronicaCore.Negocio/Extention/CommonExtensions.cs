@@ -1,4 +1,4 @@
-﻿using FacturacionelectronicaCore.Negocio.Contabilidad.Alegra;
+﻿using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
 using FacturacionelectronicaCore.Repositorio.Entities;
 using System;
 using System.Collections.Generic;

@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using FacturacionelectronicaCore.Negocio.Contabilidad;
-using FacturacionelectronicaCore.Negocio.Contabilidad.Alegra;
+using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
 using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Entities;
 using FacturacionelectronicaCore.Repositorio.Repositorios;

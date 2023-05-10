@@ -287,7 +287,8 @@ namespace EnviadorInformacionService
 
                 lineasImprimir.Add(new LineasImprimir("Factura Electrónica " + facturaElectronica[2], true));
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[3], true));
-                lineasImprimir.Add(new LineasImprimir(facturaElectronica[4], true));
+                lineasImprimir.Add(new LineasImprimir(facturaElectronica[4].Substring(0,facturaElectronica[4].Length / 2), true));
+                lineasImprimir.Add(new LineasImprimir(facturaElectronica[4].Substring(facturaElectronica[4].Length / 2), true));
             }
             else if (_factura.Consecutivo == 0)
             {

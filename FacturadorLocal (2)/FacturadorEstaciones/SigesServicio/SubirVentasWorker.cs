@@ -15,7 +15,7 @@ namespace ManejadorSurtidor
 {
     public class SubirVentasWorker : BackgroundService
     {
-        private readonly ILogger<SubirVentasWorker> _logger;
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly IEstacionesRepositorio _estacionesRepositorio;
         private readonly IOptions<Sicom> _options;
 

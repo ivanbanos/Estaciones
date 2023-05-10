@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.Json.Serialization;
 
-namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
+namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
 
     public class Name

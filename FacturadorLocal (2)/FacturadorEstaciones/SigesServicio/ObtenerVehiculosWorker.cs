@@ -11,12 +11,13 @@ using Microsoft.Extensions.Options;
 using ManejadorSurtidor.SICOM;
 using FactoradorEstacionesModelo.Siges;
 using System.Numerics;
+using LogLevel = NLog.LogLevel;
 
 namespace ManejadorSurtidor
 {
     public class ObtenerVehiculosWorker : BackgroundService
     {
-        private readonly ILogger<ObtenerVehiculosWorker> _logger;
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly IEstacionesRepositorio _estacionesRepositorio;
         private readonly IOptions<Sicom> _options;
 
@@ -35,11 +36,10 @@ namespace ManejadorSurtidor
         {
             await base.StopAsync(cancellationToken);
         }
-        public ObtenerVehiculosWorker(ILogger<ObtenerVehiculosWorker> logger, IEstacionesRepositorio estacionesRepositorio, IOptions<Sicom> options, ISicomConection sicomConection)
+        public ObtenerVehiculosWorker( IEstacionesRepositorio estacionesRepositorio, IOptions<Sicom> options, ISicomConection sicomConection)
         {
             _estacionesRepositorio = estacionesRepositorio;
             _options = options;
-            _logger = logger;
             _sicomConection = sicomConection;
         }
 
@@ -49,7 +49,7 @@ namespace ManejadorSurtidor
             {
                 try
                 {
-                    _logger.LogInformation("Bajando SUIC");
+                    Logger.Log(LogLevel.Info,"Bajando SUIC");
                     string suic = await _sicomConection.GetInfoCarros();
                     if (suic == "Fail")
                     {
@@ -60,7 +60,7 @@ namespace ManejadorSurtidor
                     Thread.Sleep(1000 * 60 * 60 * 12);
                 } catch(Exception ex)
                 {
-                    _logger.LogError($"Error. {ex.Message}.{ex.StackTrace}");
+                    Logger.Log(LogLevel.Error, $"Error. {ex.Message}.{ex.StackTrace}");
                     Thread.Sleep(1000 * 60 * 5);
                 }
             }
@@ -92,7 +92,7 @@ namespace ManejadorSurtidor
                     if (vehiculos.Count() == 10000)
                     {
 
-                        _logger.LogInformation($"procesado {i} de {lines.Length}");
+                        Logger.Log(LogLevel.Info, $"procesado {i} de {lines.Length}");
                         _estacionesRepositorio.ActualizarCarros(vehiculos);
                         vehiculos.Clear();
                     }
@@ -105,7 +105,7 @@ namespace ManejadorSurtidor
                 if (vehiculos.Count() < 10000)
                 {
 
-                    _logger.LogInformation($"procesado {vehiculos.Count()} de {lines.Length}");
+                    Logger.Log(LogLevel.Info, $"procesado {vehiculos.Count()} de {lines.Length}");
                     _estacionesRepositorio.ActualizarCarros(vehiculos);
                     vehiculos.Clear();
                 }

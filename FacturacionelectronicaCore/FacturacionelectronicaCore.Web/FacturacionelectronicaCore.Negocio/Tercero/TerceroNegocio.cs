@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using FacturacionelectronicaCore.Negocio.Contabilidad.Alegra;
+using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
 using FacturacionelectronicaCore.Negocio.Extention;
 using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Repositorios;
@@ -16,14 +16,14 @@ namespace FacturacionelectronicaCore.Negocio.Tercero
         private readonly ITerceroRepositorio _terceroRepositorio;
         private readonly IMapper _mapper;
         private readonly IFacturacionElectronicaFacade _alegraFacade;
-        private readonly bool usaAlegra;
+        private readonly Alegra _alegra;
 
         public TerceroNegocio(ITerceroRepositorio terceroRepositorio, IMapper mapper, IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra)
         {
             _terceroRepositorio = terceroRepositorio;
             _mapper = mapper;
             _alegraFacade = alegraFacade;
-            usaAlegra = alegra.Value.UsaAlegra;
+            _alegra = alegra.Value;
         }
 
         /// <inheritdoc />
@@ -52,7 +52,7 @@ namespace FacturacionelectronicaCore.Negocio.Tercero
             {
                 var tercerosRepositorio = _mapper.Map<IEnumerable<Modelo.Tercero>, IEnumerable<Repositorio.Entities.TerceroInput>>(terceros);
 
-                if (usaAlegra && tercerosRepositorio.Count() == 1)
+                if (_alegra.UsaAlegra && _alegra.ValidaTercero  && tercerosRepositorio.Count() == 1)
                 {
                     foreach (var ti in tercerosRepositorio)
                     {
@@ -131,7 +131,7 @@ namespace FacturacionelectronicaCore.Negocio.Tercero
 
         public async Task SincronizarTerceros()
         {
-            if (usaAlegra)
+            if (_alegra.UsaAlegra && _alegra.ValidaTercero)
             {
                 try
                 {

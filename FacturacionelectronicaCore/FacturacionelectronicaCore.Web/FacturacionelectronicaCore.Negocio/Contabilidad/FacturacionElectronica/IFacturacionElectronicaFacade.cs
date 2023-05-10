@@ -4,12 +4,12 @@ using FacturacionelectronicaCore.Negocio.Modelo;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace FacturacionelectronicaCore.Negocio.Contabilidad.Alegra
+namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
     public interface IFacturacionElectronicaFacade
     {
-        public Task<string> GenerarFacturaElectronica(Modelo.Factura factura);
-        public Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho factura);
+        public Task<string> GenerarFacturaElectronica(Modelo.Factura factura, Modelo.Tercero tercero);
+        public Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho factura, Modelo.Tercero tercero);
         public Task<int> GenerarTercero(Modelo.Tercero tercero);
         Task ActualizarTercero(Modelo.Tercero t, string idFacturacion);
         Task<Item> GetItem(string name);
