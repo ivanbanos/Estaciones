@@ -42,7 +42,8 @@ namespace FacturacionelectronicaCore.Web
             services.AddDataico(Configuration);
             services.AddServicesDependencies(Configuration);
             services.AddSingleton<IAuthentication, JWTAuthentication>();
-
+            services.AddSingleton<ResolucionNumber>();
+            
             // configure strongly typed settings objects
             var appSettingsSection = Configuration.GetSection("AppSettings");
             services.Configure<AppSettings>(appSettingsSection);

@@ -18,7 +18,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             } }
 
         public bool ValidaTercero { get; set; }
-        public string ResolutionNumber { get; internal set; }
-        public string Prefix { get; internal set; }
+        public string ResolutionNumber { get; set; }
+        public string Prefix { get; set; }
+        public int Current { get; set; }
     }
 }
