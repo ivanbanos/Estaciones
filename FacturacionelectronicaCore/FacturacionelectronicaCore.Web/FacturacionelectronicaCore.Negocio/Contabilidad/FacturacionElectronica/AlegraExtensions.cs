@@ -20,6 +20,16 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             return services;
         }
 
+        public static IServiceCollection AddDataico(
+            this IServiceCollection services,
+            IConfiguration configuration)
+        {
+            services.AddScoped<IFacturacionElectronicaFacade, FacturacionDataico>();
+
+            services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
+            return services;
+        }
+
         public static Invoice ConvertirAInvoice(this Modelo.Factura factura, Item item)
         {
             return new Invoice()

@@ -1,6 +1,6 @@
 using AutoMapper;
 using EstacionesServicio.Negocio.Extention;
-using FacturacionelectronicaCore.Negocio.Contabilidad.Alegra;
+using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
 using FacturacionelectronicaCore.Web.Authtentication;
 using FacturacionelectronicaCore.Web.Filters;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -39,7 +39,7 @@ namespace FacturacionelectronicaCore.Web
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddAlegra(Configuration);
+            services.AddDataico(Configuration);
             services.AddServicesDependencies(Configuration);
             services.AddSingleton<IAuthentication, JWTAuthentication>();
 
