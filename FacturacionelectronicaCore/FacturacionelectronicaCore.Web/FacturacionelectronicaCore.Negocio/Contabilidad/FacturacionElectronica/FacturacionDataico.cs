@@ -131,7 +131,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     },
                     customer = new CustomerDataico()
                     {
-                        email = tercero.Correo,
+                        email = string.IsNullOrEmpty(tercero.Correo) ? "0" : tercero.Correo,
                         phone = tercero.Celular,
                         party_identification_type = GetTipoIdentificacion(tercero.DescripcionTipoIdentificacion),
                         party_identification = tercero.Identificacion,
@@ -139,10 +139,11 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         tax_level_code = GetNivelTributario(tercero.ResponsabilidadTributaria),
                         regimen = GetRegime(tercero.ResponsabilidadTributaria),
                         city = "001",
-                        address_line = tercero.Direccion,
+                        address_line = string.IsNullOrEmpty(tercero.Direccion)?"0": tercero.Direccion,
                         country_code = "CO",
                         first_name = tercero.Nombre,
                         family_name = tercero.Apellidos,
+                        department= "73"
                     },
                     items = new List<ItemDataico>(){
                         new ItemDataico()
