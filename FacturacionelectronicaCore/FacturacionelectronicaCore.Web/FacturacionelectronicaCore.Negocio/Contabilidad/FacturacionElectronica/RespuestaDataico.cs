@@ -24,7 +24,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public string invoice_type_code { get; set; }
         public string payment_means { get; set; }
         public string uuid { get; set; }
-        public List<Item> items { get; set; }
+        public List<ItemDataico> items { get; set; }
         public string qrcode { get; set; }
         public string xml { get; set; }
         public NumberingDataico numbering { get; set; }
