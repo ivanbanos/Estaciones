@@ -132,7 +132,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     customer = new CustomerDataico()
                     {
                         email = string.IsNullOrEmpty(tercero.Correo) ? "0" : tercero.Correo,
-                        phone = tercero.Celular,
+                        phone = string.IsNullOrEmpty(tercero.Celular) ? "0" : tercero.Celular,
                         party_identification_type = GetTipoIdentificacion(tercero.DescripcionTipoIdentificacion),
                         party_identification = tercero.Identificacion,
                         party_type = GetKindOfPErson(tercero.TipoPersona),
@@ -143,7 +143,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         country_code = "CO",
                         first_name = tercero.Nombre,
                         family_name = tercero.Apellidos,
-                        department= "73"
+                        company_name= tercero.Nombre,
+                        department = "73"
                     },
                     items = new List<ItemDataico>(){
                         new ItemDataico()
