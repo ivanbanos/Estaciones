@@ -39,59 +39,68 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<string> GenerarFacturaElectronica(Modelo.Factura factura, Modelo.Tercero tercero)
         {
-            var invoice = GetFacturaDataico(factura, tercero);
-            while (true)
+            try
             {
 
-                using (var client = new HttpClient())
+                var invoice = GetFacturaDataico(factura, tercero);
+                while (true)
                 {
-                    client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
-                    client.DefaultRequestHeaders.Add("auth-token", alegraOptions.Token);
-                    var path = $"{alegraOptions.Url}invoices";
-                    var content = new StringContent(JsonConvert.SerializeObject(invoice));
-                    content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-                    var response = client.PostAsync(path, content).Result;
-                    string responseBody = await response.Content.ReadAsStringAsync();
-                    try
+
+                    using (var client = new HttpClient())
                     {
-                        response.EnsureSuccessStatusCode();
-                    }
-                    catch (Exception)
-                    {
+                        client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
+                        client.DefaultRequestHeaders.Add("auth-token", alegraOptions.Token);
+                        var path = $"{alegraOptions.Url}invoices";
+                        var content = new StringContent(JsonConvert.SerializeObject(invoice));
+                        content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+                        var response = client.PostAsync(path, content).Result;
+                        string responseBody = await response.Content.ReadAsStringAsync();
                         try
                         {
-                            var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
-                            if(respuestaError.errors.Any(x=>x.path.Any(y=>y.Contains( "invoice")))) {
-                                var error = respuestaError.errors.First(x => x.path.Any(y => y.Contains("invoice")));
-                                if(error.error.Contains("Tiene que ser el siguiente"))
-                                {
-                                    var numberpos = error.error.IndexOf('\'');
-                                    numberpos = error.error.IndexOf('\'', numberpos);
-                                    numberpos = error.error.IndexOf('\'', numberpos);
-                                    var fin = error.error.IndexOf('\'', numberpos);
-                                    _resolucionNumber.number=Int32.Parse( error.error.Substring(numberpos+1, fin - numberpos-2));
-                                }
-                                else
-                                {
-                                    _resolucionNumber.number++;
-                                }
-                                invoice.invoice.number = _resolucionNumber.number;
-                            }
-                            else
-                            {
-                                throw new AlegraException(responseBody);
-
-                            }
+                            response.EnsureSuccessStatusCode();
                         }
                         catch (Exception)
                         {
-                            throw new AlegraException(responseBody);
-                        }
-                    }
+                            try
+                            {
+                                var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
+                                if (respuestaError.errors.Any(x => x.path.Any(y => y.Contains("invoice"))))
+                                {
+                                    var error = respuestaError.errors.First(x => x.path.Any(y => y.Contains("invoice")));
+                                    if (error.error.Contains("Tiene que ser el siguiente"))
+                                    {
+                                        var numberpos = error.error.IndexOf('\'');
+                                        numberpos = error.error.IndexOf('\'', numberpos);
+                                        numberpos = error.error.IndexOf('\'', numberpos);
+                                        var fin = error.error.IndexOf('\'', numberpos);
+                                        _resolucionNumber.number = Int32.Parse(error.error.Substring(numberpos + 1, fin - numberpos - 2));
+                                    }
+                                    else
+                                    {
+                                        _resolucionNumber.number++;
+                                    }
+                                    invoice.invoice.number = _resolucionNumber.number;
+                                }
+                                else
+                                {
+                                    throw new AlegraException(responseBody);
 
-                    var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
-                    return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe;
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                throw new AlegraException(responseBody);
+                            }
+                        }
+
+                        var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
+                        return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new AlegraException(ex.Message);
             }
         }
 
