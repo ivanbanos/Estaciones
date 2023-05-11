@@ -93,11 +93,47 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                                 throw new AlegraException(responseBody+ex.Message+ JsonConvert.SerializeObject(invoice));
                             }
                         }
+                        if (responseBody.Contains("error"))
+                        {
 
-                        var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
-                        Console.WriteLine(JsonConvert.SerializeObject(respuesta));
-                        Console.WriteLine(JsonConvert.SerializeObject(responseBody));
-                        return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe+":"+ responseBody;
+                            try
+                            {
+                                var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
+                                if (respuestaError.errors.Any(x => x.path.Any(y => y.Contains("invoice"))))
+                                {
+                                    var error = respuestaError.errors.First(x => x.path.Any(y => y.Contains("invoice")));
+                                    if (error.error.Contains("Tiene que ser el siguiente"))
+                                    {
+                                        var numberpos = error.error.IndexOf('\'');
+                                        numberpos = error.error.IndexOf('\'', numberpos);
+                                        numberpos = error.error.IndexOf('\'', numberpos);
+                                        var fin = error.error.IndexOf('\'', numberpos);
+                                        _resolucionNumber.number = Int32.Parse(error.error.Substring(numberpos + 1, fin - numberpos - 2));
+                                    }
+                                    else
+                                    {
+                                        _resolucionNumber.number++;
+                                    }
+                                    invoice.invoice.number = _resolucionNumber.number;
+                                }
+                                else
+                                {
+                                    throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
+
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new AlegraException(responseBody + ex.Message + JsonConvert.SerializeObject(invoice));
+                            }
+                        }
+                        else
+                        {
+                            var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
+                            Console.WriteLine(JsonConvert.SerializeObject(respuesta));
+                            Console.WriteLine(JsonConvert.SerializeObject(responseBody));
+                            return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe + ":" + responseBody;
+                        }
                     }
                 }
             }
