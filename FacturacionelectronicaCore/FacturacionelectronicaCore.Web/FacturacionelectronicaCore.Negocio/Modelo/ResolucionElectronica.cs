@@ -11,7 +11,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
 
         public ResolucionElectronica(Numbering numbering)
         {
-            invoiceText=$"Resolución electronica {numbering.prefix} - {numbering.dian_resolutions.First().number} desde {numbering.dian_resolutions.First().start} hasta {numbering.dian_resolutions.First().end}. Valido hasta {numbering.dian_resolutions.First().end_date}"
+            invoiceText = $"Resolución electronica {numbering.prefix} - {numbering.dian_resolutions.First().number} desde {numbering.dian_resolutions.First().start} hasta {numbering.dian_resolutions.First().end}. Valido hasta {numbering.dian_resolutions.First().end_date}";
         }
 
         public ResolucionElectronica() { }
