@@ -46,7 +46,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 using (var client = new HttpClient())
                 {
                     client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
-                    client.DefaultRequestHeaders.Add("auth-token", alegraOptions.Auth);
+                    client.DefaultRequestHeaders.Add("auth-token", alegraOptions.Token);
                     var path = $"{alegraOptions.Url}invoices";
                     var content = new StringContent(JsonConvert.SerializeObject(invoice));
                     content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
@@ -266,7 +266,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 using (var client = new HttpClient())
                 {
                     client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
-                    client.DefaultRequestHeaders.Add("auth-token", alegraOptions.Auth);
+                    client.DefaultRequestHeaders.Add("auth-token", alegraOptions.Token);
                     var path = $"{alegraOptions.Url}invoices";
                     var content = new StringContent(JsonConvert.SerializeObject(invoice));
                     content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
