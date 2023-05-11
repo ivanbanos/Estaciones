@@ -87,9 +87,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
                                 }
                             }
-                            catch (Exception)
+                            catch (Exception ex)
                             {
-                                throw new AlegraException(responseBody);
+                                throw new AlegraException(responseBody+ex.Message);
                             }
                         }
 
