@@ -358,8 +358,28 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<ResolucionElectronica> GetResolucionElectronica()
         {
-            var resoluciones = await resolucionesHandler.GetResolucionesElectronica(alegraOptions);
-            return resoluciones.FirstOrDefault(x => x.isDefault);
+            using (var client = new HttpClient())
+            {
+                client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
+                client.DefaultRequestHeaders.Add("auth-token", alegraOptions.Token);
+                var path = $"{alegraOptions.Url}numberings/invoice";
+                content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+                var response = client.GetAsync(path).Result;
+                string responseBody = await response.Content.ReadAsStringAsync();
+                try
+                {
+                    response.EnsureSuccessStatusCode();
+                }
+                catch (Exception)
+                {
+                   
+                }
+
+                var respuesta = JsonConvert.DeserializeObject<ResolucionesDataico>(responseBody);
+                Console.WriteLine(JsonConvert.SerializeObject(respuesta));
+                Console.WriteLine(JsonConvert.SerializeObject(responseBody));
+                return new ResolucionElectronica(respuesta.numberings.First());
+            }
         }
 
         public async Task<IEnumerable<TerceroResponse>> GetTerceros(int start)
