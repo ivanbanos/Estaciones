@@ -61,8 +61,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         try
                         {
                             var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
-                            if(respuestaError.errors.Any(x=>x.path.Any(y=>y== "invoice"))) {
-                                var error = respuestaError.errors.First(x => x.path.Any(y => y == "invoice"));
+                            if(respuestaError.errors.Any(x=>x.path.Any(y=>y.Contains( "invoice")))) {
+                                var error = respuestaError.errors.First(x => x.path.Any(y => y.Contains("invoice")));
                                 if(error.error.Contains("Tiene que ser el siguiente"))
                                 {
                                     var numberpos = error.error.IndexOf('\'');
@@ -110,7 +110,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     invoice_type_code = "FACTURA_VENTA",
                     payment_means = "CASH",
                     payment_means_type = "DEBITO",
-                    number = 0,
+                    number = _resolucionNumber.number,
                     numbering = new NumberingDataico()
                     {
                         resolution_number = alegraOptions.ResolutionNumber,
