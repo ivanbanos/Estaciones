@@ -363,7 +363,6 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
                 client.DefaultRequestHeaders.Add("auth-token", alegraOptions.Token);
                 var path = $"{alegraOptions.Url}numberings/invoice";
-                content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
                 var response = client.GetAsync(path).Result;
                 string responseBody = await response.Content.ReadAsStringAsync();
                 try
