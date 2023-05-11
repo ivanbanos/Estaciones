@@ -43,6 +43,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             {
 
                 var invoice = GetFacturaDataico(factura, tercero);
+                Console.WriteLine(JsonConvert.SerializeObject(invoice));
                 while (true)
                 {
 
@@ -94,7 +95,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         }
 
                         var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
-                        return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe;
+                        Console.WriteLine(JsonConvert.SerializeObject(respuesta));
+                        Console.WriteLine(JsonConvert.SerializeObject(responseBody));
+                        return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe+":"+ responseBody;
                     }
                 }
             }
