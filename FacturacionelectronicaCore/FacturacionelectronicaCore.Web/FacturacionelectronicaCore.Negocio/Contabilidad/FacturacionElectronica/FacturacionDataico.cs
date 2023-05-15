@@ -147,7 +147,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         {
             return new FacturaDataico()
             {
-                actions = new ActionsDataico() { send_dian = false, send_email = true },
+                actions = new ActionsDataico() { send_dian = true, send_email = true },
                 invoice = new InvoiceDataico()
                 {
                     env = "PRODUCCION",
