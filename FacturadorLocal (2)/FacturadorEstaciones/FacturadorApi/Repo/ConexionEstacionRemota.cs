@@ -82,7 +82,7 @@ namespace EnviadorInformacionService
         {
             using (var client = new HttpClient())
             {
-                var path = $"/api/OrdenesDeDespacho/ObtenerOrdenDespachoPorIdVentaLocal/{identificacion}/{estacion};";
+                var path = $"/api/OrdenesDeDespacho/ObtenerOrdenDespachoPorIdVentaLocal/{identificacion}/{estacion}";
 
                 client.DefaultRequestHeaders.Authorization =
     new AuthenticationHeaderValue("Bearer", token);

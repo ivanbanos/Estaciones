@@ -71,14 +71,15 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                                     if (error.error.Contains("Tiene que ser el siguiente"))
                                     {
                                         var numberpos = error.error.IndexOf('\'');
-                                        numberpos = error.error.IndexOf('\'', numberpos);
-                                        numberpos = error.error.IndexOf('\'', numberpos);
-                                        var fin = error.error.IndexOf('\'', numberpos);
-                                        _resolucionNumber.number = Int32.Parse(error.error.Substring(numberpos + 1, fin - numberpos - 2));
+                                        numberpos = error.error.IndexOf('\'', numberpos+1);
+                                        numberpos = error.error.IndexOf('\'', numberpos+1);
+                                        var fin = error.error.IndexOf('\'', numberpos+1);
+                                        var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
+                                        _resolucionNumber.number = Int32.Parse(number);
                                     }
                                     else
                                     {
-                                        _resolucionNumber.number++;
+                                        throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
                                     }
                                     invoice.invoice.number = _resolucionNumber.number;
                                 }
@@ -105,14 +106,15 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                                     if (error.error.Contains("Tiene que ser el siguiente"))
                                     {
                                         var numberpos = error.error.IndexOf('\'');
-                                        numberpos = error.error.IndexOf('\'', numberpos);
-                                        numberpos = error.error.IndexOf('\'', numberpos);
-                                        var fin = error.error.IndexOf('\'', numberpos);
-                                        _resolucionNumber.number = Int32.Parse(error.error.Substring(numberpos + 1, fin - numberpos - 2));
+                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
+                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
+                                        var fin = error.error.IndexOf('\'', numberpos + 1);
+                                        var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
+                                        _resolucionNumber.number = Int32.Parse(number);
                                     }
                                     else
                                     {
-                                        _resolucionNumber.number++;
+                                        throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
                                     }
                                     invoice.invoice.number = _resolucionNumber.number;
                                 }
@@ -167,7 +169,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     },
                     customer = new CustomerDataico()
                     {
-                        email = string.IsNullOrEmpty(tercero.Correo) ? "0" : tercero.Correo,
+                        email = string.IsNullOrEmpty(tercero.Correo) || tercero.Correo.Contains("no informado") ? alegraOptions.Correo : tercero.Correo,
                         phone = string.IsNullOrEmpty(tercero.Celular) ? "0" : tercero.Celular,
                         party_identification_type = GetTipoIdentificacion(tercero.DescripcionTipoIdentificacion),
                         party_identification = tercero.Identificacion,
