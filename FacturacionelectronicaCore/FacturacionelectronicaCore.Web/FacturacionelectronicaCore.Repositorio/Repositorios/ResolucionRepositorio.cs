@@ -36,7 +36,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
             var paramList = new DynamicParameters();
             paramList.Add("prefijo", prefijo);
-            return await _sqlHelper.get("getNumeration", new { prefijo = prefijo });
+            return await _sqlHelper.InsertOrUpdateOrDeleteAsync("getNumeration", new { prefijo = prefijo });
         }
         public async Task SetFacturaelectronicaPorPRefijo(string prefijo, int numeroActual)
         {
