@@ -232,7 +232,9 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             {
                 return "Factura electrónica siendo procesada";
             }
-            var facturaEntity = (await _facturasRepository.ObtenerFacturaPorGuid(ordenGuid)).FirstOrDefault();
+            try
+            {
+                var facturaEntity = (await _facturasRepository.ObtenerFacturaPorGuid(ordenGuid)).FirstOrDefault();
             if (facturaEntity == null)
             {
                 _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
@@ -254,8 +256,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             }
             factura.Tercero = tercero;
             
-            try
-            {
+            
                 var response = await _alegraFacade.GenerarFacturaElectronica(factura, factura.Tercero);
                 if (response != "Combustible no creado")
                 {

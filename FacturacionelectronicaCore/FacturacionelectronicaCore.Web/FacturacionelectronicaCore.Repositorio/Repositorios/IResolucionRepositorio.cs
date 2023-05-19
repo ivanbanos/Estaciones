@@ -12,5 +12,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         Task<IEnumerable<Resolucion>> GetResolucionActiva(Guid estacion);
         Task<Resolucion> HabilitarResolucion(Guid estacion, DateTime fechaVencimiento);
         Task AnularResolucion(Guid resolucion);
+        Task<int> GetFacturaelectronicaPorPRefijo(string prefijo);
+        Task SetFacturaelectronicaPorPRefijo(string prefijo, int numeroActual);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Entities;
+using FacturacionelectronicaCore.Repositorio.Repositorios;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
@@ -20,16 +21,15 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         private readonly ItemHandler itemHandler;
         private readonly ResolucionesHandler resolucionesHandler;
         private readonly ResolucionNumber _resolucionNumber;
+        private readonly IResolucionRepositorio _resolucionRepositorio;
 
-        public FacturacionDataico(IOptions<Alegra> alegra, ResolucionNumber resolucionNumber)
+        public FacturacionDataico(IOptions<Alegra> alegra, ResolucionNumber resolucionNumber, IResolucionRepositorio resolucionRepositorio)
         {
             alegraOptions = alegra.Value;
 
             _resolucionNumber = resolucionNumber;
-            if (_resolucionNumber.number == 0)
-            {
-                _resolucionNumber.number= alegraOptions.Current;
-            }
+            
+           _resolucionRepositorio = resolucionRepositorio;
         }
 
         public async Task ActualizarTercero(Modelo.Tercero tercero, string idFacturacion)
@@ -42,7 +42,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             try
             {
 
-                var invoice = GetFacturaDataico(factura, tercero);
+                var invoice = await GetFacturaDataico(factura, tercero);
                 Console.WriteLine(JsonConvert.SerializeObject(invoice));
                 while (true)
                 {
@@ -134,7 +134,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                             var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
                             Console.WriteLine(JsonConvert.SerializeObject(respuesta));
                             Console.WriteLine(JsonConvert.SerializeObject(responseBody));
-                            return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe + ":" + responseBody;
+                            await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(alegraOptions.Prefix, invoice.invoice.number + 1);
+                            return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe;
                         }
                     }
                 }
@@ -145,8 +146,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
         }
 
-        public FacturaDataico GetFacturaDataico(Modelo.Factura factura, Modelo.Tercero tercero)
+        public async Task<FacturaDataico> GetFacturaDataico(Modelo.Factura factura, Modelo.Tercero tercero)
         {
+            var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(alegraOptions.Prefix);
             return new FacturaDataico()
             {
                 actions = new ActionsDataico() { send_dian = true, send_email = true },
@@ -160,7 +162,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     invoice_type_code = "FACTURA_VENTA",
                     payment_means = "CASH",
                     payment_means_type = "DEBITO",
-                    number = _resolucionNumber.number,
+                    number = numero,
                     numbering = new NumberingDataico()
                     {
                         resolution_number = alegraOptions.ResolutionNumber,
@@ -258,8 +260,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     return "PERSONA_JURIDICA";
             }
         }
-        public FacturaDataico GetFacturaDataico(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero)
+        public async Task<FacturaDataico> GetFacturaDataico(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero)
         {
+            var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(alegraOptions.Prefix);
             return new FacturaDataico()
             {
                 actions = new ActionsDataico() { send_dian = false, send_email = true },
@@ -273,7 +276,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     invoice_type_code = "FACTURA_VENTA",
                     payment_means = "CASH",
                     payment_means_type = "DEBITO",
-                    number = 0,
+                    number = numero,
                     numbering = new NumberingDataico()
                     {
                         resolution_number = alegraOptions.ResolutionNumber,
@@ -310,61 +313,111 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero)
         {
-            var invoice = GetFacturaDataico(orden, tercero);
 
-            while (true)
+            try
             {
 
-                using (var client = new HttpClient())
+                var invoice = await GetFacturaDataico(orden, tercero);
+                Console.WriteLine(JsonConvert.SerializeObject(invoice));
+                while (true)
                 {
-                    client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
-                    client.DefaultRequestHeaders.Add("auth-token", alegraOptions.Token);
-                    var path = $"{alegraOptions.Url}invoices";
-                    var content = new StringContent(JsonConvert.SerializeObject(invoice));
-                    content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-                    var response = client.PostAsync(path, content).Result;
-                    string responseBody = await response.Content.ReadAsStringAsync();
-                    try
+
+                    using (var client = new HttpClient())
                     {
-                        response.EnsureSuccessStatusCode();
-                    }
-                    catch (Exception)
-                    {
+                        client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
+                        client.DefaultRequestHeaders.Add("auth-token", alegraOptions.Token);
+                        var path = $"{alegraOptions.Url}invoices";
+                        var content = new StringContent(JsonConvert.SerializeObject(invoice));
+                        content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+                        var response = client.PostAsync(path, content).Result;
+                        string responseBody = await response.Content.ReadAsStringAsync();
                         try
                         {
-                            var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
-                            if (respuestaError.errors.Any(x => x.path.Any(y => y == "invoice")))
-                            {
-                                var error = respuestaError.errors.First(x => x.path.Any(y => y == "invoice"));
-                                if (error.error.Contains("Tiene que ser el siguiente"))
-                                {
-                                    var numberpos = error.error.IndexOf('\'');
-                                    numberpos = error.error.IndexOf('\'', numberpos);
-                                    numberpos = error.error.IndexOf('\'', numberpos);
-                                    var fin = error.error.IndexOf('\'', numberpos);
-                                    _resolucionNumber.number = Int32.Parse(error.error.Substring(numberpos + 1, fin - numberpos - 2));
-                                }
-                                else
-                                {
-                                    _resolucionNumber.number++;
-                                }
-                                invoice.invoice.number = _resolucionNumber.number;
-                            }
-                            else
-                            {
-                                throw new AlegraException(responseBody);
-
-                            }
+                            response.EnsureSuccessStatusCode();
                         }
                         catch (Exception)
                         {
-                            throw new AlegraException(responseBody);
+                            try
+                            {
+                                var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
+                                if (respuestaError.errors.Any(x => x.path.Any(y => y.Contains("invoice"))))
+                                {
+                                    var error = respuestaError.errors.First(x => x.path.Any(y => y.Contains("invoice")));
+                                    if (error.error.Contains("Tiene que ser el siguiente"))
+                                    {
+                                        var numberpos = error.error.IndexOf('\'');
+                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
+                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
+                                        var fin = error.error.IndexOf('\'', numberpos + 1);
+                                        var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
+                                        _resolucionNumber.number = Int32.Parse(number);
+                                    }
+                                    else
+                                    {
+                                        throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
+                                    }
+                                    invoice.invoice.number = _resolucionNumber.number;
+                                }
+                                else
+                                {
+                                    throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
+
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new AlegraException(responseBody + ex.Message + JsonConvert.SerializeObject(invoice));
+                            }
+                        }
+                        if (responseBody.Contains("error"))
+                        {
+
+                            try
+                            {
+                                var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
+                                if (respuestaError.errors.Any(x => x.path.Any(y => y.Contains("invoice"))))
+                                {
+                                    var error = respuestaError.errors.First(x => x.path.Any(y => y.Contains("invoice")));
+                                    if (error.error.Contains("Tiene que ser el siguiente"))
+                                    {
+                                        var numberpos = error.error.IndexOf('\'');
+                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
+                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
+                                        var fin = error.error.IndexOf('\'', numberpos + 1);
+                                        var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
+                                        _resolucionNumber.number = Int32.Parse(number);
+                                    }
+                                    else
+                                    {
+                                        throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
+                                    }
+                                    invoice.invoice.number = _resolucionNumber.number;
+                                }
+                                else
+                                {
+                                    throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
+
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                throw new AlegraException(responseBody + ex.Message + JsonConvert.SerializeObject(invoice));
+                            }
+                        }
+                        else
+                        {
+                            var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
+                            Console.WriteLine(JsonConvert.SerializeObject(respuesta));
+                            Console.WriteLine(JsonConvert.SerializeObject(responseBody));
+                            await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(alegraOptions.Prefix, invoice.invoice.number + 1);
+                            return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe;
                         }
                     }
-
-                    var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
-                    return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe;
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new AlegraException(ex.Message);
             }
         }
 
