@@ -144,7 +144,14 @@ namespace EnviadorInformacionService
                 var content = new StringContent(JsonConvert.SerializeObject(request));
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
                 var response = client.PostAsync($"{url}{path}", content).Result;
-                response.EnsureSuccessStatusCode();
+
+                try
+                {
+                    response.EnsureSuccessStatusCode();
+                }catch(Exception ex)
+                {
+                    throw new Exception(response.Content.ReadAsStringAsync().Result);
+                }
                 string responseBody = response.Content.ReadAsStringAsync().Result;
                 return response.StatusCode == System.Net.HttpStatusCode.OK;
             }

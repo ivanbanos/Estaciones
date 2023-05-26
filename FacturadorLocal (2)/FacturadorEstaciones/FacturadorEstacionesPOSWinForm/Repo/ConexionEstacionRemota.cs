@@ -104,7 +104,7 @@ namespace EnviadorInformacionService
         {
             using (var client = new HttpClient())
             {
-                client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
+                client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
                 var path = $"/api/Ventas/EnviarFacturaElectronica";
                 var content = new StringContent(JsonConvert.SerializeObject(factura));
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");

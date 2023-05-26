@@ -44,7 +44,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         }
         public async Task EnviarFacturas(IEnumerable<Modelo.Factura> facturas, Guid estacion)
         {
-
+            await EnviarTerceros(facturas.Select(x => x.Tercero));
             var facturasRepositorio = _mapper.Map<IEnumerable<Repositorio.Entities.Factura>>(facturas);
 
             await _facturasRepository.AddRange(facturasRepositorio, estacion);
@@ -54,6 +54,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
 
         public async Task EnviarOrdenesDespacho(IEnumerable<Modelo.OrdenDeDespacho> ordenDeDespachos, Guid estacion)
         {
+            await EnviarTerceros(ordenDeDespachos.Select(x => x.Tercero));
             await _ordenDeDespachoRepositorio.AddRange(ordenDeDespachos.Select(x => 
             new Repositorio.Entities.OrdenDeDespacho()
             {
