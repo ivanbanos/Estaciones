@@ -1,4 +1,5 @@
 ﻿
+using FacturacionelectronicaCore.Repositorio;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -16,7 +17,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         {
             services.AddScoped<IFacturacionElectronicaFacade, AlegraFacade>();
 
-            services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
+            services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options)); 
             return services;
         }
 

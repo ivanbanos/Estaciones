@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson;
+using System;
 using System.Collections.Generic;
 
 namespace FacturacionelectronicaCore.Repositorio.Entities
@@ -31,6 +33,7 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
         }
 
         public int Id { get; set; }
+        [BsonId]
         public Guid Guid { get; set; }
         public int Consecutivo { get; set; }
         public Guid IdTercero { get; set; }

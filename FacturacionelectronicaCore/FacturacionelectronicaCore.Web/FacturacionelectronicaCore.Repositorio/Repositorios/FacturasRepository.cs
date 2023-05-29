@@ -3,8 +3,12 @@ using EstacionesServicio.Repositorio.Common.SQLHelper;
 using EstacionesServicio.Repositorio.Entities;
 using EstacionesSevicio.Respositorio.Extention;
 using FacturacionelectronicaCore.Repositorio.Entities;
+using FacturacionelectronicaCore.Repositorio.Mongodb;
 using FacturacionelectronicaCore.Repositorio.Recursos;
+using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -13,25 +17,62 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
     public class FacturasRepository : IFacturasRepository
     {
         private readonly ISQLHelper _sqlHelper;
+        private readonly IMongoHelper _mongoHelper;
         private readonly string _facturaOrdenesDeDespachoProcedimiento;
         private readonly string _setConsecutivoFacturaPendiente;
         private readonly string _getFacturaByEstado;
         private readonly string _anularFacturas;
+        private readonly RepositorioConfig _repositorioConfig;
 
-        public FacturasRepository(ISQLHelper sqlHelper)
+        public FacturasRepository(IOptions<RepositorioConfig> repositorioConfig, ISQLHelper sqlHelper, IMongoHelper mongoHelper)
         {
+            _repositorioConfig = repositorioConfig.Value;
             _sqlHelper = sqlHelper;
             _facturaOrdenesDeDespachoProcedimiento = StoredProcedures.FacturaOrdenesDeDespacho;
             _setConsecutivoFacturaPendiente = StoredProcedures.SetConsecutivoFacturaPendiente;
             _getFacturaByEstado = StoredProcedures.GetFacturaByEstado;
             _anularFacturas = StoredProcedures.AnularFacturas;
+            _mongoHelper = mongoHelper ?? throw new ArgumentNullException(nameof(mongoHelper));
         }
 
         public async Task AddRange(IEnumerable<Factura> facturas, Guid estacion)
         {
-            var dataTable = facturas.ToDataTable();
-            await _sqlHelper.InsertOrUpdateOrDeleteAsync(StoredProcedures.AgregarFactura,
-                new { facturas = dataTable.AsTableValuedParameter(UserDefinedTypes.Factura), estacion }).ConfigureAwait(false);
+            var tasks = new List<Task>();
+            foreach (var factura in facturas)
+            {
+                tasks.Add(AgregarAMongo(estacion, factura));
+            }
+
+            await Task.WhenAll(tasks);
+            //var dataTable = facturas.ToDataTable();
+            //await _sqlHelper.InsertOrUpdateOrDeleteAsync(StoredProcedures.AgregarFactura,
+            //    new { facturas = dataTable.AsTableValuedParameter(UserDefinedTypes.Factura), estacion }).ConfigureAwait(false);
+        }
+
+        private async Task AgregarAMongo(Guid estacion, Factura factura)
+        {
+            var filter = Builders<FacturaMongo>.Filter.Eq("IdLocal", factura.IdLocal);
+            var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
+            if (!facturasMongo.Any(x => x.EstacionGuid == estacion))
+            {
+                var facturaMongo = (FacturaMongo)factura;
+                facturaMongo.Guid = new Guid();
+                facturaMongo.EstacionGuid = estacion;
+                facturaMongo.Estado = "Creada";
+                await _mongoHelper.CreateDocument(_repositorioConfig.Cliente, "factuas", facturaMongo);
+            }
+            else
+            {
+                var facturaMongo = facturasMongo.First(x => x.EstacionGuid == estacion);
+                var filterGuid = Builders<FacturaMongo>.Filter.Eq("Guid", facturaMongo.Guid);
+                var update = Builders<FacturaMongo>.Update
+                    .Set(x => x.IdentificacionTercero, factura.IdentificacionTercero)
+                    .Set(x => x.NombreTercero, factura.NombreTercero)
+                    .Set(x => x.Placa, factura.Placa)
+                    .Set(x => x.Kilometraje, factura.Kilometraje);
+                await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "factuas", filterGuid, update);
+
+            }
         }
 
         public async Task AddFacturasImprimir(IEnumerable<FacturasEntity> facturas)
@@ -40,20 +81,52 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 new { Facturas = facturas.ToDataTable().AsTableValuedParameter(UserDefinedTypes.Entity) });
         }
 
-        public Task<IEnumerable<Factura>> GetFacturasImprimir(Guid estacion)
+        public async Task<IEnumerable<Factura>> GetFacturasImprimir(Guid estacion)
         {
             var paramList = new DynamicParameters();
             paramList.Add("estacion", estacion);
 
-            return _sqlHelper.GetsAsync<Factura>(StoredProcedures.GetFacturasImprimir, paramList);
+            var list = await _sqlHelper.GetsAsync<FacturasEntity>(StoredProcedures.GetFacturasImprimir, paramList);
+            var listFacturas = new List<Factura>();
+            var tasks = new List<Task>();
+            foreach (var facturaEntity in list)
+            {
+                var filter = Builders<FacturaMongo>.Filter.Eq("Guid", facturaEntity.Guid);
+                var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
+                if (!facturasMongo.Any())
+                {
+                    var paramListfac = new DynamicParameters();
+                    paramListfac.Add("guid", facturaEntity.Guid);
+                    var factura = (await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ObtenerFacturaPorGuid, paramListfac)).First();
+
+                    tasks.Add(AgregarAMongo(estacion, factura));
+                    listFacturas.Add(factura);
+                }
+                else
+                {
+
+                    listFacturas.AddRange(facturasMongo);
+                }
+            }
+
+            await Task.WhenAll(tasks);
+            return listFacturas;
         }
 
-        public Task<IEnumerable<Factura>> ObtenerFacturaPorGuid(Guid facturaGuid)
+        public async Task<IEnumerable<Factura>> ObtenerFacturaPorGuid(Guid facturaGuid)
         {
-            var paramList = new DynamicParameters();
-            paramList.Add("guid", facturaGuid);
 
-            return _sqlHelper.GetsAsync<Factura>(StoredProcedures.ObtenerFacturaPorGuid, paramList);
+            var filter = Builders<FacturaMongo>.Filter.Eq("Guid", facturaGuid);
+            var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
+            if (!facturasMongo.Any())
+            {
+                var paramList = new DynamicParameters();
+                paramList.Add("guid", facturaGuid);
+
+                var facturas = await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ObtenerFacturaPorGuid, paramList);
+                return facturas;
+            }
+            return facturasMongo;
         }
 
         /// <inheritdoc />
@@ -65,16 +138,51 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         }
 
         /// <inheritdoc />
-        public Task<IEnumerable<Factura>> GetFacturas(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid estacion)
+        public async Task<IEnumerable<Factura>> GetFacturas(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid estacion)
         {
-            var paramList = new DynamicParameters();
-            if (fechaInicial != null) { paramList.Add("FechaInicial", fechaInicial); }
-            if (fechaFinal != null) { paramList.Add("FechaFinal", fechaFinal); }
-            if (!String.IsNullOrEmpty(identificacionTercero)) { paramList.Add("IdentificacionTercero", identificacionTercero); }
-            if (!String.IsNullOrEmpty(nombreTercero)) { paramList.Add("NombreTercero", nombreTercero); }
-            if (Guid.Empty != estacion) { paramList.Add("Estacion", estacion); }
 
-            return _sqlHelper.GetsAsync<Factura>(StoredProcedures.ListarFactura, paramList);
+            List<FilterDefinition<FacturaMongo>> filters = new List<FilterDefinition<FacturaMongo>>();
+
+            var paramList = new DynamicParameters();
+            if (fechaInicial != null) { 
+                paramList.Add("FechaInicial", fechaInicial);
+
+                filters.Add(Builders<FacturaMongo>.Filter.Gte("FechaReporte", fechaInicial));
+            }
+            if (fechaFinal != null) { 
+                paramList.Add("FechaFinal", fechaFinal);
+                filters.Add(Builders<FacturaMongo>.Filter.Lte("FechaReporte", fechaFinal));
+            }
+            if (!string.IsNullOrEmpty(identificacionTercero)) { 
+                paramList.Add("IdentificacionTercero", identificacionTercero);
+                filters.Add(Builders<FacturaMongo>.Filter.Eq("IdentificacionTercero", identificacionTercero));
+            }
+            if (!string.IsNullOrEmpty(nombreTercero)) { 
+                paramList.Add("NombreTercero", nombreTercero);
+                filters.Add(Builders<FacturaMongo>.Filter.Lte("NombreTercero", nombreTercero));
+            }
+            if (Guid.Empty != estacion) { 
+                paramList.Add("Estacion", estacion);
+                filters.Add(Builders<FacturaMongo>.Filter.Lte("EstacionGuid", estacion));
+            }
+
+
+            var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "factuas", filters);
+            if (facturasMongo.Any())
+            {
+               // return facturasMongo;
+            }
+            else
+            {
+                var facturas = await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ListarFactura, paramList);
+                var tasks = new List<Task>();
+                foreach(var factura in facturas)
+                {
+                    tasks.Add(AgregarAMongo(estacion, factura));
+                }
+                await Task.WhenAll(tasks);
+                return facturas;
+            }
         }
 
         public async Task setConsecutivoFacturaPendiente(string facturaGuid, int consecutivo)
@@ -102,9 +210,26 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         public async Task AgregarFechaReporteFactura(IEnumerable<FacturaFechaReporte> facturas, Guid estacion)
         {
-            var dataTable = facturas.ToDataTable();
-            await _sqlHelper.InsertOrUpdateOrDeleteAsync(StoredProcedures.AgregarFechaReporteFactura,
-                new { facturas = dataTable.AsTableValuedParameter(UserDefinedTypes.FacturaFechaReporte), estacion }).ConfigureAwait(false);
+            foreach(var factura in facturas)
+            {
+                var filter = Builders<FacturaMongo>.Filter.Eq("IdVentaLocal", factura.IdVentaLocal);
+                var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
+                if (facturasMongo.Any(x => x.EstacionGuid == estacion))
+                {
+                    var facturaMongo = facturasMongo.First(x => x.EstacionGuid == estacion);
+                    var filterGuid = Builders<FacturaMongo>.Filter.Eq("Guid", facturaMongo.Guid);
+                    var update = Builders<FacturaMongo>.Update
+                        .Set(x => x.FechaReporte, factura.FechaReporte);
+                    await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "factuas", filterGuid, update);
+
+                }
+                var dataTable = facturas.ToDataTable();
+                await _sqlHelper.InsertOrUpdateOrDeleteAsync(StoredProcedures.AgregarFechaReporteFactura,
+                    new { facturas = dataTable.AsTableValuedParameter(UserDefinedTypes.FacturaFechaReporte), estacion }).ConfigureAwait(false);
+
+            }
+
+
 
         }
 
