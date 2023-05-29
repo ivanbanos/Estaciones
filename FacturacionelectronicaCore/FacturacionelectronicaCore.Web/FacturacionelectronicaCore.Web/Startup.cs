@@ -86,7 +86,7 @@ namespace FacturacionelectronicaCore.Web
                     Title = "Swagger Estaciones de servicios",
                     Description = "Estaciones de servicios"
                 });
-                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme { In = ParameterLocation.Header, Description = "JWT con Bearer", Name = "Autorizaci?n", Type = SecuritySchemeType.ApiKey });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme { In = ParameterLocation.Header, Description = "JWT con Bearer", Name = "Autorization", Type = SecuritySchemeType.ApiKey });
                 c.AddSecurityRequirement(new OpenApiSecurityRequirement{ 
                     {
                         new OpenApiSecurityScheme{
