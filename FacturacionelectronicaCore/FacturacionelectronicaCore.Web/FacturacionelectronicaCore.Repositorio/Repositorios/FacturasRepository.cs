@@ -170,7 +170,14 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "factuas", filters);
             if (facturasMongo.Any())
             {
-               // return facturasMongo;
+                var facturas = await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ListarFactura, paramList);
+                var tasks = new List<Task>();
+                foreach (var factura in facturas)
+                {
+                    tasks.Add(AgregarAMongo(estacion, factura));
+                }
+                await Task.WhenAll(tasks);
+                return facturas;
             }
             else
             {
