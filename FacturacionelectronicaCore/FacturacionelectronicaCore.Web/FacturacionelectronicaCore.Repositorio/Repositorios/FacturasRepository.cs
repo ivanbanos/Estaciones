@@ -242,6 +242,17 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         public async Task SetIdFacturaElectronicaFactura(string idFacturaElectronica, Guid guid)
         {
+            var filter = Builders<FacturaMongo>.Filter.Eq("guid", guid);
+            var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "facturas", filter);
+            if (facturasMongo.Any())
+            {
+                var facturaMongo = facturasMongo.First();
+                var filterGuid = Builders<FacturaMongo>.Filter.Eq("Guid", facturaMongo.Guid);
+                var update = Builders<FacturaMongo>.Update
+                    .Set(x => x.idFacturaElectronica, idFacturaElectronica);
+                await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "facturas", filterGuid, update);
+
+            }
             var paramList = new DynamicParameters();
             paramList.Add("idFacturaElectronica", idFacturaElectronica);
             paramList.Add("guid", guid);
@@ -249,6 +260,17 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         }
         public async Task SetIdFacturaElectronicaOrdenesdeDespacho(string idFacturaElectronica, Guid guid)
         {
+            var filter = Builders<OrdenesMongo>.Filter.Eq("guid", guid);
+            var facturasMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filter);
+            if (facturasMongo.Any())
+            {
+                var facturaMongo = facturasMongo.First();
+                var filterGuid = Builders<OrdenesMongo>.Filter.Eq("Guid", facturaMongo.guid);
+                var update = Builders<OrdenesMongo>.Update
+                    .Set(x => x.idFacturaElectronica, idFacturaElectronica);
+                await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "ordenes", filterGuid, update);
+
+            }
             var paramList = new DynamicParameters();
             paramList.Add("idFacturaElectronica", idFacturaElectronica);
             paramList.Add("guid", guid);
