@@ -4,6 +4,7 @@ using EstacionesSevicio.Respositorio.Extention;
 using FacturacionelectronicaCore.Repositorio.Entities;
 using FacturacionelectronicaCore.Repositorio.Mongodb;
 using FacturacionelectronicaCore.Repositorio.Recursos;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -18,10 +19,10 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         private readonly RepositorioConfig _repositorioConfig;
         private readonly IMongoHelper _mongoHelper;
 
-        public OrdenDeDespachoRepositorio(ISQLHelper sqlHelper, RepositorioConfig repositorioConfig, IMongoHelper mongoHelper)
+        public OrdenDeDespachoRepositorio(ISQLHelper sqlHelper, IOptions<RepositorioConfig> repositorioConfig, IMongoHelper mongoHelper)
         {
             _sqlHelper = sqlHelper;
-            _repositorioConfig = repositorioConfig;
+            _repositorioConfig = repositorioConfig.Value;
             _mongoHelper = mongoHelper;
         }
 
