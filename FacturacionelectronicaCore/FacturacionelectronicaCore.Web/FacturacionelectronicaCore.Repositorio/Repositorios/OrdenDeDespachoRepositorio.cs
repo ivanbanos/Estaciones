@@ -77,17 +77,17 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             {
                 paramList.Add("FechaInicial", fechaInicial);
 
-                filters.Add(Builders<OrdenesMongo>.Filter.Gte("FechaReporte", fechaInicial));
+                filters.Add(Builders<OrdenesMongo>.Filter.Gte("Fecha", fechaInicial));
             }
             if (fechaFinal != null)
             {
                 paramList.Add("FechaFinal", fechaFinal);
-                filters.Add(Builders<OrdenesMongo>.Filter.Lte("FechaReporte", fechaFinal));
+                filters.Add(Builders<OrdenesMongo>.Filter.Lte("Fecha", fechaFinal));
             }
             if (!string.IsNullOrEmpty(identificacionTercero))
             {
                 paramList.Add("IdentificacionTercero", identificacionTercero);
-                filters.Add(Builders<OrdenesMongo>.Filter.Eq("Ideintificacion", identificacionTercero));
+                filters.Add(Builders<OrdenesMongo>.Filter.Eq("Identificacion", identificacionTercero));
             }
             if (!string.IsNullOrEmpty(nombreTercero))
             {
