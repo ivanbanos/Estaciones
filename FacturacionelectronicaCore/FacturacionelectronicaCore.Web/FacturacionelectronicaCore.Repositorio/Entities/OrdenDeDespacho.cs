@@ -6,7 +6,7 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
     public class OrdenDeDespacho
     {
         [BsonId]
-        public Guid guid { get; set; }
+        public string guid { get; set; }
         public int IdFactura { get; set; }
         public string Identificacion { get; set; }
         public string NombreTercero { get; set; }

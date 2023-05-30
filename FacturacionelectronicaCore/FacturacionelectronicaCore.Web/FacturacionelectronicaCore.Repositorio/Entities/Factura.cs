@@ -34,9 +34,9 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
 
         public int Id { get; set; }
         [BsonId]
-        public Guid Guid { get; set; }
+        public string Guid { get; set; }
         public int Consecutivo { get; set; }
-        public Guid IdTercero { get; set; }
+        public string IdTercero { get; set; }
         public string Identificacion { get; set; }
         public string NombreTercero { get; set; }
         public string Combustible { get; set; }
@@ -47,7 +47,7 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
         public string IdInterno { get; set; }
         public string Placa { get; set; }
         public string Kilometraje { get; set; }
-        public Guid IdResolucion { get; set; }
+        public string IdResolucion { get; set; }
         public int IdEstadoActual { get; set; }
         public string Surtidor { get; set; }
         public string Cara { get; set; }

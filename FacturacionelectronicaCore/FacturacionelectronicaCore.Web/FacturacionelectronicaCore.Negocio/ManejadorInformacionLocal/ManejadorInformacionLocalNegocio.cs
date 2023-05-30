@@ -58,7 +58,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             await _ordenDeDespachoRepositorio.AddRange(ordenDeDespachos.Select(x => 
             new Repositorio.Entities.OrdenDeDespacho()
             {
-                guid = x.guid,
+                guid = x.guid.ToString(),
                 Cantidad = x.Cantidad,
                 Cara = x.Cara,
                 Combustible = x.Combustible,

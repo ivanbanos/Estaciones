@@ -53,17 +53,17 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         {
             var filter = Builders<FacturaMongo>.Filter.Eq("IdLocal", factura.IdLocal);
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
-            if (!facturasMongo.Any(x => x.EstacionGuid == estacion))
+            if (!facturasMongo.Any(x => x.EstacionGuid == estacion.ToString()))
             {
                 var facturaMongo = new FacturaMongo(factura);
-                facturaMongo.Guid = new Guid();
-                facturaMongo.EstacionGuid = estacion;
+                facturaMongo.Guid = new Guid().ToString();
+                facturaMongo.EstacionGuid = estacion.ToString();
                 facturaMongo.Estado = "Creada";
                 await _mongoHelper.CreateDocument(_repositorioConfig.Cliente, "factuas", facturaMongo);
             }
             else
             {
-                var facturaMongo = facturasMongo.First(x => x.EstacionGuid == estacion);
+                var facturaMongo = facturasMongo.First(x => x.EstacionGuid == estacion.ToString());
                 var filterGuid = Builders<FacturaMongo>.Filter.Eq("Guid", facturaMongo.Guid);
                 var update = Builders<FacturaMongo>.Update
                     .Set(x => x.IdentificacionTercero, factura.IdentificacionTercero)
@@ -91,7 +91,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             var tasks = new List<Task>();
             foreach (var facturaEntity in list)
             {
-                var filter = Builders<FacturaMongo>.Filter.Eq("Guid", facturaEntity.Guid);
+                var filter = Builders<FacturaMongo>.Filter.Eq("Guid", facturaEntity.Guid.ToString());
                 var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
                 if (!facturasMongo.Any())
                 {
@@ -116,12 +116,12 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         public async Task<IEnumerable<Factura>> ObtenerFacturaPorGuid(Guid facturaGuid)
         {
 
-            var filter = Builders<FacturaMongo>.Filter.Eq("Guid", facturaGuid);
+            var filter = Builders<FacturaMongo>.Filter.Eq("Guid", facturaGuid.ToString());
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
             if (!facturasMongo.Any())
             {
                 var paramList = new DynamicParameters();
-                paramList.Add("guid", facturaGuid);
+                paramList.Add("guid", facturaGuid.ToString());
 
                 var facturas = await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ObtenerFacturaPorGuid, paramList);
                 return facturas;
@@ -159,11 +159,11 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             }
             if (!string.IsNullOrEmpty(nombreTercero)) { 
                 paramList.Add("NombreTercero", nombreTercero);
-                filters.Add(Builders<FacturaMongo>.Filter.Lte("NombreTercero", nombreTercero));
+                filters.Add(Builders<FacturaMongo>.Filter.Eq("NombreTercero", nombreTercero));
             }
             if (Guid.Empty != estacion) { 
                 paramList.Add("Estacion", estacion);
-                filters.Add(Builders<FacturaMongo>.Filter.Lte("EstacionGuid", estacion));
+                filters.Add(Builders<FacturaMongo>.Filter.Eq("EstacionGuid", estacion.ToString()));
             }
 
 
@@ -221,9 +221,9 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             {
                 var filter = Builders<FacturaMongo>.Filter.Eq("IdVentaLocal", factura.IdVentaLocal);
                 var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
-                if (facturasMongo.Any(x => x.EstacionGuid == estacion))
+                if (facturasMongo.Any(x => x.EstacionGuid == estacion.ToString()))
                 {
-                    var facturaMongo = facturasMongo.First(x => x.EstacionGuid == estacion);
+                    var facturaMongo = facturasMongo.First(x => x.EstacionGuid == estacion.ToString());
                     var filterGuid = Builders<FacturaMongo>.Filter.Eq("Guid", facturaMongo.Guid);
                     var update = Builders<FacturaMongo>.Update
                         .Set(x => x.FechaReporte, factura.FechaReporte);
@@ -242,7 +242,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         public async Task SetIdFacturaElectronicaFactura(string idFacturaElectronica, Guid guid)
         {
-            var filter = Builders<FacturaMongo>.Filter.Eq("guid", guid);
+            var filter = Builders<FacturaMongo>.Filter.Eq("guid", guid.ToString());
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
             if (facturasMongo.Any())
             {
@@ -260,7 +260,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         }
         public async Task SetIdFacturaElectronicaOrdenesdeDespacho(string idFacturaElectronica, Guid guid)
         {
-            var filter = Builders<OrdenesMongo>.Filter.Eq("guid", guid);
+            var filter = Builders<OrdenesMongo>.Filter.Eq("guid", guid.ToString());
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filter);
             if (facturasMongo.Any())
             {
@@ -286,7 +286,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filters);
             if (facturasMongo.Any())
             {
-                return facturasMongo.Where(x=>x.EstacionGuid == estacion);
+                return facturasMongo.Where(x=>x.EstacionGuid == estacion.ToString());
 
             }
             var paramList = new DynamicParameters();

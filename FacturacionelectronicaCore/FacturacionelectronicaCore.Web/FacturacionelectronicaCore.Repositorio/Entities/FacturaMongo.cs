@@ -45,6 +45,6 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
         }
 
         public DateTime FechaReporte { get; set; }
-        public Guid EstacionGuid { get; set; }
+        public string EstacionGuid { get; set; }
     }
 }
