@@ -185,6 +185,8 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
 
         public async Task<Modelo.OrdenDeDespacho> ObtenerOrdenDespachoPorIdVentaLocal(int idVentaLocal, Guid estacion)
         {
+
+
             var ordenDeDespachoEntity = (await _ordenDeDespachoRepositorio.ObtenerOrdenDespachoPorIdVentaLocal(idVentaLocal, estacion)).FirstOrDefault();
             if (ordenDeDespachoEntity == null)
             {

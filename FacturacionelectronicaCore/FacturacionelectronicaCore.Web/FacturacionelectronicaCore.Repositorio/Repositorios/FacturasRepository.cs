@@ -277,13 +277,24 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             await _sqlHelper.GetsAsync<int>(StoredProcedures.SetIdFacturaElectronicaOrdenesdeDespacho, paramList);
         }
 
-        public Task<IEnumerable<Factura>> ObtenerFacturaPorIdVentaLocal(int idVentaLocal, Guid estacion)
+        public async Task<IEnumerable<Factura>> ObtenerFacturaPorIdVentaLocal(int idVentaLocal, Guid estacion)
         {
+            List<FilterDefinition<FacturaMongo>> filters = new List<FilterDefinition<FacturaMongo>>
+            {
+                Builders<FacturaMongo>.Filter.Lte("EstacionGuid", estacion),
+                Builders<FacturaMongo>.Filter.Eq("idVentaLocal", idVentaLocal)
+            };
+            var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filters);
+            if (facturasMongo.Any())
+            {
+                return facturasMongo;
+
+            }
             var paramList = new DynamicParameters();
             paramList.Add("idVentaLocal", idVentaLocal);
             paramList.Add("estacion", estacion);
 
-            return _sqlHelper.GetsAsync<Factura>(StoredProcedures.ObtenerFacturaPorIdVentaLocal, paramList);
+            return await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ObtenerFacturaPorIdVentaLocal, paramList);
         }
     }
 }
