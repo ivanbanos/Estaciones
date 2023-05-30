@@ -281,13 +281,12 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         {
             List<FilterDefinition<FacturaMongo>> filters = new List<FilterDefinition<FacturaMongo>>
             {
-                Builders<FacturaMongo>.Filter.Eq("EstacionGuid", estacion),
                 Builders<FacturaMongo>.Filter.Eq("idVentaLocal", idVentaLocal)
             };
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filters);
             if (facturasMongo.Any())
             {
-                return facturasMongo;
+                return facturasMongo.Where(x=>x.EstacionGuid == estacion);
 
             }
             var paramList = new DynamicParameters();
