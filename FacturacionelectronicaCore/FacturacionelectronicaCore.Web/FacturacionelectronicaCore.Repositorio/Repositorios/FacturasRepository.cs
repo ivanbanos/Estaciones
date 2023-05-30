@@ -243,14 +243,14 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         public async Task SetIdFacturaElectronicaFactura(string idFacturaElectronica, Guid guid)
         {
             var filter = Builders<FacturaMongo>.Filter.Eq("guid", guid);
-            var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "facturas", filter);
+            var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
             if (facturasMongo.Any())
             {
                 var facturaMongo = facturasMongo.First();
                 var filterGuid = Builders<FacturaMongo>.Filter.Eq("Guid", facturaMongo.Guid);
                 var update = Builders<FacturaMongo>.Update
                     .Set(x => x.idFacturaElectronica, idFacturaElectronica);
-                await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "facturas", filterGuid, update);
+                await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "factuas", filterGuid, update);
 
             }
             var paramList = new DynamicParameters();
