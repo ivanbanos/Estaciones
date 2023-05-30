@@ -55,7 +55,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
             if (!facturasMongo.Any(x => x.EstacionGuid == estacion))
             {
-                var facturaMongo = (FacturaMongo)factura;
+                var facturaMongo = new FacturaMongo(factura);
                 facturaMongo.Guid = new Guid();
                 facturaMongo.EstacionGuid = estacion;
                 facturaMongo.Estado = "Creada";
