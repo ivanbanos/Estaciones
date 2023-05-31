@@ -67,7 +67,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
     public class RetentionDataico
     {
         public string tax_category { get; set; }
-        public int tax_rate { get; set; }
+        public string tax_rate { get; set; }
     }
 
     public class FacturaDataico
@@ -79,7 +79,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
     public class TaxisDataico
     {
         public string tax_category { get; set; }
-        public int tax_rate { get; set; }
+        public string tax_rate { get; set; }
     }
 
 
