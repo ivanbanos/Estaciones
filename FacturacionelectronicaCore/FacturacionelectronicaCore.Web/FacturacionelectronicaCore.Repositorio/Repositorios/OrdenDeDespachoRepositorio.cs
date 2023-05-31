@@ -43,7 +43,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 var facturaMongo = facturasMongo.First(x => x.EstacionGuid == estacion.ToString());
                 var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", facturaMongo.Guid);
                 var update = Builders<OrdenesMongo>.Update
-                    .Set(x => x.IdentificacionTercero, factura.IdentificacionTercero)
+                    .Set(x => x.Identificacion, factura.Identificacion)
                     .Set(x => x.NombreTercero, factura.NombreTercero)
                     .Set(x => x.Placa, factura.Placa)
                     .Set(x => x.Kilometraje, factura.Kilometraje);
