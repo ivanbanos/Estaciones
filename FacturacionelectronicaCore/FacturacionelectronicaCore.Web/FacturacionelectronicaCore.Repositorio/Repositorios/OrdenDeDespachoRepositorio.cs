@@ -41,7 +41,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             else
             {
                 var facturaMongo = facturasMongo.First(x => x.EstacionGuid == estacion.ToString());
-                var filterGuid = Builders<OrdenesMongo>.Filter.Eq("Guid", facturaMongo.Guid);
+                var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", facturaMongo.Guid);
                 var update = Builders<OrdenesMongo>.Update
                     .Set(x => x.IdentificacionTercero, factura.IdentificacionTercero)
                     .Set(x => x.NombreTercero, factura.NombreTercero)
@@ -136,7 +136,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             var tasks = new List<Task>();
             foreach (var facturaEntity in list)
             {
-                var filter = Builders<OrdenesMongo>.Filter.Eq("Guid", facturaEntity.Guid.ToString());
+                var filter = Builders<OrdenesMongo>.Filter.Eq("_id", facturaEntity.Guid.ToString());
                 var facturasMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filter);
                 if (!facturasMongo.Any())
                 {
@@ -161,7 +161,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         /// <inheritdoc />
         public async Task<IEnumerable<OrdenDeDespacho>> ObtenerOrdenDespachoPorGuid(Guid guid)
         {
-            var filter = Builders<OrdenesMongo>.Filter.Eq("Guid", guid.ToString());
+            var filter = Builders<OrdenesMongo>.Filter.Eq("_id", guid.ToString());
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filter);
             if (!facturasMongo.Any())
             {
@@ -191,12 +191,12 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         public async Task SetIdFacturaElectronicaOrdenesdeDespacho(string idFacturaElectronica, Guid guid)
         {
-            var filter = Builders<OrdenesMongo>.Filter.Eq("guid", guid.ToString());
+            var filter = Builders<OrdenesMongo>.Filter.Eq("_id", guid.ToString());
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filter);
             if (facturasMongo.Any())
             {
                 var facturaMongo = facturasMongo.First();
-                var filterGuid = Builders<OrdenesMongo>.Filter.Eq("Guid", facturaMongo.guid.ToString());
+                var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", facturaMongo.guid.ToString());
                 var update = Builders<OrdenesMongo>.Update
                     .Set(x => x.idFacturaElectronica, idFacturaElectronica);
                 await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "ordenes", filterGuid, update);
