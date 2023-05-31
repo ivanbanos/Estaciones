@@ -281,7 +281,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         {
             List<FilterDefinition<FacturaMongo>> filters = new List<FilterDefinition<FacturaMongo>>
             {
-                Builders<FacturaMongo>.Filter.Eq("idVentaLocal", idVentaLocal)
+                Builders<FacturaMongo>.Filter.Eq("IdVentaLocal", idVentaLocal)
             };
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filters);
             if (facturasMongo.Any())

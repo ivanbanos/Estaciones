@@ -216,7 +216,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
             paramList.Add("Estacion", estacion);
             paramList.Add("idVentaLocal", idVentaLocal);
-            filters.Add(Builders<OrdenesMongo>.Filter.Eq("idVentaLocal", idVentaLocal));
+            filters.Add(Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", idVentaLocal));
 
             var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "ordenes", filters);
             if (facturasMongo.Any())
