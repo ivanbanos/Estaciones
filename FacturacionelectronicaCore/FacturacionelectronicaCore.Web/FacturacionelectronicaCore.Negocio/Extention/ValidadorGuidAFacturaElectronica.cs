@@ -6,18 +6,18 @@ namespace EstacionesServicio.Negocio.Extention
 {
     public class ValidadorGuidAFacturaElectronica : IValidadorGuidAFacturaElectronica
     {
-        public readonly List<Guid> guidsSiendoProcesados;
-        public readonly Dictionary<Guid,Queue<Guid>> facturasImprimirCanastilla;
+        public readonly List<string> guidsSiendoProcesados;
+        public readonly Dictionary<Guid,Queue<string>> facturasImprimirCanastilla;
 
         public ValidadorGuidAFacturaElectronica()
         {
-            guidsSiendoProcesados = new List<Guid>();
-            facturasImprimirCanastilla = new Dictionary <Guid,Queue<Guid>>();
+            guidsSiendoProcesados = new List<string>();
+            facturasImprimirCanastilla = new Dictionary <Guid,Queue<string>>();
         }
 
         
 
-        public bool FacturaSiendoProceada(Guid ordenGuid)
+        public bool FacturaSiendoProceada(string ordenGuid)
         {
             lock (guidsSiendoProcesados)
             {
@@ -33,7 +33,7 @@ namespace EstacionesServicio.Negocio.Extention
             }
         }
 
-        public bool FacturasSiendoProceada(IEnumerable<Guid> facturasGuids)
+        public bool FacturasSiendoProceada(IEnumerable<string> facturasGuids)
         {
             lock (guidsSiendoProcesados)
             {
@@ -49,7 +49,7 @@ namespace EstacionesServicio.Negocio.Extention
             }
         }
 
-        public void SacarFactura(Guid ordenGuid)
+        public void SacarFactura(string ordenGuid)
         {
             lock (guidsSiendoProcesados)
             {
@@ -57,7 +57,7 @@ namespace EstacionesServicio.Negocio.Extention
             }
         }
 
-        public void SacarFacturas(IEnumerable<Guid> facturasGuids)
+        public void SacarFacturas(IEnumerable<string> facturasGuids)
         {
             lock (guidsSiendoProcesados)
             {
@@ -66,16 +66,16 @@ namespace EstacionesServicio.Negocio.Extention
         }
 
 
-        public void AgregarAColaImpresionCanastilla(Guid guid, Guid idEstacion)
+        public void AgregarAColaImpresionCanastilla(string guid, Guid idEstacion)
         {
             if (!facturasImprimirCanastilla.ContainsKey(idEstacion))
             {
-                facturasImprimirCanastilla.Add(idEstacion, new Queue<Guid>());
+                facturasImprimirCanastilla.Add(idEstacion, new Queue<string>());
             }
             facturasImprimirCanastilla[idEstacion].Enqueue(guid);
         }
 
-        public Guid? ObtenerColaImpresionCanastilla(Guid idEstacion)
+        public string? ObtenerColaImpresionCanastilla(Guid idEstacion)
         {
             if (facturasImprimirCanastilla.ContainsKey(idEstacion) && facturasImprimirCanastilla[idEstacion].Count > 0)
             {

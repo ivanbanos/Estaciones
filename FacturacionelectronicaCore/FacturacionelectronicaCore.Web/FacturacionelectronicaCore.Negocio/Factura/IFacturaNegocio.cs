@@ -33,7 +33,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
         /// <param name="filtroFactura">Filtro para seleccionar las facturas del reporte fiscal</param>
         /// <returns>Reporte Fiscal</returns>
         Task<ReporteFiscal> GetReporteFiscal(FiltroBusqueda filtroFactura);
-        Task<string> EnviarAFacturacion(Guid ordenGuid);
+        Task<string> EnviarAFacturacion(string ordenGuid);
         Task<string> CrearFacturaFacturas(IEnumerable<FacturasEntity> facturasGuids);
         Task<Modelo.Factura> ObtenerFacturaPorIdVentaLocal(int idVentaLocal, Guid estacion);
     }

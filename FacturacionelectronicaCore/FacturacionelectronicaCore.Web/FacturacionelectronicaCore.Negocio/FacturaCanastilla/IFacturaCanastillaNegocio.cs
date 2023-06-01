@@ -10,10 +10,10 @@ namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
     {
         Task<IEnumerable<FacturasCanastillaResponse>> GetFacturas(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid estacion);
 
-        Task<FacturasCanastillaResponse> GetFactura(Guid idFactura);
+        Task<FacturasCanastillaResponse> GetFactura(string idFactura);
 
-        Task<IEnumerable<FacturaCanastillaDetalleResponse>> GetDetalleFactura(Guid idFactura);
-        void ColocarEspera(Guid guid, Guid idEstacion);
+        Task<IEnumerable<FacturaCanastillaDetalleResponse>> GetDetalleFactura(string idFactura);
+        void ColocarEspera(string guid, Guid idEstacion);
         Task<int> ObtenerParaImprimir(Guid idEstacion);
     }
 }

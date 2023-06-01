@@ -31,18 +31,18 @@ namespace FacturacionelectronicaCore.Web.Controllers
 
 
         [HttpGet("{idFactura}")]
-        public async Task<FacturasCanastillaResponse> Get(Guid idFactura)
+        public async Task<FacturasCanastillaResponse> Get(string idFactura)
             => await _facturaNegocio.GetFactura(idFactura);
 
 
         [HttpGet("detalle/{idFactura}")]
-        public async Task<IEnumerable<FacturaCanastillaDetalleResponse>> GetDEtalle(Guid idFactura)
+        public async Task<IEnumerable<FacturaCanastillaDetalleResponse>> GetDEtalle(string idFactura)
             => await _facturaNegocio.GetDetalleFactura(idFactura);
 
 
 
         [HttpGet("ColocarEspera/{idFactura}/Estacion/{idEstacion}")]
-        public async Task<int> ColocarEspera(Guid idFactura, Guid idEstacion)
+        public async Task<int> ColocarEspera(string idFactura, Guid idEstacion)
         { _facturaNegocio.ColocarEspera(idFactura, idEstacion);return 0; }
 
 

@@ -226,7 +226,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             return consolidados;
         }
 
-        public async Task<string> EnviarAFacturacion(Guid ordenGuid)
+        public async Task<string> EnviarAFacturacion(string ordenGuid)
         {
             if (_validadorGuidAFacturaElectronica.FacturaSiendoProceada(ordenGuid))
             {

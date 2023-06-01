@@ -19,12 +19,12 @@ namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
             _facturaCanastillaRepository = facturaCanastillaRepository;
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
         }
-        public async Task<IEnumerable<FacturaCanastillaDetalleResponse>> GetDetalleFactura(Guid idFactura)
+        public async Task<IEnumerable<FacturaCanastillaDetalleResponse>> GetDetalleFactura(string idFactura)
         {
             return await _facturaCanastillaRepository.GetDetalleFactura(idFactura);
         }
 
-        public async Task<FacturasCanastillaResponse> GetFactura(Guid idFactura)
+        public async Task<FacturasCanastillaResponse> GetFactura(string idFactura)
         {
             return (await _facturaCanastillaRepository.GetFactura(idFactura)).FirstOrDefault();
         }
@@ -35,17 +35,17 @@ namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
         }
 
 
-        public void ColocarEspera(Guid guid, Guid idEstacion)
+        public void ColocarEspera(string guid, Guid idEstacion)
         {
             _validadorGuidAFacturaElectronica.AgregarAColaImpresionCanastilla(guid, idEstacion);
         }
         public async Task<int> ObtenerParaImprimir(Guid idEstacion)
         {
             var guid = _validadorGuidAFacturaElectronica.ObtenerColaImpresionCanastilla(idEstacion);
-            if (guid.HasValue)
+            if (!string.IsNullOrEmpty(guid))
             {
-                var factura = await GetFactura(guid.Value);
-                factura.facturaCanastillaDetalles = await GetDetalleFactura(guid.Value);
+                var factura = await GetFactura(guid);
+                factura.facturaCanastillaDetalles = await GetDetalleFactura(guid);
 
                 return factura.consecutivo;
             }

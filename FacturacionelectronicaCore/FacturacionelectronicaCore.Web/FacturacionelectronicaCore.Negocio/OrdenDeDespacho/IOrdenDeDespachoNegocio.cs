@@ -20,7 +20,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
 
         Task<int> AddOrdenesImprimir(IEnumerable<FacturasEntity> ordenDeDespachos);
         Task AnularOrdenes(IEnumerable<FacturasEntity> ordenes);
-        Task<string> EnviarAFacturacion(Guid ordenGuid);
+        Task<string> EnviarAFacturacion(string ordenGuid);
         Task<string> CrearFacturaOrdenesDeDespacho(IEnumerable<OrdenesDeDespachoGuids> ordenesDeDespacho);
         Task<Modelo.OrdenDeDespacho> ObtenerOrdenDespachoPorIdVentaLocal(int idVentaLocal, Guid estacion);
     }

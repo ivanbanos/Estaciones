@@ -11,9 +11,9 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         Task<int> Add(FacturaCanastilla factura, IEnumerable<CanastillaFactura> detalleFactura, Guid estacion);
         Task<IEnumerable<FacturasCanastillaResponse>> GetFacturas(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid estacion);
 
-        Task<IEnumerable<FacturasCanastillaResponse>> GetFactura(Guid idFactura);
+        Task<IEnumerable<FacturasCanastillaResponse>> GetFactura(string idFactura);
 
-        Task<IEnumerable<FacturaCanastillaDetalleResponse>> GetDetalleFactura(Guid idFactura);
+        Task<IEnumerable<FacturaCanastillaDetalleResponse>> GetDetalleFactura(string idFactura);
 
     }
 }

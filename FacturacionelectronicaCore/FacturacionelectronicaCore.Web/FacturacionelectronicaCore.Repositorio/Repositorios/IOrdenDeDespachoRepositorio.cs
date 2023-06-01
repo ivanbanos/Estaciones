@@ -22,15 +22,15 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         Task<int> AddOrdenesImprimir(IEnumerable<FacturasEntity> lists);
         Task<IEnumerable<OrdenDeDespacho>> GetOrdenesImprimir(Guid estacion);
         Task<int> AnularOrdenes(IEnumerable<FacturasEntity> facturasList);
-        Task SetIdFacturaElectronicaOrdenesdeDespacho(string idFacturaElectronica, Guid guid);
+        Task SetIdFacturaElectronicaOrdenesdeDespacho(string idFacturaElectronica, string guid);
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="facturaGuid"></param>
         /// <returns></returns>
-        Task<IEnumerable<OrdenDeDespacho>> GetOrdenesDeDespachoByFactura(Guid facturaGuid);
-        Task<IEnumerable<OrdenDeDespacho>> ObtenerOrdenDespachoPorGuid(Guid guid);
+        Task<IEnumerable<OrdenDeDespacho>> GetOrdenesDeDespachoByFactura(string facturaGuid);
+        Task<IEnumerable<OrdenDeDespacho>> ObtenerOrdenDespachoPorGuid(string guid);
         Task<IEnumerable<OrdenDeDespacho>> ObtenerOrdenDespachoPorIdVentaLocal(int idVentaLocal, Guid estacion);
     }
 }

@@ -77,12 +77,12 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             {
                 paramList.Add("FechaInicial", fechaInicial);
 
-                filters.Add(Builders<OrdenesMongo>.Filter.Gte("Fecha", fechaInicial));
+                filters.Add(Builders<OrdenesMongo>.Filter.Gte("FechaReporte", fechaInicial));
             }
             if (fechaFinal != null)
             {
                 paramList.Add("FechaFinal", fechaFinal);
-                filters.Add(Builders<OrdenesMongo>.Filter.Lte("Fecha", fechaFinal));
+                filters.Add(Builders<OrdenesMongo>.Filter.Lte("FechaReporte", fechaFinal));
             }
             if (!string.IsNullOrEmpty(identificacionTercero))
             {
@@ -159,7 +159,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         }
         /// <inheritdoc />
-        public async Task<IEnumerable<OrdenDeDespacho>> ObtenerOrdenDespachoPorGuid(Guid guid)
+        public async Task<IEnumerable<OrdenDeDespacho>> ObtenerOrdenDespachoPorGuid(string guid)
         {
             var filter = Builders<OrdenesMongo>.Filter.Eq("_id", guid.ToString());
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filter);
@@ -174,22 +174,39 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             return facturasMongo;
         }
 
-        public Task<int> AnularOrdenes(IEnumerable<FacturasEntity> ordenes)
+        public async Task<int> AnularOrdenes(IEnumerable<FacturasEntity> ordenes)
         {
-            return _sqlHelper.InsertOrUpdateOrDeleteAsync(StoredProcedures.AnularOrdenesDeDespacho,
+            foreach (var factura in ordenes)
+            {
+                var filter = Builders<OrdenesMongo>.Filter.Eq("_id", factura.Guid);
+                var ordenesMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filter);
+                if (ordenesMongo.Any())
+                {
+                    var facturaMongo = ordenesMongo.First();
+                    var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", facturaMongo.guid);
+                    var update = Builders<OrdenesMongo>.Update
+                        .Set(x => x.Estado, "Anulada");
+                    await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "ordenes", filterGuid, update);
+
+                }
+
+            }
+
+            return await  _sqlHelper.InsertOrUpdateOrDeleteAsync(StoredProcedures.AnularOrdenesDeDespacho,
                 new { Ordenes = ordenes.ToDataTable().AsTableValuedParameter(UserDefinedTypes.Entity) });
         }
 
 
         /// <inheritdoc />
-        public Task<IEnumerable<OrdenDeDespacho>> GetOrdenesDeDespachoByFactura(Guid facturaGuid)
+        public Task<IEnumerable<OrdenDeDespacho>> GetOrdenesDeDespachoByFactura(string facturaGuid)
         {
+
             var paramList = new DynamicParameters();
             paramList.Add("facturaGuid", facturaGuid);
             return _sqlHelper.GetsAsync<OrdenDeDespacho>(StoredProcedures.GetOrdenesDeDespachoByFactura, paramList);
         }
 
-        public async Task SetIdFacturaElectronicaOrdenesdeDespacho(string idFacturaElectronica, Guid guid)
+        public async Task SetIdFacturaElectronicaOrdenesdeDespacho(string idFacturaElectronica, string guid)
         {
             var filter = Builders<OrdenesMongo>.Filter.Eq("_id", guid.ToString());
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filter);

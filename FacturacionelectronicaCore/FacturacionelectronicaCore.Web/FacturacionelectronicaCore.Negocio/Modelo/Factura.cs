@@ -6,9 +6,9 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
     public class Factura
     {
         public Factura() {
-            Guid = new Guid();
+            Guid = "";
         }
-        public Guid Guid { get; set; }
+        public string Guid { get; set; }
 
         public int Consecutivo { get; set; }
 

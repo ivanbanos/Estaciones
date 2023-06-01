@@ -61,7 +61,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
         }
 
         [HttpGet("EnviarFacturacion/{ordenGuid}")]
-        public async Task<ActionResult<string>> EnviarFacturacion(Guid ordenGuid)
+        public async Task<ActionResult<string>> EnviarFacturacion(string ordenGuid)
         {
             var result = await _ordenDeDespachoNegocio.EnviarAFacturacion(ordenGuid);
             return Ok(result);

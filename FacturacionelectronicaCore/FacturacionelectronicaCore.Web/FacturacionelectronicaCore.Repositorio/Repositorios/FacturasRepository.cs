@@ -113,7 +113,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             return listFacturas;
         }
 
-        public async Task<IEnumerable<Factura>> ObtenerFacturaPorGuid(Guid facturaGuid)
+        public async Task<IEnumerable<Factura>> ObtenerFacturaPorGuid(string facturaGuid)
         {
 
             var filter = Builders<FacturaMongo>.Filter.Eq("_id", facturaGuid.ToString());
@@ -147,11 +147,11 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             if (fechaInicial != null) { 
                 paramList.Add("FechaInicial", fechaInicial);
 
-                filters.Add(Builders<FacturaMongo>.Filter.Gte("Fecha", fechaInicial));
+                filters.Add(Builders<FacturaMongo>.Filter.Gte("FechaReporte", fechaInicial));
             }
             if (fechaFinal != null) { 
                 paramList.Add("FechaFinal", fechaFinal);
-                filters.Add(Builders<FacturaMongo>.Filter.Lte("Fecha", fechaFinal));
+                filters.Add(Builders<FacturaMongo>.Filter.Lte("FechaReporte", fechaFinal));
             }
             if (!string.IsNullOrEmpty(identificacionTercero)) { 
                 paramList.Add("IdentificacionTercero", identificacionTercero);
@@ -209,9 +209,25 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         }
 
         /// <inheritdoc />
-        public Task<int> AnularFacturas(IEnumerable<FacturasEntity> facturas)
+        public async Task<int> AnularFacturas(IEnumerable<FacturasEntity> facturas)
         {
-            return _sqlHelper.InsertOrUpdateOrDeleteAsync(_anularFacturas,
+            foreach (var factura in facturas)
+            {
+                var filter = Builders<FacturaMongo>.Filter.Eq("_id", factura.Guid);
+                var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
+                if (facturasMongo.Any())
+                {
+                    var facturaMongo = facturasMongo.First();
+                    var filterGuid = Builders<FacturaMongo>.Filter.Eq("_id", facturaMongo.Guid);
+                    var update = Builders<FacturaMongo>.Update
+                        .Set(x => x.Estado, "Anulada");
+                    await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "factuas", filterGuid, update);
+
+                }
+                
+            }
+
+            return await _sqlHelper.InsertOrUpdateOrDeleteAsync(_anularFacturas,
                 new { Facturas = facturas.ToDataTable().AsTableValuedParameter(UserDefinedTypes.Entity) });
         }
 
@@ -240,7 +256,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         }
 
-        public async Task SetIdFacturaElectronicaFactura(string idFacturaElectronica, Guid guid)
+        public async Task SetIdFacturaElectronicaFactura(string idFacturaElectronica, string guid)
         {
             var filter = Builders<FacturaMongo>.Filter.Eq("_id", guid.ToString());
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);

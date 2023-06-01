@@ -37,8 +37,8 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         Task AddFacturasImprimir(IEnumerable<FacturasEntity> facturas);
         Task<IEnumerable<Factura>> GetFacturasImprimir(Guid estacion);
         Task AgregarFechaReporteFactura(IEnumerable<FacturaFechaReporte> facturas, Guid estacion);
-        Task<IEnumerable<Factura>> ObtenerFacturaPorGuid(Guid facturaGuid);
+        Task<IEnumerable<Factura>> ObtenerFacturaPorGuid(string facturaGuid);
         Task<IEnumerable<Factura>> ObtenerFacturaPorIdVentaLocal(int idVentaLocal, Guid estacion);
-        Task SetIdFacturaElectronicaFactura(string idFacturaElectronica, Guid guid);
+        Task SetIdFacturaElectronicaFactura(string idFacturaElectronica, string guid);
     }
 }

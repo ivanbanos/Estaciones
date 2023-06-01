@@ -54,7 +54,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 }).ConfigureAwait(false);
         }
 
-        public Task<IEnumerable<FacturaCanastillaDetalleResponse>> GetDetalleFactura(Guid idFactura)
+        public Task<IEnumerable<FacturaCanastillaDetalleResponse>> GetDetalleFactura(string idFactura)
         {
             var paramList = new DynamicParameters();
             paramList.Add("guid", idFactura);
@@ -62,7 +62,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             return _sqlHelper.GetsAsync<FacturaCanastillaDetalleResponse>(StoredProcedures.getFacturaCanatillaDetalle, paramList);
         }
 
-        public Task<IEnumerable<FacturasCanastillaResponse>> GetFactura(Guid idFactura)
+        public Task<IEnumerable<FacturasCanastillaResponse>> GetFactura(string idFactura)
         {
             var paramList = new DynamicParameters();
             paramList.Add("guid", idFactura);

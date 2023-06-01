@@ -33,7 +33,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
         }
 
-        public async Task<string> EnviarAFacturacion(Guid ordenGuid)
+        public async Task<string> EnviarAFacturacion(string ordenGuid)
         {
             if (_validadorGuidAFacturaElectronica.FacturaSiendoProceada(ordenGuid))
             {
