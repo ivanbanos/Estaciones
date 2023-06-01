@@ -149,7 +149,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             }
             if (fechaFinal != null) { 
                 paramList.Add("FechaFinal", fechaFinal);
-                filters.Add(Builders<FacturaMongo>.Filter.Lte("FechaReporte", fechaFinal));
+                filters.Add(Builders<FacturaMongo>.Filter.Lte("FechaReporte", fechaFinal.Value.AddDays(1)));
             }
             if (!string.IsNullOrEmpty(identificacionTercero)) { 
                 paramList.Add("IdentificacionTercero", identificacionTercero);
