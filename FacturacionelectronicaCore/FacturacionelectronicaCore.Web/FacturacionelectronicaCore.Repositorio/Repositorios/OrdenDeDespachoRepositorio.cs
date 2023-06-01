@@ -28,8 +28,8 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         private async Task AgregarAMongo(Guid estacion, OrdenDeDespacho factura)
         {
-            var filter = Builders<FacturaMongo>.Filter.Eq("IdLocal", factura.IdLocal);
-            var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "ordenes", filter);
+            var filter = Builders<OrdenesMongo>.Filter.Eq("IdLocal", factura.IdLocal);
+            var facturasMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filter);
             if (!facturasMongo.Any(x => x.EstacionGuid == estacion.ToString()))
             {
                 var facturaMongo = new OrdenesMongo(factura);
@@ -41,7 +41,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             else
             {
                 var facturaMongo = facturasMongo.First(x => x.EstacionGuid == estacion.ToString());
-                var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", facturaMongo.Guid);
+                var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", facturaMongo.guid);
                 var update = Builders<OrdenesMongo>.Update
                     .Set(x => x.Identificacion, factura.Identificacion)
                     .Set(x => x.NombreTercero, factura.NombreTercero)
