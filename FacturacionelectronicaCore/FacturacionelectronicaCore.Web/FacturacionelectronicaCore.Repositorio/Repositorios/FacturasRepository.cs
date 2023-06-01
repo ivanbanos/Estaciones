@@ -37,13 +37,11 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         public async Task AddRange(IEnumerable<Factura> facturas, Guid estacion)
         {
-            var tasks = new List<Task>();
             foreach (var factura in facturas)
             {
-                tasks.Add(AgregarAMongo(estacion, factura));
+                await AgregarAMongo(estacion, factura);
             }
 
-            await Task.WhenAll(tasks);
             //var dataTable = facturas.ToDataTable();
             //await _sqlHelper.InsertOrUpdateOrDeleteAsync(StoredProcedures.AgregarFactura,
             //    new { facturas = dataTable.AsTableValuedParameter(UserDefinedTypes.Factura), estacion }).ConfigureAwait(false);
