@@ -16,14 +16,14 @@
                 context.Result = new JsonResult(new
                 {
                     StatusCode = context.HttpContext.Response.StatusCode,
-                    Message = businessException.ExceptionMessage
-                });
+                    Message = $"Un error no controlado ha ocurrido. {businessException.ExceptionMessage}. {businessException.GetBaseException().StackTrace}"
+                }); ;
             } else 
             {
                 context.Result = new JsonResult(new
                 {
                     StatusCode = context.HttpContext.Response.StatusCode,
-                    Message = $"Un error no controlado ha ocurrido. {context.Exception.Message}"
+                    Message = $"Un error no controlado ha ocurrido. {context.Exception.Message}. {context.Exception.StackTrace}"
                 });
             }
 
