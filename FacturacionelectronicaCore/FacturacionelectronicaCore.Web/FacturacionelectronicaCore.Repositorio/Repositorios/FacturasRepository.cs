@@ -244,7 +244,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                     if (ordenesMongo.Any(x => x.EstacionGuid == estacion.ToString()))
                     {
                         var ordenMongo = ordenesMongo.First(x => x.EstacionGuid == estacion.ToString());
-                        var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", ordenMongo.Guid);
+                        var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", ordenMongo.guid);
                         var update = Builders<OrdenesMongo>.Update
                             .Set(x => x.FechaReporte, factura.FechaReporte);
                         await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "ordenes", filterGuid, update);
