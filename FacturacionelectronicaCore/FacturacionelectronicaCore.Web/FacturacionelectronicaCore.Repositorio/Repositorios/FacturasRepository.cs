@@ -260,10 +260,10 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "factuas", filterGuid, update);
 
             }
-            var paramList = new DynamicParameters();
-            paramList.Add("idFacturaElectronica", idFacturaElectronica);
-            paramList.Add("guid", guid);
-            await _sqlHelper.GetsAsync<int>(StoredProcedures.SetIdFacturaElectronicaFactura, paramList);
+            //var paramList = new DynamicParameters();
+            //paramList.Add("idFacturaElectronica", idFacturaElectronica);
+            //paramList.Add("guid", guid);
+            //await _sqlHelper.GetsAsync<int>(StoredProcedures.SetIdFacturaElectronicaFactura, paramList);
         }
         public async Task SetIdFacturaElectronicaOrdenesdeDespacho(string idFacturaElectronica, Guid guid)
         {

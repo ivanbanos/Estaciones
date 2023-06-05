@@ -217,10 +217,10 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "ordenes", filterGuid, update);
 
             }
-            var paramList = new DynamicParameters();
-            paramList.Add("idFacturaElectronica", idFacturaElectronica);
-            paramList.Add("guid", guid);
-            await _sqlHelper.GetsAsync<int>(StoredProcedures.SetIdFacturaElectronicaOrdenesdeDespacho, paramList);
+            //var paramList = new DynamicParameters();
+            //paramList.Add("idFacturaElectronica", idFacturaElectronica);
+            //paramList.Add("guid", guid);
+            //await _sqlHelper.GetsAsync<int>(StoredProcedures.SetIdFacturaElectronicaOrdenesdeDespacho, paramList);
         }
 
         public async Task<IEnumerable<OrdenDeDespacho>> ObtenerOrdenDespachoPorIdVentaLocal(int idVentaLocal, Guid estacion)
