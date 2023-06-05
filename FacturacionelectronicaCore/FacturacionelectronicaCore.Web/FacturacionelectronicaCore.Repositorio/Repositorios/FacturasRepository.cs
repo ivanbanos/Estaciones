@@ -237,10 +237,20 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                     await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "factuas", filterGuid, update);
 
                 }
-                var dataTable = facturas.ToDataTable();
-                await _sqlHelper.InsertOrUpdateOrDeleteAsync(StoredProcedures.AgregarFechaReporteFactura,
-                    new { facturas = dataTable.AsTableValuedParameter(UserDefinedTypes.FacturaFechaReporte), estacion }).ConfigureAwait(false);
+                else
+                {
+                    var filtero = Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", factura.IdVentaLocal);
+                    var ordenesMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "ordenes", filtero);
+                    if (ordenesMongo.Any(x => x.EstacionGuid == estacion.ToString()))
+                    {
+                        var ordenMongo = ordenesMongo.First(x => x.EstacionGuid == estacion.ToString());
+                        var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", ordenMongo.Guid);
+                        var update = Builders<OrdenesMongo>.Update
+                            .Set(x => x.FechaReporte, factura.FechaReporte);
+                        await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "ordenes", filterGuid, update);
 
+                    }
+                }
             }
 
 

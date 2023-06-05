@@ -52,8 +52,23 @@ namespace FacturacionelectronicaCore.Negocio.Factura
         {
             try
             {
-                var facturas = await _facturasRepository.GetFacturas(filtroFactura.FechaInicial, filtroFactura.FechaFinal, filtroFactura.Identificacion, filtroFactura.NombreTercero, filtroFactura.Estacion);
-                return _mapper.Map<IEnumerable<Repositorio.Entities.Factura>, IEnumerable<Modelo.Factura>>(facturas);
+                var facturasEntity = await _facturasRepository.GetFacturas(filtroFactura.FechaInicial, filtroFactura.FechaFinal, filtroFactura.Identificacion, filtroFactura.NombreTercero, filtroFactura.Estacion);
+                var facturas = _mapper.Map<IEnumerable<Repositorio.Entities.Factura>, IEnumerable<Modelo.Factura>>(facturasEntity);
+                var nombresPorIdentificacion = new Dictionary<string, string>();
+                foreach (var factura in facturas)
+                {
+                    if (!nombresPorIdentificacion.ContainsKey(factura.Identificacion))
+                    {
+                        var tercero = await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.Identificacion);
+                        if(tercero.FirstOrDefault() != null)
+                        {
+                            nombresPorIdentificacion.Add(factura.Identificacion, tercero.FirstOrDefault().Nombre + " " + tercero.FirstOrDefault().Apellidos);
+
+                        }
+                    }
+                    factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
+                }
+                return facturas;
             }
             catch (Exception)
             {

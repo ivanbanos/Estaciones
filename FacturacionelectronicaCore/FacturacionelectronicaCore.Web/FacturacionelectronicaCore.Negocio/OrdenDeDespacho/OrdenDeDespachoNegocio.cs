@@ -4,6 +4,7 @@ using EstacionesServicio.Negocio.Extention;
 using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
 using FacturacionelectronicaCore.Negocio.Extention;
 using FacturacionelectronicaCore.Negocio.Modelo;
+using FacturacionelectronicaCore.Repositorio.Entities;
 using FacturacionelectronicaCore.Repositorio.Repositorios;
 using Microsoft.Extensions.Options;
 using System;
@@ -85,7 +86,23 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             {
                 var ordenesDeDespacho = await _ordenDeDespachoRepositorio.GetOrdenesDeDespacho(filtroOrdenDeDespacho.FechaInicial, 
                         filtroOrdenDeDespacho.FechaFinal, filtroOrdenDeDespacho.Identificacion, filtroOrdenDeDespacho.NombreTercero, filtroOrdenDeDespacho.Estacion);
-                return _mapper.Map<IEnumerable<Repositorio.Entities.OrdenDeDespacho>, IEnumerable<Modelo.OrdenDeDespacho>>(ordenesDeDespacho);
+                var ordenes = _mapper.Map<IEnumerable<Repositorio.Entities.OrdenDeDespacho>, IEnumerable<Modelo.OrdenDeDespacho>>(ordenesDeDespacho);
+
+                var nombresPorIdentificacion = new Dictionary<string, string>();
+                foreach (var factura in ordenes)
+                {
+                    if (!nombresPorIdentificacion.ContainsKey(factura.Identificacion))
+                    {
+                        var tercero = await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.Identificacion);
+                        if (tercero.FirstOrDefault() != null)
+                        {
+                            nombresPorIdentificacion.Add(factura.Identificacion, tercero.FirstOrDefault().Nombre + " " + tercero.FirstOrDefault().Apellidos);
+
+                        }
+                    }
+                    factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
+                }
+                return ordenes;
             }
             catch (Exception)
             {
