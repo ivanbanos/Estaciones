@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FacturasEntity = EstacionesServicio.Modelo.FacturasEntity;
 
 namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
 {

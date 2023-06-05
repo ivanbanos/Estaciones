@@ -240,7 +240,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 else
                 {
                     var filtero = Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", factura.IdVentaLocal);
-                    var ordenesMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "ordenes", filtero);
+                    var ordenesMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filtero);
                     if (ordenesMongo.Any(x => x.EstacionGuid == estacion.ToString()))
                     {
                         var ordenMongo = ordenesMongo.First(x => x.EstacionGuid == estacion.ToString());
