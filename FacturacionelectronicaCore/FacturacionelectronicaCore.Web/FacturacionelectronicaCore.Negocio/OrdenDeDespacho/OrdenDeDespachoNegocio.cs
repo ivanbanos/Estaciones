@@ -92,13 +92,18 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 var nombresPorIdentificacion = new Dictionary<string, string>();
                 foreach (var factura in ordenes)
                 {
-                    if (!nombresPorIdentificacion.ContainsKey(factura.Identificacion))
+                    if (!nombresPorIdentificacion.ContainsKey(factura.Identificacion) || string.IsNullOrEmpty(nombresPorIdentificacion[factura.Identificacion]))
                     {
                         var tercero = await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.Identificacion);
                         if (tercero.FirstOrDefault() != null)
                         {
-                            nombresPorIdentificacion.Add(factura.Identificacion, tercero.FirstOrDefault().Nombre + " " + tercero.FirstOrDefault().Apellidos);
+                            nombresPorIdentificacion.Add(factura.Identificacion, tercero.FirstOrDefault().Nombre);
 
+                        }
+                        else
+                        {
+
+                            nombresPorIdentificacion.Add(factura.Identificacion, " ");
                         }
                     }
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
