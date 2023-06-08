@@ -124,13 +124,13 @@ namespace FacturadorEstacionesAPI.Controllers
             {
 
                 var guid = _conexionEstacionRemota.ObtenerFacturaPorIdVentaLocal(idVentaLocal, token);
-                return guid;
+                return Guid.Parse(guid);
             }
             catch (Exception)
             {
                 token = _conexionEstacionRemota.getToken();
                 var guid = _conexionEstacionRemota.ObtenerFacturaPorIdVentaLocal(idVentaLocal, token);
-                return guid;
+                return Guid.Parse(guid);
             }
         }
 

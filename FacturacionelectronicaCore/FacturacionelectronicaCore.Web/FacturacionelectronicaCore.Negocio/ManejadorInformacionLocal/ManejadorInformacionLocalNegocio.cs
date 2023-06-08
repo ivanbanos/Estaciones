@@ -46,7 +46,15 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         {
             await EnviarTerceros(facturas.Select(x => x.Tercero));
             var facturasRepositorio = _mapper.Map<IEnumerable<Repositorio.Entities.Factura>>(facturas);
-
+            var resolucionActiva = (await _resolucionRepositorio.GetResolucionActiva(estacion)).FirstOrDefault();
+            if (resolucionActiva != null)
+            {
+                foreach (var factura in facturasRepositorio)
+                {
+                    factura.IdResolucion = resolucionActiva.guid.ToString();
+                    factura.DescripcionResolucion = resolucionActiva.Descripcion;
+                }
+            }
             await _facturasRepository.AddRange(facturasRepositorio, estacion);
 
             //_apiContabilidad.EnviarFacturas(facturas);

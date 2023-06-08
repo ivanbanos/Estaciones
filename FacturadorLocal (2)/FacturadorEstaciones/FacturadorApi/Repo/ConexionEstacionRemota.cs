@@ -63,7 +63,7 @@ namespace EnviadorInformacionService
             }
         }
 
-        public Guid ObtenerFacturaPorIdVentaLocal(int idVentaLocal, string token)
+        public string ObtenerFacturaPorIdVentaLocal(int idVentaLocal, string token)
         {
             using (var client = new HttpClient())
             {
@@ -73,7 +73,7 @@ namespace EnviadorInformacionService
     new AuthenticationHeaderValue("Bearer", token);
                 var response = client.GetAsync($"{url}{path}").Result;
                 response.EnsureSuccessStatusCode();
-                Guid responseBody = response.Content.ReadAsAsync<Guid>().Result;
+                var responseBody = response.Content.ReadAsStringAsync().Result;
                 return responseBody;
             }
         }
@@ -121,8 +121,8 @@ namespace EnviadorInformacionService
     new AuthenticationHeaderValue("Bearer", token);
                 var path = $"/api/Factura/EnviarFacturacion/{guid}";
                 var response = client.GetAsync($"{url}{path}").Result;
-                string responseBody = response.Content.ReadAsStringAsync().Result;
-                return responseBody;
+                //string responseBody = response.Content.ReadAsStringAsync().Result;
+                return "Ok";
             }
         }
         public class FacturasEntity
