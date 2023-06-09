@@ -72,6 +72,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                         }
                     }
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
+                    factura.Fecha = factura.Fecha.ToLocalTime();
                 }
                 return facturas;
             }

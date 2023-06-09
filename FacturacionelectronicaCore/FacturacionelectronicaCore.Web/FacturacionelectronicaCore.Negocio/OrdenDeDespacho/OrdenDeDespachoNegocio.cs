@@ -107,6 +107,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                         }
                     }
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
+                    factura.Fecha = factura.Fecha.ToLocalTime();
                 }
                 return ordenes;
             }
