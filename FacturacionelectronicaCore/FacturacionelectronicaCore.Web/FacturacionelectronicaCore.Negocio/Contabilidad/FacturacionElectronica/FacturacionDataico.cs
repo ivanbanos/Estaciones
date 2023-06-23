@@ -142,7 +142,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
             catch (Exception ex)
             {
-                throw new AlegraException(ex.Message);
+                throw;
             }
         }
 
