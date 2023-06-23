@@ -16,7 +16,6 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public string issue_date { get; set; }
         public string xml_url { get; set; }
         public string payment_date { get; set; }
-        public CustomerDataico customer { get; set; }
         public string customer_status { get; set; }
         public string pdf_url { get; set; }
         public string email_status { get; set; }
