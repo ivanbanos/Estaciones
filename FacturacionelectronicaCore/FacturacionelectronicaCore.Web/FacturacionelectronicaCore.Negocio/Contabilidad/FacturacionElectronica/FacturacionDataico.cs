@@ -142,6 +142,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex);
+                Console.WriteLine(ex.StackTrace);
                 throw;
             }
         }
