@@ -24,7 +24,6 @@ namespace ManejadorSurtidor
         {
             _estacionesRepositorio = estacionesRepositorio;
             _options = options;
-            _logger = logger;
             _sicomConection = sicomConection;
         }
         public override void Dispose()

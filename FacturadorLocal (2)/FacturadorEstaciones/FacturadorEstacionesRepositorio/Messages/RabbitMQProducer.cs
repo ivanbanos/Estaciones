@@ -15,14 +15,18 @@ namespace ManejadorSurtidor.Messages
     public class RabbitMQProducer : IMessageProducer
     {
         private readonly InfoEstacion _infoEstacion;
+        private readonly ConnectionFactory factory;
+        private readonly IConnection connection;
+
         public RabbitMQProducer(IOptions<InfoEstacion> infoEstacion)
         {
-            _infoEstacion = infoEstacion.Value;
+            _infoEstacion = infoEstacion.Value; 
+            factory = new ConnectionFactory() { HostName = _infoEstacion.RabbitHost, UserName = "siges", Password = "siges", Port = Protocols.DefaultProtocol.DefaultPort };
+
+             connection = factory.CreateConnection();
         }
-            public async Task SendMessage<T>(T message, string queue)
+        public async Task SendMessage<T>(T message, string queue)
         {
-            var factory = new ConnectionFactory() { HostName = _infoEstacion.RabbitHost, UserName = "siges", Password = "siges", Port = Protocols.DefaultProtocol.DefaultPort };
-            var connection = factory.CreateConnection();
             using var channel = connection.CreateModel();
             channel.QueueDeclare(queue: queue,
                                      durable: false,

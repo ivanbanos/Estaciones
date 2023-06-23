@@ -154,6 +154,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 actions = new ActionsDataico() { send_dian = true, send_email = true },
                 invoice = new InvoiceDataico()
                 {
+                    notes = new List<string>(),
                     env = "PRODUCCION",
                     dataico_account_id = alegraOptions.DataicoAccountId,
                     issue_date = DateTime.Now.ToString("dd/MM/yyyy"),
@@ -192,7 +193,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                             sku="0",
                             price=(double)factura.Precio,
                             description=factura.Combustible,
-                            quantity=(double)factura.Cantidad
+                            quantity=(double)factura.Cantidad,
+                            taxes = new List<TaxisDataico>(){ },
+                            measuring_unit = "G",
+                            retentions = new List<RetentionDataico>(){ },
                         }
                     }
                 }
@@ -257,7 +261,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 case 2:
                     return "PERSONA_NATURAL";
                 default:
-                    return "PERSONA_JURIDICA";
+                    return "PERSONA_NATURAL";
             }
         }
         public async Task<FacturaDataico> GetFacturaDataico(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero)
