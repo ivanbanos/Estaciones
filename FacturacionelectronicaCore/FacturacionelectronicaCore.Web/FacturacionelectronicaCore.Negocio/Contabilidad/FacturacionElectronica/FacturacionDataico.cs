@@ -131,6 +131,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         }
                         else
                         {
+                            Console.WriteLine(responseBody);
                             var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
                             Console.WriteLine(JsonConvert.SerializeObject(respuesta));
                             Console.WriteLine(JsonConvert.SerializeObject(responseBody));
