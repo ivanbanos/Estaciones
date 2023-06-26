@@ -198,7 +198,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                             description=factura.Combustible,
                             quantity=(double)factura.Cantidad,
                             taxes = new List<TaxisDataico>(){ },
-                            measuring_unit = "G",
+                            measuring_unit = "GL",
                             retentions = new List<RetentionDataico>(){ },
                         }
                     }
