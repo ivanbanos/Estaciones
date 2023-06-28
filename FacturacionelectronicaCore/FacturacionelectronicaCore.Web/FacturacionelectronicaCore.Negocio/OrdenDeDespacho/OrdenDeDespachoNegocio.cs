@@ -120,7 +120,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
                     factura.Fecha = factura.Fecha.ToLocalTime();
                 }
-                return ordenes;
+                return ordenes.OrderBy(x=>x.IdVentaLocal);
             }
             catch (Exception)
             {
