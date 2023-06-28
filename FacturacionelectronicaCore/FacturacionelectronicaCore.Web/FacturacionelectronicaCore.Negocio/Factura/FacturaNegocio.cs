@@ -60,15 +60,26 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                     if (!nombresPorIdentificacion.ContainsKey(factura.Identificacion) || string.IsNullOrEmpty(nombresPorIdentificacion[factura.Identificacion]))
                     {
                         var tercero = await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.Identificacion);
-                        if(tercero.FirstOrDefault() != null)
+                        if (tercero.FirstOrDefault() != null)
                         {
-                            nombresPorIdentificacion.Add(factura.Identificacion, tercero.FirstOrDefault().Nombre );
+                            if (!nombresPorIdentificacion.ContainsKey(factura.Identificacion))
+                            {
+                                nombresPorIdentificacion.Add(factura.Identificacion, tercero.FirstOrDefault()?.Nombre); 
+                                
+                            }
+                            else
+                            {
+                                nombresPorIdentificacion[factura.Identificacion] = tercero.FirstOrDefault()?.Nombre;
 
+                            }
                         }
                         else
                         {
+                            if (!nombresPorIdentificacion.ContainsKey(factura.Identificacion))
+                            {
+                                nombresPorIdentificacion.Add(factura.Identificacion, " ");
 
-                            nombresPorIdentificacion.Add(factura.Identificacion, " ");
+                            }
                         }
                     }
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
