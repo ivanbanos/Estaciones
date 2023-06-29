@@ -266,7 +266,8 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 var facturaMongo = facturasMongo.First();
                 var filterGuid = Builders<FacturaMongo>.Filter.Eq("_id", facturaMongo.Guid);
                 var update = Builders<FacturaMongo>.Update
-                    .Set(x => x.idFacturaElectronica, idFacturaElectronica);
+                    .Set(x => x.idFacturaElectronica, idFacturaElectronica)
+                    .Set(x => x.Estado, "Anulada");
                 await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "factuas", filterGuid, update);
 
             }
@@ -284,7 +285,8 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 var facturaMongo = facturasMongo.First();
                 var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", facturaMongo.guid);
                 var update = Builders<OrdenesMongo>.Update
-                    .Set(x => x.idFacturaElectronica, idFacturaElectronica);
+                    .Set(x => x.idFacturaElectronica, idFacturaElectronica)
+                    .Set(x => x.Estado, "Anulada");
                 await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "ordenes", filterGuid, update);
 
             }

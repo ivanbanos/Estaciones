@@ -186,8 +186,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         address_line = string.IsNullOrEmpty(tercero.Direccion)?"0": tercero.Direccion,
                         country_code = "CO",
                         first_name = tercero.Nombre,
-                        family_name = tercero.Apellidos,
-                        company_name= tercero.Nombre,
+                        family_name = tercero.Apellidos.Contains("no informado") ? "" : tercero.Apellidos,
+                        company_name = tercero.Nombre,
                         department = "73"
                     },
                     items = new List<ItemDataico>(){
@@ -303,7 +303,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         address_line = tercero.Direccion,
                         country_code = "CO",
                         first_name = tercero.Nombre,
-                        family_name = tercero.Apellidos,
+                        family_name = tercero.Apellidos.Contains("no informado")?"":tercero.Apellidos,
                     },
                     items = new List<ItemDataico>(){
                         new ItemDataico()

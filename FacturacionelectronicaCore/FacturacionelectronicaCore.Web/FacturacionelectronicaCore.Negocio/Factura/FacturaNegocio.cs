@@ -57,6 +57,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                 var nombresPorIdentificacion = new Dictionary<string, string>();
                 foreach (var factura in facturas)
                 {
+                    factura.Estado = factura.idFacturaElectronica == null ? factura.Estado : "Anulada";
                     if (!nombresPorIdentificacion.ContainsKey(factura.Identificacion) || string.IsNullOrEmpty(nombresPorIdentificacion[factura.Identificacion]))
                     {
                         var tercero = await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.Identificacion);
