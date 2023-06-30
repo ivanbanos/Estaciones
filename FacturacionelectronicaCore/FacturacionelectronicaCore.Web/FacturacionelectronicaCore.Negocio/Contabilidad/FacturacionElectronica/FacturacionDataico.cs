@@ -206,8 +206,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         city = "001",
                         address_line = string.IsNullOrEmpty(tercero.Direccion)?"0": tercero.Direccion,
                         country_code = "CO",
-                        first_name = tercero.Nombre,
-                        family_name = tercero.Apellidos.Contains("no informado") ? "" : tercero.Apellidos,
+                        first_name = nombre,
+                        family_name = apellido,
                         company_name = tercero.Nombre,
                         department = "73"
                     },
