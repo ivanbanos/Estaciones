@@ -152,6 +152,27 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public async Task<FacturaDataico> GetFacturaDataico(Modelo.Factura factura, Modelo.Tercero tercero)
         {
             var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(alegraOptions.Prefix);
+
+            var nombre = "";
+            var apellido = "";
+            if (string.IsNullOrEmpty(tercero.Apellidos) || tercero.Apellidos.Contains("no informado"))
+            {
+                if(tercero.Nombre.Split(' ').Count() > 2)
+                {
+                    nombre = tercero.Nombre.Substring(0, tercero.Nombre.LastIndexOf(" "));
+                    apellido = tercero.Nombre.Split(' ').Last();
+                }
+                else
+                {
+                    nombre = tercero.Nombre;
+                    apellido = "no informado";
+                }
+            }
+            else
+            {
+                nombre = tercero.Nombre;
+                apellido = tercero.Apellidos;
+            }
             return new FacturaDataico()
             {
                 actions = new ActionsDataico() { send_dian = true, send_email = true },
