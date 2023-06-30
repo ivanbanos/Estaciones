@@ -4,6 +4,7 @@ using EstacionesServicio.Negocio.Extention;
 using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
 using FacturacionelectronicaCore.Negocio.Extention;
 using FacturacionelectronicaCore.Negocio.Modelo;
+using FacturacionelectronicaCore.Repositorio.Entities;
 using FacturacionelectronicaCore.Repositorio.Repositorios;
 using Microsoft.Extensions.Options;
 using System;
@@ -95,11 +96,11 @@ namespace FacturacionelectronicaCore.Negocio.Factura
         }
 
         /// <inheritdoc />
-        public Task<int> AnularFacturas(IEnumerable<FacturasEntity> facturas)
+        public Task<int> AnularFacturas(IEnumerable<EstacionesServicio.Modelo.FacturasEntity> facturas)
         {
             try
             {
-                var facturasList = _mapper.Map<IEnumerable<FacturasEntity>, IEnumerable<Repositorio.Entities.FacturasEntity>>(facturas);
+                var facturasList = _mapper.Map<IEnumerable<EstacionesServicio.Modelo.FacturasEntity>, IEnumerable<Repositorio.Entities.FacturasEntity>>(facturas);
                 return _facturasRepository.AnularFacturas(facturasList);
             }
             catch (Exception)
@@ -109,11 +110,11 @@ namespace FacturacionelectronicaCore.Negocio.Factura
         }
 
 
-        public async Task AddFacturasImprimir(IEnumerable<FacturasEntity> facturas)
+        public async Task AddFacturasImprimir(IEnumerable<EstacionesServicio.Modelo.FacturasEntity> facturas)
         {
             try
             {
-                var facturasList = _mapper.Map<IEnumerable<FacturasEntity>, IEnumerable<Repositorio.Entities.FacturasEntity>>(facturas);
+                var facturasList = _mapper.Map<IEnumerable<EstacionesServicio.Modelo.FacturasEntity>, IEnumerable<Repositorio.Entities.FacturasEntity>>(facturas);
                 _facturasRepository.AddFacturasImprimir(facturasList);
             }
             catch (Exception)
@@ -151,17 +152,17 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                 {
                     ConsecutivoFacturaInicial = !facturas.Any()?0:facturas.Min(factura => factura.Consecutivo),
                     ConsecutivoDeFacturaFinal = !facturas.Any() ? 0 : facturas.Max(factura => factura.Consecutivo),
-                    TotalDeVentas = !facturas.Any() ? 0 : facturas.Count(factura => factura.Estado != "Anulado"),
-                    CantidadDeFacturasAnuladas = !facturas.Any() ? 0 : facturas.Count(factura => factura.Estado == "Anulado"),
-                    ConsolidadoFacturasAnuladas = !facturas.Any() ? new List<ConsolidadoCombustible>() : GetConsolidados(facturas.Where(factura => factura.Estado == "Anulado")),
-                    ConsolidadoOrdenesAnuladas = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => orden.Estado == "Anulado")),
-                    TotalDeOrdenes = !ordenes.Any() ? 0 : ordenes.Count(orden => orden.Estado != "Anulado"),
-                    Consolidados = !facturas.Any() ? new List<ConsolidadoCombustible>() : GetConsolidados(facturas.Where(factura => factura.Estado != "Anulado")),
-                    ConsolidadosOrdenes = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => orden.Estado != "Anulado")),
-                    consolidadoClienteFacturas = !facturas.Any() ? new List<ConsolidadoCliente>() : GetConsolidadosClientes(facturas.Where(factura => factura.Estado != "Anulado")),
-                    consolidadoClienteOrdenes = !ordenes.Any() ? new List<ConsolidadoCliente>() : GetConsolidadosOrdenesCliente(ordenes.Where(orden => orden.Estado != "Anulado")),
-                    TotalFacturasAnuladas = !facturas.Any() ? 0 : facturas.Count(factura => factura.Estado == "Anulado"),
-                    TotalOrdenesAnuladas = !ordenes.Any() ? 0 : ordenes.Count(orden => orden.Estado == "Anulado"),
+                    TotalDeVentas = !facturas.Any() ? 0 : facturas.Count(factura => factura.Estado != "Anulado" && factura.Estado != "Anulada" && factura.idFacturaElectronica == null),
+                    CantidadDeFacturasAnuladas = !facturas.Any() ? 0 : facturas.Count(factura => factura.Estado == "Anulado" || factura.Estado == "Anulada" || factura.idFacturaElectronica != null),
+                    ConsolidadoFacturasAnuladas = !facturas.Any() ? new List<ConsolidadoCombustible>() : GetConsolidados(facturas.Where(factura => factura.Estado == "Anulado" || factura.Estado == "Anulada" || factura.idFacturaElectronica != null)),
+                    ConsolidadoOrdenesAnuladas = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => orden.Estado == "Anulado" || orden.Estado == "Anulada" || orden.idFacturaElectronica != null)),
+                    TotalDeOrdenes = !ordenes.Any() ? 0 : ordenes.Count(orden => orden.Estado != "Anulado" && orden.Estado != "Anulada" && orden.idFacturaElectronica == null),
+                    Consolidados = !facturas.Any() ? new List<ConsolidadoCombustible>() : GetConsolidados(facturas.Where(factura => factura.Estado != "Anulado" && factura.Estado != "Anulada" && factura.idFacturaElectronica == null)),
+                    ConsolidadosOrdenes = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => orden.Estado != "Anulado" && orden.Estado != "Anulada" && orden.idFacturaElectronica == null)),
+                    consolidadoClienteFacturas = !facturas.Any() ? new List<ConsolidadoCliente>() : GetConsolidadosClientes(facturas.Where(factura => factura.Estado != "Anulado" && factura.Estado != "Anulada" && factura.idFacturaElectronica == null)),
+                    consolidadoClienteOrdenes = !ordenes.Any() ? new List<ConsolidadoCliente>() : GetConsolidadosOrdenesCliente(ordenes.Where(orden => orden.Estado != "Anulado" && orden.Estado != "Anulada" && orden.idFacturaElectronica == null)),
+                    TotalFacturasAnuladas = !facturas.Any() ? 0 : facturas.Count(factura => factura.Estado == "Anulado" || factura.Estado == "Anulada" || factura.idFacturaElectronica != null),
+                    TotalOrdenesAnuladas = !ordenes.Any() ? 0 : ordenes.Count(orden => orden.Estado == "Anulado" || orden.Estado == "Anulada" || orden.idFacturaElectronica != null),
                 };
                 return reporte;
             }
@@ -307,7 +308,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
         }
 
 
-        public async Task<string> CrearFacturaFacturas(IEnumerable<FacturasEntity> facturasGuids)
+        public async Task<string> CrearFacturaFacturas(IEnumerable<EstacionesServicio.Modelo.FacturasEntity> facturasGuids)
         {
             var guids = facturasGuids.Select(x => x.Guid);
             if (_validadorGuidAFacturaElectronica.FacturasSiendoProceada(guids))

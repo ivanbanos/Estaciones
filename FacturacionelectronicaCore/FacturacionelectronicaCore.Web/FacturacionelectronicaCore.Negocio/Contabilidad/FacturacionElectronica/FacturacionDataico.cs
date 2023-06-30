@@ -157,7 +157,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             var apellido = "";
             if (string.IsNullOrEmpty(tercero.Apellidos) || tercero.Apellidos.Contains("no informado"))
             {
-                if(tercero.Nombre.Split(' ').Count() > 2)
+                if(tercero.Nombre.Split(' ').Count() > 1)
                 {
                     nombre = tercero.Nombre.Substring(0, tercero.Nombre.LastIndexOf(" "));
                     apellido = tercero.Nombre.Split(' ').Last();
