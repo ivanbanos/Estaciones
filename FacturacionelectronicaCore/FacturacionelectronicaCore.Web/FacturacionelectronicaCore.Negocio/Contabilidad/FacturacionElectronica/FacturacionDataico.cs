@@ -200,7 +200,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         phone = string.IsNullOrEmpty(tercero.Celular) ? "0" : tercero.Celular,
                         party_identification_type = GetTipoIdentificacion(tercero.DescripcionTipoIdentificacion),
                         party_identification = tercero.Identificacion,
-                        party_type = GetKindOfPErson(tercero.TipoPersona),
+                        party_type = GetKindOfPErson(tercero.DescripcionTipoIdentificacion),
                         tax_level_code = GetNivelTributario(tercero.ResponsabilidadTributaria),
                         regimen = GetRegime(tercero.ResponsabilidadTributaria),
                         city = "001",
@@ -276,14 +276,12 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 return "CC";
             }
         }
-        private string GetKindOfPErson(int tipoPersona)
+        private string GetKindOfPErson(string descripcionTipoIdentificacion)
         {
-            switch (tipoPersona)
+            switch (descripcionTipoIdentificacion)
             {
-                case 1:
+                case "Nit":
                     return "PERSONA_JURIDICA";
-                case 2:
-                    return "PERSONA_NATURAL";
                 default:
                     return "PERSONA_NATURAL";
             }
@@ -291,6 +289,26 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public async Task<FacturaDataico> GetFacturaDataico(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero)
         {
             var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(alegraOptions.Prefix);
+            var nombre = "";
+            var apellido = "";
+            if (string.IsNullOrEmpty(tercero.Apellidos) || tercero.Apellidos.Contains("no informado"))
+            {
+                if (tercero.Nombre.Split(' ').Count() > 1)
+                {
+                    nombre = tercero.Nombre.Substring(0, tercero.Nombre.LastIndexOf(" "));
+                    apellido = tercero.Nombre.Split(' ').Last();
+                }
+                else
+                {
+                    nombre = tercero.Nombre;
+                    apellido = "no informado";
+                }
+            }
+            else
+            {
+                nombre = tercero.Nombre;
+                apellido = tercero.Apellidos;
+            }
             return new FacturaDataico()
             {
                 actions = new ActionsDataico() { send_dian = false, send_email = true },
@@ -317,14 +335,14 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         phone = tercero.Celular,
                         party_identification_type = GetTipoIdentificacion(tercero.DescripcionTipoIdentificacion),
                         party_identification = tercero.Identificacion,
-                        party_type = GetKindOfPErson(tercero.TipoPersona),
+                        party_type = GetKindOfPErson(tercero.DescripcionTipoIdentificacion),
                         tax_level_code = GetNivelTributario(tercero.ResponsabilidadTributaria),
                         regimen = GetRegime(tercero.ResponsabilidadTributaria),
                         city = "001",
                         address_line = tercero.Direccion,
                         country_code = "CO",
-                        first_name = tercero.Nombre,
-                        family_name = tercero.Apellidos.Contains("no informado")?"":tercero.Apellidos,
+                        first_name = nombre,
+                        family_name = apellido,
                     },
                     items = new List<ItemDataico>(){
                         new ItemDataico()
