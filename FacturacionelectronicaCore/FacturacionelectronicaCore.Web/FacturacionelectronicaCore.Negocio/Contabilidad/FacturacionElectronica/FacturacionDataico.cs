@@ -155,22 +155,23 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
             var nombre = "";
             var apellido = "";
+            var nombreCompleto = tercero.Nombre.Trim();
             if (string.IsNullOrEmpty(tercero.Apellidos) || tercero.Apellidos.Contains("no informado"))
             {
-                if(tercero.Nombre.Split(' ').Count() > 1)
+                if(nombreCompleto.Split(' ').Count() > 1)
                 {
-                    nombre = tercero.Nombre.Substring(0, tercero.Nombre.LastIndexOf(" "));
-                    apellido = tercero.Nombre.Split(' ').Last();
+                    nombre = nombreCompleto.Substring(0, nombreCompleto.LastIndexOf(" "));
+                    apellido = nombreCompleto.Split(' ').Last();
                 }
                 else
                 {
-                    nombre = tercero.Nombre;
+                    nombre = nombreCompleto;
                     apellido = "no informado";
                 }
             }
             else
             {
-                nombre = tercero.Nombre;
+                nombre = nombreCompleto;
                 apellido = tercero.Apellidos;
             }
             return new FacturaDataico()
@@ -291,22 +292,23 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(alegraOptions.Prefix);
             var nombre = "";
             var apellido = "";
+            var nombreCompleto = tercero.Nombre.Trim();
             if (string.IsNullOrEmpty(tercero.Apellidos) || tercero.Apellidos.Contains("no informado"))
             {
-                if (tercero.Nombre.Split(' ').Count() > 1)
+                if (nombreCompleto.Split(' ').Count() > 1)
                 {
-                    nombre = tercero.Nombre.Substring(0, tercero.Nombre.LastIndexOf(" "));
-                    apellido = tercero.Nombre.Split(' ').Last();
+                    nombre = nombreCompleto.Substring(0, nombreCompleto.LastIndexOf(" "));
+                    apellido = nombreCompleto.Split(' ').Last();
                 }
                 else
                 {
-                    nombre = tercero.Nombre;
+                    nombre = nombreCompleto;
                     apellido = "no informado";
                 }
             }
             else
             {
-                nombre = tercero.Nombre;
+                nombre = nombreCompleto;
                 apellido = tercero.Apellidos;
             }
             return new FacturaDataico()
