@@ -99,11 +99,13 @@
     <Compile Include="Contabilidad\RequestContabilidad.cs" />
     <Compile Include="Convertidor\Convertidor.cs" />
     <Compile Include="EnviadorDeInformacion.cs" />
+    <Compile Include="EnviadorProsoft.cs" />
     <Compile Include="EnviadorSilog.cs" />
     <Compile Include="EstacionesRepositorioSqlServer.cs" />
     <Compile Include="ICanastillaService.cs" />
     <Compile Include="IConexionEstacionRemota.cs" />
     <Compile Include="IEnviadorDeInformacion.cs" />
+    <Compile Include="IEnviadorProsoft.cs" />
     <Compile Include="IEnviadorSilog.cs" />
     <Compile Include="IEstacionesRepositorio.cs" />
     <Compile Include="ImpresionService.cs" />
@@ -127,6 +129,7 @@
     <Compile Include="Models\Externos\Usuario.cs" />
     <Compile Include="Models\Factura.cs" />
     <Compile Include="Models\FacturaCanastilla.cs" />
+    <Compile Include="Models\FacturaProsoft.cs" />
     <Compile Include="Models\FormasPagos.cs" />
     <Compile Include="Models\InfoEstacion.cs" />
     <Compile Include="Models\Manguera.cs" />

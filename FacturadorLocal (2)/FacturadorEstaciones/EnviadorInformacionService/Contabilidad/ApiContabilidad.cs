@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using EnviadorInformacionService.Models;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -57,5 +58,45 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
             }
             return facturasEnviadas;
         }
+
+
+        public IEnumerable<int> EnviarFacturas(IEnumerable<FacturaProsoft> facturas)
+        {
+            var facturasEnviadas = new List<int>();
+
+            using (var client = new HttpClient())
+            {
+                try
+                {
+
+                    Logger.Warn(JsonConvert.SerializeObject(facturas));
+                    MultipartFormDataContent form = new MultipartFormDataContent();
+
+                    StringContent content = new StringContent(JsonConvert.SerializeObject(facturas));
+                    var response = client.PostAsync(ConfigurationManager.AppSettings["UrlProsoft"], content).Result;
+                    response.EnsureSuccessStatusCode();
+
+                    string responseBody = response.Content.ReadAsStringAsync().Result;
+
+                    Logger.Info($"Factura enviada, respuesta de prosfot: {responseBody}");
+                    if (responseBody.ToLower().Contains("error"))
+                    {
+
+                        Logger.Warn(responseBody);
+                    }
+                    else
+                    {
+                    }
+                }
+                catch (Exception ex)
+                {
+
+                    Logger.Error("Factura no recibida en prosfot por " + ex.Message);
+                    Logger.Error("Ex" + ex.StackTrace);
+                }
+            }
+            return facturasEnviadas;
+        }
+
     }
 }

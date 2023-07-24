@@ -19,8 +19,8 @@ namespace EnviadorInformacionService
         private Thread envioThread;
         private readonly ImpresionService impresionService;
         private Thread impresionThread;
-        private readonly IEnviadorSilog enviadorSilog;
-        private Thread enviadorSilogThread;
+        private readonly IEnviadorProsoft enviadorProsoft;
+        private Thread enviadorProsoftThread;
         private readonly ICanastillaService canastillaService;
         private Thread canastillaServiceThread;
         private Thread canastillaWebServiceThread;
@@ -30,7 +30,7 @@ namespace EnviadorInformacionService
             InitializeComponent();
             enviadorDeInformacion = new EnviadorDeInformacion();
             impresionService = new ImpresionService();
-            enviadorSilog = new EnviadorSilog();
+            enviadorProsoft = new EnviadorProsoft();
             //canastillaService = new CanastillaService();
         }
 
@@ -46,13 +46,13 @@ namespace EnviadorInformacionService
                     envioThread.Start();
                 }
 
-                Logger.Info(ConfigurationManager.AppSettings["EnvioASilog"]);
-                if (ConfigurationManager.AppSettings["EnvioASilog"] == "true" )
+                Logger.Info(ConfigurationManager.AppSettings["EnvioAProsoft"]);
+                if (ConfigurationManager.AppSettings["EnvioAProsoft"] == "true" )
                 {
 
-                    Logger.Info("Iniciando interfaz silog");
-                    enviadorSilogThread = new Thread(new ThreadStart(enviadorSilog.EnviarInformacion));
-                    enviadorSilogThread.Start();
+                    Logger.Info("Iniciando interfaz Prosoft");
+                    enviadorProsoftThread = new Thread(new ThreadStart(enviadorProsoft.EnviarInformacion));
+                    enviadorProsoftThread.Start();
                 }
                 impresionThread = new Thread(new ThreadStart(impresionService.Execute));
                 impresionThread.Start();
@@ -79,7 +79,7 @@ namespace EnviadorInformacionService
             {
                 envioThread.Abort();
                 impresionThread.Abort();
-                enviadorSilogThread.Abort();
+                enviadorProsoftThread.Abort();
                 //canastillaServiceThread.Abort();
             }
             catch (Exception ex)

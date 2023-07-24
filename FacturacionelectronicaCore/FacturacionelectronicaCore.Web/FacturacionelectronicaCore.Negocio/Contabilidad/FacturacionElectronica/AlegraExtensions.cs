@@ -30,6 +30,15 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
             return services;
         }
+        public static IServiceCollection AddTitan(
+            this IServiceCollection services,
+            IConfiguration configuration)
+        {
+            services.AddScoped<IFacturacionElectronicaFacade, FacturacionTitan>();
+
+            services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
+            return services;
+        }
 
         public static Invoice ConvertirAInvoice(this Modelo.Factura factura, Item item)
         {
