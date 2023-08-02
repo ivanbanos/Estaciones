@@ -38,7 +38,7 @@ namespace EnviadorInformacionService
         .Where(nic => nic.OperationalStatus == OperationalStatus.Up && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
         .Select(nic => nic.GetPhysicalAddress().ToString())
         .FirstOrDefault();
-
+            firstMacAddress = firstMacAddress ?? "Mac Unknown";
             Console.WriteLine(ConfigurationManager.AppSettings["Razon"].ToString());
             ImpresionAutomatica = bool.Parse(ConfigurationManager.AppSettings["ImpresionAutomatica"]);
             impresionFormaDePagoOrdenDespacho = bool.Parse(ConfigurationManager.AppSettings["impresionFormaDePagoOrdenDespacho"]);

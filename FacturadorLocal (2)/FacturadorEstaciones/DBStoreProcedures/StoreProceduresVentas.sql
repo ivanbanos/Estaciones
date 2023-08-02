@@ -1,6 +1,6 @@
 /*
 *************************************************************************    
- Author: Ivan Baños    
+ Author: Ivan Baï¿½os    
  Create date: 2020-11-07
  Description: StoreProcedures para Base de datos estacion
 **************************************************************************
@@ -359,7 +359,7 @@ begin try
 		select @ventaMin = MIN(VENTAS.CONSECUTIVO)
 		FROM VENTAS
 		left join Facturacion_Electronica.dbo.FacturasPOS as FacturasPOS on FacturasPOS.ventaId = VENTAS.CONSECUTIVO
-		left join Facturacion_Electronica.dbo.FacturasPOS as OrdenesDeDespacho on OrdenesDeDespacho.ventaId = VENTAS.CONSECUTIVO
+		left join Facturacion_Electronica.dbo.OrdenesDeDespacho as OrdenesDeDespacho on OrdenesDeDespacho.ventaId = VENTAS.CONSECUTIVO
 		Where VENTAS.CONSECUTIVO > @ventaMin
 		and FacturasPOS.facturaPOSId is null
 		and OrdenesDeDespacho.facturaPOSId is null
