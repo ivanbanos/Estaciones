@@ -136,7 +136,7 @@ namespace FacturadorEstacionesAPI.Controllers
 
         [HttpGet]
         [Route("api/Ventas/ObtenerOrdenDespachoPorIdVentaLocal/{idVentaLocal}")]
-        public Guid ObtenerOrdenDespachoPorIdVentaLocal(int idVentaLocal)
+        public string ObtenerOrdenDespachoPorIdVentaLocal(int idVentaLocal)
         {
             try
             {
@@ -652,7 +652,7 @@ namespace FacturadorEstacionesAPI.Controllers
                 }
             } catch(Exception e)
             {
-                return e.StackTrace;
+                return e.Message + e.StackTrace;
             }
         }
 

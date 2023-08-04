@@ -177,7 +177,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         Descuento = factura.Descuento.ToString(),
                         SubTotal = factura.SubTotal.ToString(),
                         Total = factura.Total.ToString(),
-                        Impuestos = new List<ImpuestoTitan>()
+                        Impuestos = new List<ImpuestoTitan>(){ new ImpuestoTitan() { Base = "0", Impuesto = "0", Nombre = "No" , Porcentaje = "0" } }
 
 
 
@@ -337,7 +337,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         Descuento = orden.Descuento.ToString(),
                         SubTotal = orden.SubTotal.ToString(),
                         Total = orden.Total.ToString(),
-                        Impuestos = new List<ImpuestoTitan>()
+                        Impuestos = new List<ImpuestoTitan>(){ new ImpuestoTitan() { Base = "0", Impuesto = "0", Nombre = "No", Porcentaje = "0" } }
 
 
 

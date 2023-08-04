@@ -7,6 +7,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -78,19 +79,26 @@ namespace EnviadorInformacionService
             }
         }
 
-        public Guid ObtenerOrdenDespachoPorIdVentaLocal(int identificacion, string token)
+        public string ObtenerOrdenDespachoPorIdVentaLocal(int identificacion, string token)
         {
             using (var client = new HttpClient())
             {
                 var path = $"/api/OrdenesDeDespacho/ObtenerOrdenDespachoPorIdVentaLocal/{identificacion}/{estacion}";
+                HttpResponseMessage response = null;
+                try
+                {
+                    
+                    client.DefaultRequestHeaders.Authorization =
+        new AuthenticationHeaderValue("Bearer", token);
 
-                client.DefaultRequestHeaders.Authorization =
-    new AuthenticationHeaderValue("Bearer", token);
-                
-                var response = client.GetAsync($"{url}{path}").Result;
-                response.EnsureSuccessStatusCode();
-                Guid responseBody = response.Content.ReadAsAsync<Guid>().Result;
-                return responseBody; 
+                    response = client.GetAsync($"{url}{path}").Result;
+                   // response.EnsureSuccessStatusCode();
+                    string responseBody = response.Content.ReadAsStringAsync().Result;
+                    return responseBody;
+                }
+                catch (Exception ex) {
+                    throw new Exception($"{url}{path}"+ response.ReasonPhrase+ response.Content.ReadAsStringAsync().Result);
+                }
             }
         }
         public string CrearFacturaOrdenesDeDespacho(string guid, string token)
