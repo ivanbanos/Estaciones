@@ -297,8 +297,9 @@ namespace FacturacionelectronicaCore.Negocio.Factura
 
                     await _facturasRepository.SetIdFacturaElectronicaFactura(response, factura.Guid);
                 }
+                else { return "Combustible no creado"; }
                 _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
-                return "Ok"+ response;
+                return "Ok";
             }
             catch (Exception e)
             {
