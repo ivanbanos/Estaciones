@@ -28,10 +28,10 @@ namespace EnviadorInformacionService
         public Service1()
         {
             InitializeComponent();
-            enviadorDeInformacion = new EnviadorDeInformacion();
-            impresionService = new ImpresionService();
-            enviadorProsoft = new EnviadorProsoft();
-            //canastillaService = new CanastillaService();
+            //enviadorDeInformacion = new EnviadorDeInformacion();
+            //impresionService = new ImpresionService();
+            //enviadorProsoft = new EnviadorProsoft();
+            canastillaService = new CanastillaService();
         }
 
         protected override void OnStart(string[] args)
@@ -40,26 +40,26 @@ namespace EnviadorInformacionService
             {
 
                 Logger.Error("Iniciando ");
-                if (ConfigurationManager.AppSettings["EnvioInformacion"] == "true")
-                {
-                    envioThread = new Thread(new ThreadStart(enviadorDeInformacion.EnviarInformacion));
-                    envioThread.Start();
-                }
+                //if (ConfigurationManager.AppSettings["EnvioInformacion"] == "true")
+                //{
+                //    envioThread = new Thread(new ThreadStart(enviadorDeInformacion.EnviarInformacion));
+                //    envioThread.Start();
+                //}
 
-                Logger.Info(ConfigurationManager.AppSettings["EnvioAProsoft"]);
-                if (ConfigurationManager.AppSettings["EnvioAProsoft"] == "true" )
-                {
+                //Logger.Info(ConfigurationManager.AppSettings["EnvioAProsoft"]);
+                //if (ConfigurationManager.AppSettings["EnvioAProsoft"] == "true" )
+                //{
 
-                    Logger.Info("Iniciando interfaz Prosoft");
-                    enviadorProsoftThread = new Thread(new ThreadStart(enviadorProsoft.EnviarInformacion));
-                    enviadorProsoftThread.Start();
-                }
-                impresionThread = new Thread(new ThreadStart(impresionService.Execute));
-                impresionThread.Start();
-                //canastillaServiceThread = new Thread(new ThreadStart(canastillaService.ProcesoCanastilla));
-                //canastillaServiceThread.Start();
-                //canastillaWebServiceThread = new Thread(new ThreadStart(canastillaService.WebCanastilla));
-                //canastillaWebServiceThread.Start();
+                //    Logger.Info("Iniciando interfaz Prosoft");
+                //    enviadorProsoftThread = new Thread(new ThreadStart(enviadorProsoft.EnviarInformacion));
+                //    enviadorProsoftThread.Start();
+                //}
+                //impresionThread = new Thread(new ThreadStart(impresionService.Execute));
+                //impresionThread.Start();
+                canastillaServiceThread = new Thread(new ThreadStart(canastillaService.ProcesoCanastilla));
+                canastillaServiceThread.Start();
+                canastillaWebServiceThread = new Thread(new ThreadStart(canastillaService.WebCanastilla));
+                canastillaWebServiceThread.Start();
 
             }
             catch (Exception ex)

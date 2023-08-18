@@ -206,12 +206,12 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             {
                 if(facturaEntity.idFacturaElectronica != null)
                 {
-                    var factura = await _alegraFacade.GetFacturaElectronica(facturaEntity.idFacturaElectronica.Split(':')[1]);
-                    return $"Factura electrónica\n\r{factura.numberTemplate.fullNumber}\n\rCUFE:\n\r{factura.stamp.cufe}";
                     //var factura = await _alegraFacade.GetFacturaElectronica(facturaEntity.idFacturaElectronica.Split(':')[1]);
-                    //var info = facturaEntity.idFacturaElectronica.Split(':');
+                    //return $"Factura electrónica\n\r{factura.numberTemplate.fullNumber}\n\rCUFE:\n\r{factura.stamp.cufe}";
+                    var factura = await _alegraFacade.GetFacturaElectronica(facturaEntity.idFacturaElectronica.Split(':')[1]);
+                    var info = facturaEntity.idFacturaElectronica.Split(':');
 
-                    //return $"Factura electrónica\n\r{info[1]}\n\rCUFE:\n\r{info[2]}";
+                    return $"Factura electrónica\n\r{info[1]}\n\rCUFE:\n\r{info[2]}";
                 }
                 return null;
             }
@@ -220,12 +220,12 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             {
                 if (ordenDeDespachoEntity.idFacturaElectronica != null)
                 {
-                    var factura = await _alegraFacade.GetFacturaElectronica(ordenDeDespachoEntity.idFacturaElectronica.Split(':')[1]);
-                    return $"Factura electrónica {factura.numberTemplate.fullNumber}\n\rCUFE: {factura.stamp.cufe}";
-                    //var factura = await _alegraFacade.GetFacturaElectronica(facturaEntity.idFacturaElectronica.Split(':')[1]);
-                    //var info = ordenDeDespachoEntity.idFacturaElectronica.Split(':');
+                    //var factura = await _alegraFacade.GetFacturaElectronica(ordenDeDespachoEntity.idFacturaElectronica.Split(':')[1]);
+                    //return $"Factura electrónica {factura.numberTemplate.fullNumber}\n\rCUFE: {factura.stamp.cufe}";
+                    var factura = await _alegraFacade.GetFacturaElectronica(facturaEntity.idFacturaElectronica.Split(':')[1]);
+                    var info = ordenDeDespachoEntity.idFacturaElectronica.Split(':');
 
-                    //return $"Factura electrónica\n\r{info[1]}\n\rCUFE:\n\r{info[2]}";
+                    return $"Factura electrónica\n\r{info[1]}\n\rCUFE:\n\r{info[2]}";
                 }
                 return null;
             }

@@ -297,7 +297,7 @@ namespace EnviadorInformacionService
             }
             else
             {
-                lineasImprimir.Add(new LineasImprimir("Factura de venta P.O.S No: " + _factura.DescripcionResolucion + "-" + _factura.Consecutivo, true));
+                lineasImprimir.Add(new LineasImprimir("SISTEMA POS No: " + _factura.DescripcionResolucion + "-" + _factura.Consecutivo, true));
             }
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));

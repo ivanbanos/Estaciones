@@ -321,7 +321,7 @@ namespace EnviadorInformacionService
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[4], true));
             }
             
-                lineasImprimir.Add(new LineasImprimir("Factura de venta P.O.S No: " + _factura.resolucion.DescripcionResolucion + "-" + _factura.consecutivo, true));
+                lineasImprimir.Add(new LineasImprimir("SISTEMA POS CANASTILLA No: " + _factura.resolucion.DescripcionResolucion + "-" + _factura.consecutivo, true));
             
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
