@@ -298,7 +298,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                     await _facturasRepository.SetIdFacturaElectronicaFactura(response, factura.Guid);
                 }
                 _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
-                return "Ok";
+                return "Ok"+ response;
             }
             catch (Exception e)
             {

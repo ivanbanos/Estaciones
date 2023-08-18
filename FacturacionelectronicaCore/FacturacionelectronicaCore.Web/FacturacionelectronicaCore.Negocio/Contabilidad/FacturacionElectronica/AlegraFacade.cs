@@ -40,7 +40,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 return "Combustible no creado";
             }
             var invoice = await invoiceHandler.CrearFatura(factura.ConvertirAInvoice(item), alegraOptions);
-                return invoice.numberTemplate.prefix+ invoice.numberTemplate.number + ":" + invoice.id;
+                return invoice.numberTemplate.prefix+ invoice.numberTemplate.number + ":" + invoice.id + ":"+JsonConvert.SerializeObject(invoice);
         }
 
         public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero)
