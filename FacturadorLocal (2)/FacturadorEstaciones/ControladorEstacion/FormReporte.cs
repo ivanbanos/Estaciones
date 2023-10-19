@@ -1,4 +1,6 @@
-﻿using FacturadorAPI.Application.Queries.Reportes.Objetos;
+﻿using Accessibility;
+using FactoradorEstacionesModelo.Siges;
+using FacturadorAPI.Application.Queries.Reportes.Objetos;
 using FacturadorEstacionesRepositorio;
 using Microsoft.Extensions.Options;
 using Modelo;
@@ -30,27 +32,40 @@ namespace ControladorEstacion
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if(tipoReporte == "lecturas")
+
+            var reporteText = new StringBuilder();
+            if (tipoReporte == "lecturas")
             {
+                reporteText.Append($"<h2>{_infoEstacion.Razon}</h2>").AppendLine();
+                reporteText.Append($"<h2>NIT {_infoEstacion.NIT}</h2>").AppendLine();
+                reporteText.Append($"<b>Reporte de Control de Lecturas de Turnos<b>").AppendLine();
+                reporteText.Append($"<b>Entre las fechas desde {dateTimePicker1.Value} hasta {dateTimePicker2.Value}<b><br />").AppendLine();
                 var reporteLecturasGeneralResponse = new ReporteLecturasGeneralResponse(_infoEstacion.Nombre, _infoEstacion.NIT);
                 var turnos = _estacionesRepositorio.GetTurnosByFechas(this.dateTimePicker1.Value, this.dateTimePicker2.Value);
+
+
+                reporteText.Append($"<table><tr><th>Fecha</th><th>Turno</th><th>Isla</th><th>Manguera</th><th>Articulo</th><th>Lectura inicial</th><th>Lectura final</th><th>Diferencia</th><th>Ventas</th></tr>").AppendLine();
                 foreach (var turno in turnos)
                 {
                     var turnoinfo = _estacionesRepositorio.ObtenerTurnoSurtidor(turno.Id);
                     foreach (var turnosurtidor in turnoinfo.turnoSurtidores)
                     {
-                        reporteLecturasGeneralResponse.reporteTurnoItem.Add(
-                            new ReporteTurnoItem()
-                            {
-                                Combustible = turnosurtidor.Combustible.Descripcion,
-                                Fecha = turno.FechaApertura,
-                                IdTurno = turno.Id,
-                                Isla = turno.Isla,
-                                LecturaInicial = turnosurtidor.Apertura.ToString(),
-                                LecturaFinal = turnosurtidor.Cierre.HasValue ? turnosurtidor.Cierre.Value.ToString() : "",
-                                Manguera = turnosurtidor.Manguera.Descripcion
-                            }); ;
+                        reporteText.Append($"<tr>").AppendLine();
+                        reporteText.Append($"<td>{turno.FechaApertura}</td>").AppendLine();
+                        reporteText.Append($"<td>{turno.Id}</td>").AppendLine();
+                        reporteText.Append($"<td>{turno.Isla}</td>").AppendLine();
+                        reporteText.Append($"<td>{turnosurtidor.Manguera.Descripcion}</td>").AppendLine();
+                        reporteText.Append($"<td>{turnosurtidor.Combustible.Descripcion}</td>").AppendLine();
+                        reporteText.Append($"<td>{turnosurtidor.Apertura}</td>").AppendLine();
+                        reporteText.Append($"<td>{turnosurtidor.Cierre.Value}</td>").AppendLine();
+                        reporteText.Append($"<td>{turnosurtidor.Apertura - turnosurtidor.Cierre.Value}</td>").AppendLine();
+                        reporteText.Append($"<td>{turnosurtidor.Apertura - turnosurtidor.Cierre.Value}</td>").AppendLine();
+
+
+                        reporteText.Append($"</tr>").AppendLine();
                     }
+                    reporteText.Append($"</table>").AppendLine();
+
                 }
             } else
             {
@@ -58,36 +73,54 @@ namespace ControladorEstacion
                 var facturas = _estacionesRepositorio.GetFacturasPorFechas(this.dateTimePicker1.Value, this.dateTimePicker2.Value);
                 var formasPago = _estacionesRepositorio.BuscarFormasPagosSiges();
                 var groupForma = facturas.GroupBy(x => x.codigoFormaPago);
+
+
+                reporteText.Append($"<h2>{_infoEstacion.Razon}</h2>").AppendLine();
+                reporteText.Append($"<h2>NIT {_infoEstacion.NIT}</h2>").AppendLine();
+                reporteText.Append($"<b>Reporte de Ventas por Articulo Resumido<b>").AppendLine();
+                reporteText.Append($"<b>Entre las fechas desde {dateTimePicker1.Value} hasta {dateTimePicker2.Value}<b><br />").AppendLine();
+
+
+                var groupArticulo = facturas.GroupBy(x => x.Combustible);
+
+                reporteText.Append($"<table>").AppendLine();
+                reporteText.Append($"<tr><th>Articulo</th><th>No Ventas</th><th>Cantidad</th><th>Valor Neto</th><th>Subtotal</th><th>Descuento</th><th>Recaudo</th><th>Total</th></tr>").AppendLine();
+                foreach (var articulo in groupArticulo)
+                {
+                    reporteText.Append($"<tr>").AppendLine();
+                    reporteText.Append($"<td>{articulo.Key}</td>").AppendLine();
+                    reporteText.Append($"<td>{articulo.Count()}</td>").AppendLine();
+                    reporteText.Append($"<td>${articulo.Sum(x => x.Subtotal)}</td>").AppendLine();
+                    reporteText.Append($"<td>${articulo.Sum(x => x.Subtotal)}</td>").AppendLine();
+                    reporteText.Append($"<td>${articulo.Sum(x => x.Descuento)}</td>").AppendLine();
+                    reporteText.Append($"<td>$0.00</td>").AppendLine();
+                    reporteText.Append($"<td>${articulo.Sum(x => x.Total)}</td>").AppendLine();
+
+                    reporteText.Append($"</tr>").AppendLine();
+                    
+                }
+                reporteText.Append($"</table>").AppendLine();
+
+
+                reporteText.Append($"<b>Reporte de Formas de Pagos<b>").AppendLine();
+                reporteText.Append($"<table>").AppendLine();
+                reporteText.Append($"<tr><th>Código forma de pago</th><th>No Ventas</th><th>Cantidad</th><th>Total</th></tr>").AppendLine();
                 foreach (var forma in groupForma)
                 {
                     if (formasPago.Any(x => x.Id == forma.Key))
                     {
-                        reporteArticuloResponse.PorFormas.Add(new PorFormas()
-                        {
-                            Cantidad = forma.Sum(x => x.Cantidad),
-                            Descripcion = formasPago.First(x => x.Id == forma.Key).Descripcion,
-                            Facturas = forma.Count(),
-                            Total = forma.Sum(x => x.Total)
-                        });
+
+                        reporteText.Append($"<tr>").AppendLine();
+                        reporteText.Append($"<td>{formasPago.First(x => x.Id == forma.Key).Id} {formasPago.First(x => x.Id == forma.Key).Descripcion}</td>").AppendLine();
+                        reporteText.Append($"<td>{forma.Count()}</td>").AppendLine();
+                        reporteText.Append($"<td>${forma.Sum(x => x.Cantidad)}</td>").AppendLine();
+                        reporteText.Append($"<td>${forma.Sum(x => x.Total)}</td>").AppendLine();
+
+                        reporteText.Append($"</tr>").AppendLine();
                     }
                 }
+                reporteText.Append($"</table>").AppendLine();
 
-                var groupArticulo = facturas.GroupBy(x => x.Combustible);
-                foreach (var articulo in groupArticulo)
-                {
-                    reporteArticuloResponse.PorArticulo.Add(new PorArticulo()
-                    {
-                        Cantidad = articulo.Sum(x => x.Cantidad),
-                        Descripcion = articulo.Key,
-                        Facturas = articulo.Count(),
-                        Neto = articulo.Sum(x => x.Subtotal),
-                        Recaudo = 0,
-                        Descuento = articulo.Sum(x => x.Descuento),
-                        Subtotal = articulo.Sum(x => x.Subtotal),
-                        Total = articulo.Sum(x => x.Total)
-                    });
-
-                }
             }
         }
     }
