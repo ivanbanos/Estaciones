@@ -29,7 +29,7 @@ namespace ManejadorSurtidor.Messages
         {
             using var channel = connection.CreateModel();
             channel.QueueDeclare(queue: queue,
-                                     durable: false,
+                                      durable: true,
                                      exclusive: false,
                                      autoDelete: false,
                                      arguments: null);

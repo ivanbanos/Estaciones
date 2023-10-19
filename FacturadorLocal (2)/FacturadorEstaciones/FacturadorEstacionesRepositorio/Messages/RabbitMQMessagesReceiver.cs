@@ -29,7 +29,7 @@ namespace ControladorEstacion.Messages
             var channel = connection.CreateModel();
 
             channel.QueueDeclare(queue:_infoEstacion.Isla,
-                                 durable: false,
+                                 durable: true,
                                  exclusive: false,
                                  autoDelete: false,
                                  arguments: null);

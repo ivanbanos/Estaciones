@@ -42,6 +42,7 @@ namespace ManejadorSurtidor.SICOM
 
                     client.DefaultRequestHeaders.Add("APIKey", sicom.APIKey);
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", base64EncodedAuthenticationString);
+                    client.Timeout = new TimeSpan(0,0,0,5,0);
                     var response = await client.GetAsync(uri);
                     response.EnsureSuccessStatusCode();
                     string responseBody = await response.Content.ReadAsStringAsync();

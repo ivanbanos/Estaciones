@@ -22,7 +22,7 @@ namespace ControladorEstacion.Messages
             var channel = connection.CreateModel();
             
                 channel.QueueDeclare(queue: "controlador",
-                                     durable: false,
+                                     durable: true,
                                      exclusive: false,
                                      autoDelete: false,
                                      arguments: null);

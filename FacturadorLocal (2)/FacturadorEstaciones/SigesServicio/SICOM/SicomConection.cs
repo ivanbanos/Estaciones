@@ -1,6 +1,7 @@
 ﻿using FactoradorEstacionesModelo.Siges;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Modelo;
 using Newtonsoft.Json;
 using NLog;
 using System;
@@ -15,9 +16,10 @@ namespace ManejadorSurtidor.SICOM
     public class SicomConection : ISicomConection
     {
         private Sicom sicom;
+        private readonly InfoEstacion _infoEstacion;
 
         private readonly ILogger<SicomConection> _logger;
-        public SicomConection(IOptions<Sicom> options, ILogger<SicomConection> logger)
+        public SicomConection(IOptions<Sicom> options, ILogger<SicomConection> logger, IOptions<InfoEstacion> infoEstacion)
         {
             sicom = options.Value;
             _logger = logger;
@@ -26,6 +28,7 @@ namespace ManejadorSurtidor.SICOM
      {
          return true;
      };
+            _infoEstacion = infoEstacion.Value;
         }
 
         public async Task<VehiculoSuic> validateIButton(string iButton)
@@ -119,7 +122,7 @@ namespace ManejadorSurtidor.SICOM
 
                     //_logger.LogInformation( $"Sicom respuesta {responseBody}");
 
-                    File.WriteAllText("SUIC.txt", responseBody);
+                    File.WriteAllText(_infoEstacion.ArchivoSiCOM+"SUIC.txt", responseBody);
                     return responseBody;
                 }
                 catch (Exception ex)

@@ -8,6 +8,7 @@ using System.Text;
 using ServicioSIGES;
 using System.Net.NetworkInformation;
 using Modelo;
+using Newtonsoft.Json;
 
 namespace SigesServicio
 {
@@ -71,6 +72,7 @@ namespace SigesServicio
                                 if (imprimiendo == 0)
                                 {
                                     imprimiendo++;
+                                Logger.Info($"imprimirnedo {JsonConvert.SerializeObject(turnoimprimir)} ");
                                     ImprimirTurno(turnoimprimir);
                                     turnoimprimir.impresa++;
 
@@ -177,16 +179,17 @@ namespace SigesServicio
             // Iterate over the file, printing each line.
             lineasImprimirTurno.Add(new LineasImprimir(".", true));
             lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Razon, true));
-            lineasImprimirTurno.Add(new LineasImprimir("NIT " + _infoEstacion.NIT, true));
-            lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Nombre, true));
-            lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Direccion, true));
-            lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Telefono, true));
+            lineasImprimirTurno.Add(new LineasImprimir("NIT             " + _infoEstacion.NIT, false));
+            lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Nombre, false));
+            lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Direccion, false));
+            lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Telefono, false));
             lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
-            lineasImprimirTurno.Add(new LineasImprimir("Empleado:"+turnoimprimir.Empleado, true));
-            lineasImprimirTurno.Add(new LineasImprimir("Isla: "+turnoimprimir.Isla, true));
-            lineasImprimirTurno.Add(new LineasImprimir("Fecha apertura: " + turnoimprimir.FechaApertura.ToString(), true));
+            lineasImprimirTurno.Add(new LineasImprimir("Empleado:       "+turnoimprimir.Empleado, false));
+            lineasImprimirTurno.Add(new LineasImprimir("Isla:           "+turnoimprimir.Isla, false));
+            lineasImprimirTurno.Add(new LineasImprimir("Fecha apertura: " + turnoimprimir.FechaApertura.ToString(), false));
             if (turnoimprimir.FechaCierre.HasValue) {
-                lineasImprimirTurno.Add(new LineasImprimir("Fecha cierre: " + turnoimprimir.FechaCierre.Value.ToString(), true));
+                lineasImprimirTurno.Add(new LineasImprimir("Fecha cierre:   " + turnoimprimir.FechaCierre.Value.ToString(), false));
+               
             }
 
 
@@ -195,13 +198,51 @@ namespace SigesServicio
             lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
             foreach (var turnosurtidor in turnoimprimir.turnoSurtidores)
             {
-                lineasImprimirTurno.Add(new LineasImprimir($"Manguera {turnosurtidor.Manguera.Descripcion}", true));
-                lineasImprimirTurno.Add(new LineasImprimir($"Combustible {turnosurtidor.Combustible.Descripcion}", true));
-                lineasImprimirTurno.Add(new LineasImprimir($"Apertura {turnosurtidor.Apertura}", true));
+                lineasImprimirTurno.Add(new LineasImprimir($"Manguera:       {turnosurtidor.Manguera.Descripcion}", false));
+                lineasImprimirTurno.Add(new LineasImprimir($"Combustible:    {turnosurtidor.Combustible.Descripcion}", false));
+                lineasImprimirTurno.Add(new LineasImprimir($"Apertura:       {turnosurtidor.Apertura}", false));
                 if (turnoimprimir.FechaCierre.HasValue)
                 {
-                    lineasImprimirTurno.Add(new LineasImprimir($"Cierre {turnosurtidor.Cierre}", true));
-                    lineasImprimirTurno.Add(new LineasImprimir($"Total {string.Format("{0:N2}%", (turnosurtidor.Cierre - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio)}", true));
+                    lineasImprimirTurno.Add(new LineasImprimir($"Cierre:         {turnosurtidor.Cierre}", false));
+                    lineasImprimirTurno.Add(new LineasImprimir($"Cantidad:       {string.Format("{0:N2}", (turnosurtidor.Cierre - turnosurtidor.Apertura))}", false));
+                    lineasImprimirTurno.Add(new LineasImprimir($"Total:          {string.Format("{0:N2}", (turnosurtidor.Cierre - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio)}", false));
+                }
+
+                lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+            }
+            if (turnoimprimir.FechaCierre.HasValue)
+            {
+                var reporteCierrePorTotal = _estacionesRepositorio.GetReporteCierrePorTotal(turnoimprimir.Id);
+                if (reporteCierrePorTotal.Any())
+                {
+
+                    //Por forma
+                    lineasImprimirTurno.Add(new LineasImprimir($"Resumen por forma de pago", true));
+                    var groupForma = reporteCierrePorTotal.GroupBy(x => x.codigoFormaPago);
+                    Logger.Info("facturas turno " + JsonConvert.SerializeObject(groupForma));
+
+                    foreach (var forma in groupForma)
+                    {
+                        if (formas.Any(x => x.Id == forma.Key))
+                        {
+                            lineasImprimirTurno.Add(new LineasImprimir($"{formas.First(x => x.Id == forma.Key).Descripcion.Trim()}: {forma.Sum(x => x.Total)}", false));
+
+                        }
+                    }
+                    lineasImprimirTurno.Add(new LineasImprimir($"Total: {reporteCierrePorTotal.Sum(x => x.Total)}", false));
+
+
+                    lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+
+                    lineasImprimirTurno.Add(new LineasImprimir($"Resumen por Combustibles", true));
+                    //Totalizador
+                    lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+                    lineasImprimirTurno.Add(new LineasImprimir($"Combustible : {reporteCierrePorTotal.Sum(x => x.Subtotal)}", false));
+                    lineasImprimirTurno.Add(new LineasImprimir($"Calibracion : 0.0", false));
+                    lineasImprimirTurno.Add(new LineasImprimir($"Descuento : {reporteCierrePorTotal.Sum(x => x.Descuento)}", false));
+                    lineasImprimirTurno.Add(new LineasImprimir($"Total : {reporteCierrePorTotal.Sum(x => x.Total)}", false));
+
+                    lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
                 }
 
             }
@@ -298,7 +339,7 @@ namespace SigesServicio
             }
             else
             {
-                lineasImprimir.Add(new LineasImprimir("Factura de venta P.O.S No: " + _factura.DescripcionResolucion + "-" + _factura.Consecutivo, true));
+                lineasImprimir.Add(new LineasImprimir("SISTEMA POS No: " + _factura.DescripcionResolucion + "-" + _factura.Consecutivo, true));
             }
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
@@ -527,6 +568,11 @@ namespace SigesServicio
                 if (_infoEstacion.CaracteresPorPagina == 0)
                 {
                     _infoEstacion.CaracteresPorPagina = fonSizeInches * sizePaper / 100;
+                }
+                foreach (var linea in lineasImprimirTurno)
+                {
+
+                    count = printLine(linea.linea, ev, count, leftMargin, topMargin, linea.centrada);
                 }
                 foreach (var linea in lineasImprimirTurno)
                 {

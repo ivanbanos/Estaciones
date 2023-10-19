@@ -1,17 +1,10 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using FacturadorEstacionesRepositorio;
-using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json;
+﻿using FacturadorEstacionesRepositorio;
 using NLog;
 using Microsoft.Extensions.Options;
 using ManejadorSurtidor.SICOM;
 using FactoradorEstacionesModelo.Siges;
-using System.Numerics;
 using LogLevel = NLog.LogLevel;
+using Modelo;
 
 namespace ManejadorSurtidor
 {
@@ -20,6 +13,7 @@ namespace ManejadorSurtidor
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly IEstacionesRepositorio _estacionesRepositorio;
         private readonly IOptions<Sicom> _options;
+        private readonly IOptions<InfoEstacion> _optionsInfo;
 
         private readonly ISicomConection _sicomConection;
 
@@ -36,11 +30,12 @@ namespace ManejadorSurtidor
         {
             await base.StopAsync(cancellationToken);
         }
-        public ObtenerVehiculosWorker( IEstacionesRepositorio estacionesRepositorio, IOptions<Sicom> options, ISicomConection sicomConection)
+        public ObtenerVehiculosWorker(IEstacionesRepositorio estacionesRepositorio, IOptions<Sicom> options, ISicomConection sicomConection, IOptions<InfoEstacion> optionsInfo)
         {
             _estacionesRepositorio = estacionesRepositorio;
             _options = options;
             _sicomConection = sicomConection;
+            _optionsInfo = optionsInfo;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(async () =>
@@ -53,7 +48,7 @@ namespace ManejadorSurtidor
                     string suic = await _sicomConection.GetInfoCarros();
                     if (suic == "Fail")
                     {
-                        suic = File.ReadAllText("SUIC.txt");
+                        suic = File.ReadAllText(_optionsInfo.Value.ArchivoSiCOM + "SUIC.txt");
                     }
                     await setCarInDatabase(suic);
 

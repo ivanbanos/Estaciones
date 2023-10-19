@@ -129,7 +129,7 @@ namespace SigesServicio
             var fidelizados = _fidelizacon.GetFidelizados().Result;
             foreach(var fidelizado in fidelizados)
             {
-                _estacionesRepositorio.AddFidelizado(fidelizado.Documento, fidelizado.Puntos??0);
+                _estacionesRepositorio.AddFidelizado(fidelizado.Documento, fidelizado.Puntos.HasValue? fidelizado.Puntos.Value:0);
             }
         }
     }

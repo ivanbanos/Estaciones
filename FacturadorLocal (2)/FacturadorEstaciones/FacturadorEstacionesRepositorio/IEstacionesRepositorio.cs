@@ -68,5 +68,8 @@ namespace FacturadorEstacionesRepositorio
         void AddFidelizado(string documento, float? puntos);
         Puntos GetVentaFidelizarAutomatica(int id);
         Fidelizado getFidelizado(string identificacion);
+        List<FacturaSiges> GetReporteCierrePorTotal(int id);
+        IEnumerable<FacturaSiges> GetFacturasPorFechas(DateTime desde, DateTime hasta);
+        IEnumerable<TurnoSiges> GetTurnosByFechas(DateTime desde, DateTime hasta);
     }
 }

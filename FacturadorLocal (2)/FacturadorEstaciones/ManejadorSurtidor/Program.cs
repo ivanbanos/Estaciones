@@ -1,18 +1,9 @@
 
 using FacturadorEstacionesRepositorio;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Configuration;
-using NLog.Web;
-using System;
-using NLog;
 using NLog.Targets;
-using System.Threading.Tasks;
 using ManejadorSurtidor.SICOM;
 using ManejadorSurtidor.Messages;
-using System.Collections.Generic;
 using ControladorEstacion.Messages;
-using FactoradorEstacionesModelo.Siges;
 using Modelo;
 
 namespace ManejadorSurtidor
@@ -52,6 +43,8 @@ namespace ManejadorSurtidor
             catch (Exception ex)
             {
                 //NLog: catch setup errors
+                logger.Info(ex.Message);
+                logger.Info(ex.StackTrace);
                 Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
                 Environment.Exit(1);
@@ -66,14 +59,12 @@ namespace ManejadorSurtidor
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddSingleton<ISicomConection, SicomConection>();
-                    services.AddSingleton<IEstacionesRepositorio, EstacionesRepositorioSqlServer>();
+                    services.AddTransient<IEstacionesRepositorio, EstacionesRepositorioSqlServer>();
                     services.AddSingleton<IMessageProducer, RabbitMQProducer>();
                     services.Configure<ConnectionStrings>(options => hostContext.Configuration.GetSection("ConnectionStrings").Bind(options));
-                    services.AddSingleton<ISicomConection, SicomConection>();
-                    services.AddSingleton<IMessageProducer, RabbitMQProducer>();
-                    services.AddSingleton<IMessagesReceiver, RabbitMQMessagesReceiver>();
-                    services.AddSingleton<IFidelizacion, FidelizacionConexionApi>();
+                    services.AddTransient<ISicomConection, SicomConection>();
+                    services.AddTransient<IMessagesReceiver, RabbitMQMessagesReceiver>();
+                    services.AddTransient<IFidelizacion, FidelizacionConexionApi>();
                     services.AddSingleton<Islas>();
                     services.Configure<Sicom>(options => hostContext.Configuration.GetSection("Sicom").Bind(options));
                     services.AddHostedService<Worker>();

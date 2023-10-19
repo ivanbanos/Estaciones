@@ -18,7 +18,7 @@ namespace ControladorEstacion
         public Surtidor(FactoradorEstacionesModelo.Siges.SurtidorSiges surtidor)
         {
             InitializeComponent();
-            this.Nombre.Text = surtidor.Descripcion;
+            this.Nombre.Text = surtidor.Descripcion.ToLower().Replace("surtidor","").Replace(" ", "");
             SurtidorControl = surtidor;
         }
 

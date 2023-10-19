@@ -28,115 +28,108 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.Nombre = new System.Windows.Forms.Label();
-            this.label1 = new System.Windows.Forms.Label();
-            this.EstadoPar = new System.Windows.Forms.Label();
-            this.label3 = new System.Windows.Forms.Label();
-            this.EstadoImpar = new System.Windows.Forms.Label();
-            this.Turno = new System.Windows.Forms.Label();
-            this.Islero = new System.Windows.Forms.Label();
-            this.SuspendLayout();
+            Nombre = new Label();
+            EstadoPar = new Label();
+            EstadoImpar = new Label();
+            Turno = new Label();
+            Islero = new Label();
+            panel1 = new Panel();
+            panel1.SuspendLayout();
+            SuspendLayout();
             // 
             // Nombre
             // 
-            this.Nombre.AutoSize = true;
-            this.Nombre.Font = new System.Drawing.Font("Segoe UI", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.Nombre.ForeColor = System.Drawing.Color.White;
-            this.Nombre.Location = new System.Drawing.Point(9, 11);
-            this.Nombre.Name = "Nombre";
-            this.Nombre.Size = new System.Drawing.Size(99, 25);
-            this.Nombre.TabIndex = 0;
-            this.Nombre.Text = "[surtidor]";
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.label1.ForeColor = System.Drawing.Color.White;
-            this.label1.Location = new System.Drawing.Point(9, 78);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(52, 15);
-            this.label1.TabIndex = 1;
-            this.label1.Text = "Cara Par";
+            Nombre.AutoSize = true;
+            Nombre.BackColor = Color.FromArgb(5, 29, 56);
+            Nombre.Font = new Font("Segoe UI", 18F, FontStyle.Bold, GraphicsUnit.Point);
+            Nombre.ForeColor = Color.White;
+            Nombre.Location = new Point(113, 18);
+            Nombre.Name = "Nombre";
+            Nombre.Size = new Size(28, 32);
+            Nombre.TabIndex = 0;
+            Nombre.Text = "1";
             // 
             // EstadoPar
             // 
-            this.EstadoPar.AutoSize = true;
-            this.EstadoPar.ForeColor = System.Drawing.Color.White;
-            this.EstadoPar.Location = new System.Drawing.Point(9, 93);
-            this.EstadoPar.Name = "EstadoPar";
-            this.EstadoPar.Size = new System.Drawing.Size(81, 15);
-            this.EstadoPar.TabIndex = 2;
-            this.EstadoPar.Text = "Desautorizada";
-            // 
-            // label3
-            // 
-            this.label3.AutoSize = true;
-            this.label3.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point);
-            this.label3.ForeColor = System.Drawing.Color.White;
-            this.label3.Location = new System.Drawing.Point(9, 108);
-            this.label3.Name = "label3";
-            this.label3.Size = new System.Drawing.Size(67, 15);
-            this.label3.TabIndex = 3;
-            this.label3.Text = "Cara Impar";
+            EstadoPar.AutoSize = true;
+            EstadoPar.BackColor = Color.FromArgb(1, 5, 29, 56);
+            EstadoPar.Font = new Font("Segoe UI", 6F, FontStyle.Regular, GraphicsUnit.Point);
+            EstadoPar.ForeColor = Color.White;
+            EstadoPar.Location = new Point(70, 80);
+            EstadoPar.Name = "EstadoPar";
+            EstadoPar.Size = new Size(57, 11);
+            EstadoPar.TabIndex = 2;
+            EstadoPar.Text = "Desautorizada";
             // 
             // EstadoImpar
             // 
-            this.EstadoImpar.AutoSize = true;
-            this.EstadoImpar.ForeColor = System.Drawing.Color.White;
-            this.EstadoImpar.Location = new System.Drawing.Point(9, 123);
-            this.EstadoImpar.Name = "EstadoImpar";
-            this.EstadoImpar.Size = new System.Drawing.Size(81, 15);
-            this.EstadoImpar.TabIndex = 4;
-            this.EstadoImpar.Text = "Desautorizada";
+            EstadoImpar.AutoSize = true;
+            EstadoImpar.BackColor = Color.FromArgb(1, 5, 29, 56);
+            EstadoImpar.Font = new Font("Segoe UI", 6F, FontStyle.Regular, GraphicsUnit.Point);
+            EstadoImpar.ForeColor = Color.White;
+            EstadoImpar.Location = new Point(151, 80);
+            EstadoImpar.Name = "EstadoImpar";
+            EstadoImpar.Size = new Size(57, 11);
+            EstadoImpar.TabIndex = 4;
+            EstadoImpar.Text = "Desautorizada";
             // 
             // Turno
             // 
-            this.Turno.AutoSize = true;
-            this.Turno.ForeColor = System.Drawing.Color.White;
-            this.Turno.Location = new System.Drawing.Point(9, 36);
-            this.Turno.Name = "Turno";
-            this.Turno.Size = new System.Drawing.Size(86, 15);
-            this.Turno.TabIndex = 5;
-            this.Turno.Text = "Turno: Cerrado";
+            Turno.AutoSize = true;
+            Turno.BackColor = Color.FromArgb(1, 5, 29, 56);
+            Turno.ForeColor = Color.White;
+            Turno.Location = new Point(249, 42);
+            Turno.Name = "Turno";
+            Turno.Size = new Size(86, 15);
+            Turno.TabIndex = 5;
+            Turno.Text = "Turno: Cerrado";
             // 
             // Islero
             // 
-            this.Islero.AutoSize = true;
-            this.Islero.ForeColor = System.Drawing.Color.White;
-            this.Islero.Location = new System.Drawing.Point(9, 51);
-            this.Islero.Name = "Islero";
-            this.Islero.Size = new System.Drawing.Size(63, 15);
-            this.Islero.TabIndex = 6;
-            this.Islero.Text = "Empleado:";
+            Islero.AutoSize = true;
+            Islero.BackColor = Color.FromArgb(1, 5, 29, 56);
+            Islero.ForeColor = Color.White;
+            Islero.Location = new Point(249, 83);
+            Islero.Name = "Islero";
+            Islero.Size = new Size(63, 15);
+            Islero.TabIndex = 6;
+            Islero.Text = "Empleado:";
+            // 
+            // panel1
+            // 
+            panel1.BackColor = Color.FromArgb(1, 5, 29, 56);
+            panel1.BackgroundImage = Properties.Resources.Visualizador___Surtidor_1__3_;
+            panel1.Controls.Add(Nombre);
+            panel1.Controls.Add(EstadoImpar);
+            panel1.Controls.Add(Islero);
+            panel1.Controls.Add(Turno);
+            panel1.Controls.Add(EstadoPar);
+            panel1.Location = new Point(0, 0);
+            panel1.Name = "panel1";
+            panel1.Size = new Size(400, 110);
+            panel1.TabIndex = 7;
             // 
             // Surtidor
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.BackColor = System.Drawing.Color.SteelBlue;
-            this.Controls.Add(this.Islero);
-            this.Controls.Add(this.Turno);
-            this.Controls.Add(this.EstadoImpar);
-            this.Controls.Add(this.label3);
-            this.Controls.Add(this.EstadoPar);
-            this.Controls.Add(this.label1);
-            this.Controls.Add(this.Nombre);
-            this.Name = "Surtidor";
-            this.Size = new System.Drawing.Size(262, 158);
-            this.ResumeLayout(false);
-            this.PerformLayout();
-
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            BackColor = Color.FromArgb(1, 5, 29, 56);
+            BackgroundImage = Properties.Resources.Visualizador__Fondo__1_;
+            Controls.Add(panel1);
+            Name = "Surtidor";
+            Size = new Size(400, 110);
+            panel1.ResumeLayout(false);
+            panel1.PerformLayout();
+            ResumeLayout(false);
         }
 
         #endregion
 
         private Label Nombre;
-        private Label label1;
         private Label EstadoPar;
-        private Label label3;
         private Label EstadoImpar;
         private Label Turno;
         private Label Islero;
+        private Panel panel1;
     }
 }

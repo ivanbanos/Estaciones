@@ -62,6 +62,8 @@ try
 catch (Exception ex)
 {
     //NLog: catch setup errors
+    logger.Info(ex.Message);
+    logger.Info(ex.StackTrace);
     Console.WriteLine(ex.Message);
     Console.WriteLine(ex.StackTrace);
     Environment.Exit(1);

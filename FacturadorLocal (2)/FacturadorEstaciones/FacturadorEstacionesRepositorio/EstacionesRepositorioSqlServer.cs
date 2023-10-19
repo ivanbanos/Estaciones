@@ -998,5 +998,39 @@ namespace FacturadorEstacionesRepositorio
                             });
             return _convertidor.ConvertirFidelizado(dt).FirstOrDefault();
         }
+
+        public List<FacturaSiges> GetReporteCierrePorTotal(int id)
+        {
+            var parameters = new Dictionary<string, object>
+            {{"@idTurno", id }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetReporteCierrePorTotal",
+                         parameters);
+            return _convertidor.ConvertirFacturasSiges(dt2);
+        }
+
+        public IEnumerable<FacturaSiges> GetFacturasPorFechas(DateTime desde, DateTime hasta)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                    {"@fechaInicio", desde },
+                    {"@fechaFin", hasta }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetFacturasPorFechas",
+                         parameters);
+            return _convertidor.ConvertirFacturasSiges(dt2);
+        }
+
+        public IEnumerable<TurnoSiges> GetTurnosByFechas(DateTime desde, DateTime hasta)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                    {"@fechaInicio", desde },
+                    {"@fechaFin", hasta }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnosPorFecha",
+                         parameters);
+            return _convertidor.ConvertirTurnoSiges(dt2);
+        }
     }
 }

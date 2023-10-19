@@ -59,5 +59,6 @@ namespace Modelo
         public string CentroVenta { get; set; }
         public string RabbitHost { get; set; }
         public string Isla { get; set; }
+        public string ArchivoSiCOM { get; set; }
     }
 }
