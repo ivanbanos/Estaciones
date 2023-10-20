@@ -237,7 +237,9 @@ namespace SigesServicio
                     lineasImprimirTurno.Add(new LineasImprimir($"Resumen por Combustibles", true));
                     //Totalizador
                     lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
-                    lineasImprimirTurno.Add(new LineasImprimir($"Combustible : {reporteCierrePorTotal.Sum(x => x.Subtotal)}", false));
+                    lineasImprimirTurno.Add(new LineasImprimir($"Combustible : {reporteCierrePorTotal.First().Combustible}", false));
+                    lineasImprimirTurno.Add(new LineasImprimir($"Precio : {reporteCierrePorTotal.First().Precio}", false));
+                    lineasImprimirTurno.Add(new LineasImprimir($"Subtotal : {reporteCierrePorTotal.Sum(x => x.Subtotal)}", false));
                     lineasImprimirTurno.Add(new LineasImprimir($"Calibracion : 0.0", false));
                     lineasImprimirTurno.Add(new LineasImprimir($"Descuento : {reporteCierrePorTotal.Sum(x => x.Descuento)}", false));
                     lineasImprimirTurno.Add(new LineasImprimir($"Total : {reporteCierrePorTotal.Sum(x => x.Total)}", false));
@@ -568,11 +570,6 @@ namespace SigesServicio
                 if (_infoEstacion.CaracteresPorPagina == 0)
                 {
                     _infoEstacion.CaracteresPorPagina = fonSizeInches * sizePaper / 100;
-                }
-                foreach (var linea in lineasImprimirTurno)
-                {
-
-                    count = printLine(linea.linea, ev, count, leftMargin, topMargin, linea.centrada);
                 }
                 foreach (var linea in lineasImprimirTurno)
                 {

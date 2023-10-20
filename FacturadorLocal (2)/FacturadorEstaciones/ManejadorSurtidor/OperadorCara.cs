@@ -379,6 +379,7 @@ namespace ManejadorSurtidor
                     if (vehiculo != null)
                     {
                         vehiculo.surtidor = surtidor.Numero;
+                        vehiculo.isla = surtidor.turno.Isla;
                         await sendVehiculo(vehiculo);
                         break;
                     }

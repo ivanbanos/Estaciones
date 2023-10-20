@@ -1,18 +1,7 @@
-﻿using Accessibility;
-using FactoradorEstacionesModelo.Siges;
-using FacturadorAPI.Application.Queries.Reportes.Objetos;
+﻿using FacturadorAPI.Application.Queries.Reportes.Objetos;
 using FacturadorEstacionesRepositorio;
-using Microsoft.Extensions.Options;
 using Modelo;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace ControladorEstacion
 {
@@ -120,7 +109,11 @@ namespace ControladorEstacion
                     }
                 }
                 reporteText.Append($"</table>").AppendLine();
-
+                ChromePdfRenderer renderer = new ChromePdfRenderer();
+                PdfDocument pdf = renderer.RenderHtmlAsPdf(reporteText.ToString());
+                pdf.SaveAs($"{_infoEstacion.Reportes}/repore-{tipoReporte}.pdf");
+                MessageBox.Show("Reporte generado con exito");
+                this.Close();
             }
         }
     }

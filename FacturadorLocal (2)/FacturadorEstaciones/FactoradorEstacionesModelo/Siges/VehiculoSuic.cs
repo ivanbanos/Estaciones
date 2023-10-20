@@ -17,5 +17,6 @@ namespace FactoradorEstacionesModelo.Siges
         public string motivo { get;set; }
         public string motivoTexto { get; set; }
         public int surtidor { get; set; }
+        public string isla { get; set; }
     }
 }

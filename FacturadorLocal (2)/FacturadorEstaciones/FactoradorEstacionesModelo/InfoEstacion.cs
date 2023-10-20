@@ -58,6 +58,8 @@ namespace Modelo
         public string PasswordFidelizacion { get; set; }
         public string CentroVenta { get; set; }
         public string RabbitHost { get; set; }
+        public string Reportes { get; set; }
+        
         public string Isla { get; set; }
         public string ArchivoSiCOM { get; set; }
     }
