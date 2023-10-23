@@ -433,7 +433,19 @@ namespace FacturadorEstacionesRepositorio
 
                     {"@idSurtidor", id }
                             });
-            return _convertidor.ConvertirTurnoSiges(dt).FirstOrDefault();
+            var turno = _convertidor.ConvertirTurnoSiges(dt).FirstOrDefault();
+            if (turno != null)
+            {
+                var parameters2 = new Dictionary<string, object>
+                {
+                 {"@Id",turno.Id },
+                };
+                DataTable dt3 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnoSurtidorInfo",
+                             parameters2);
+                turno.turnoSurtidores = _convertidor.ConvertirTurnoSurtidoresSiges(dt3);
+            }
+
+            return turno;
         }
 
         public void EnviarTotalizadorCierre(int idSurtidor, int? idTurno, int idManguera, string total)
@@ -1030,7 +1042,22 @@ namespace FacturadorEstacionesRepositorio
             };
             DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnosPorFecha",
                          parameters);
-            return _convertidor.ConvertirTurnoSiges(dt2);
+
+
+
+            var turnos = _convertidor.ConvertirTurnoSiges(dt2);
+
+            foreach (var turno in turnos)
+            {
+                var parameters2 = new Dictionary<string, object>
+                {
+                 {"@Id",turno.Id },
+                };
+                DataTable dt3 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnoSurtidorInfo",
+                             parameters2);
+                turno.turnoSurtidores = _convertidor.ConvertirTurnoSurtidoresSiges(dt3);
+            }
+            return turnos;
         }
     }
 }

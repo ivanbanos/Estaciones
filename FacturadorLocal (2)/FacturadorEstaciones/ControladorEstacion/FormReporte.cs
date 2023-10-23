@@ -46,7 +46,7 @@ namespace ControladorEstacion
                         reporteText.Append($"<td>{turnosurtidor.Manguera.Descripcion}</td>").AppendLine();
                         reporteText.Append($"<td>{turnosurtidor.Combustible.Descripcion}</td>").AppendLine();
                         reporteText.Append($"<td>{turnosurtidor.Apertura}</td>").AppendLine();
-                        reporteText.Append($"<td>{turnosurtidor.Cierre.Value}</td>").AppendLine();
+                        reporteText.Append($"<td>{turnosurtidor.Cierre??0}</td>").AppendLine();
                         reporteText.Append($"<td>{turnosurtidor.Apertura - turnosurtidor.Cierre.Value}</td>").AppendLine();
                         reporteText.Append($"<td>{turnosurtidor.Apertura - turnosurtidor.Cierre.Value}</td>").AppendLine();
 

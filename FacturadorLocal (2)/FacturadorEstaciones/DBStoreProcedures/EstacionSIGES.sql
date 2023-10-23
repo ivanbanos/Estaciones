@@ -3503,7 +3503,7 @@ begin try
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
 	
 	
-	where FacturasPOS.estado != 'AN' and FacturasPOS.Fecha between @fechaInicio and @fechaFin
+	where FacturasPOS.estado != 'AN' and turno.FechaApertura between @fechaInicio and @fechaFin
 	
     union
 	select 
@@ -3538,7 +3538,7 @@ begin try
 	left join dbo.Resoluciones on OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId
 	left join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
-	where  OrdenesDeDespacho.Fecha between @fechaInicio and @fechaFin
+	where  turno.FechaApertura between @fechaInicio and @fechaFin
     
 
 
@@ -3607,6 +3607,63 @@ begin try
 				from OrdenesDeDespacho
 				where OrdenesDeDespacho.ventaId = @consecutivo
 		end
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+drop procedure [dbo].[ReimprimirTurno]
+GO
+CREATE procedure [dbo].[ReimprimirTurno]
+(@Fecha datetime,
+@IdIsla int,
+@posicion int)
+as
+begin try
+    set nocount on;
+
+
+
+	declare @turnosCerrados as table (ID INT IDENTITY, IdTurno), @turnoImprimir int;
+
+    insert into @turnosCerrados (IdTurno)
+	select Id 
+    from Turno 
+    where IDISla=@IdIsla 
+    and CONVERT(date, FechaApertura) = CONVERT(date, @Fecha) 
+    and  (IdEstado=4)
+
+    select @turnoImprimir = IdTurno from @turnosCerrados where Id = @posicion
+
+	if @turnoImprimir is not null
+	begin
+		
+		update Turno set
+		 impreso=1
+		from Turno
+		where Id = @turnoImprimir 
+	end
+	else
+	begin
+		RAISERROR (N'Turno no cerrado', -- Message text.
+           10, -- Severity,
+           1, -- State,
+           7, -- First argument used for width.
+           3, -- Second argument used for precision.
+           N'Turno no cerrado');
+	end
+
 end try
 begin catch
     declare 
