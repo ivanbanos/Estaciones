@@ -3285,7 +3285,7 @@ CREATE procedure [dbo].GetVentaFidelizarAutomatica
 as
 begin try
     set nocount on;
-	select TOP (1) Venta.total as ValorVenta, Fidelizado.documento as DocumentoFidelizado, Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo)   from Venta
+	select TOP (1) Venta.total as ValorVenta, Fidelizado.documento as DocumentoFidelizado, Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo) as Factura  from Venta
 	inner join FacturasPOS on FacturasPOS.ventaId = Venta.Id
 	inner join Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
 	inner join Vehiculos on Vehiculos.idrom = Venta.Ibutton
@@ -3463,7 +3463,7 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-CREATE procedure [dbo].GetFacturasPorFechas
+ALTER procedure [dbo].GetFacturasPorFechas
 (@fechaInicio datetime, @fechaFin datetime)
 as
 begin try
@@ -3635,7 +3635,8 @@ begin try
 
 
 
-	declare @turnosCerrados as table (ID INT IDENTITY, IdTurno), @turnoImprimir int;
+	declare @turnosCerrados as table (ID INT IDENTITY, IdTurno int)
+    declare @turnoImprimir int;
 
     insert into @turnosCerrados (IdTurno)
 	select Id 
@@ -3663,6 +3664,35 @@ begin try
            3, -- Second argument used for precision.
            N'Turno no cerrado');
 	end
+
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+drop procedure [dbo].GetVentaFidelizarAutomaticaPorVenta
+GO
+CREATE procedure [dbo].GetVentaFidelizarAutomaticaPorVenta
+(@idVenta int)
+as
+begin try
+    set nocount on;
+	select TOP (1) Venta.total as ValorVenta, '' as DocumentoFidelizado, Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo) as Factura  from Venta
+	inner join FacturasPOS on FacturasPOS.ventaId = Venta.Id
+	inner join Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
+	where venta.Id = @idVenta
+	order by venta.id desc
+
 
 end try
 begin catch

@@ -111,7 +111,7 @@ namespace ControladorEstacion
                 reporteText.Append($"</table>").AppendLine();
                 ChromePdfRenderer renderer = new ChromePdfRenderer();
                 PdfDocument pdf = renderer.RenderHtmlAsPdf(reporteText.ToString());
-                pdf.SaveAs($"{_infoEstacion.Reportes}/repore-{tipoReporte}.pdf");
+                pdf.SaveAs($"{_infoEstacion.Reportes}/reporte-{tipoReporte}.pdf");
                 MessageBox.Show("Reporte generado con exito");
                 this.Close();
             }
