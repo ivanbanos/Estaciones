@@ -22,7 +22,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         private readonly IMapper _mapper;
         private readonly IApiContabilidad _apiContabilidad;
         private readonly IFacturacionElectronicaFacade _alegraFacade;
-        private readonly bool usaAlegra;
+        private readonly bool MultiplicarPorDies;
         private readonly IFacturaCanastillaRepository _facturaCanastillaRepository;
 
         public ManejadorInformacionLocalNegocio(IFacturasRepository facturasRepository,
@@ -37,7 +37,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             _ordenDeDespachoRepositorio = ordenDeDespachoRepositorio;
             _apiContabilidad = apiContabilidad;
             _mapper = mapper;
-            usaAlegra = alegra.Value.UsaAlegra;
+            MultiplicarPorDies = alegra.Value.MultiplicarPorDies;
             _alegraFacade = alegraFacade;
             _tipoIdentificacionRepositorio = tipoIdentificacionRepositorio;
             _facturaCanastillaRepository = facturaCanastillaRepository;
@@ -53,6 +53,13 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                 {
                     factura.IdResolucion = resolucionActiva.guid.ToString();
                     factura.DescripcionResolucion = resolucionActiva.Descripcion;
+                    if (MultiplicarPorDies)
+                    {
+                        factura.Precio *= 10;
+                        factura.SubTotal *= 10;
+                        factura.Total *= 10;
+                        factura.Descuento *= 10;
+                    }
                 }
             }
             await _facturasRepository.AddRange(facturasRepositorio, estacion);
@@ -88,10 +95,10 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                 Manguera = x.Manguera,
                 NombreTercero = x.NombreTercero,
                 Placa = x.Placa,
-                Precio = x.Precio,
-                SubTotal = x.SubTotal,
+                Precio = MultiplicarPorDies ? x.Precio * 10 : x.Precio,
+                SubTotal = MultiplicarPorDies ? x.SubTotal * 10 : x.SubTotal,
                 Surtidor = x.Surtidor,
-                Total = x.Total,
+                Total = MultiplicarPorDies? x.Total*10: x.Total,
                 Vendedor = x.Vendedor,
             }), estacion);
         }

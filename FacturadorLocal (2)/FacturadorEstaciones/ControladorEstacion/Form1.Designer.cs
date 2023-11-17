@@ -35,8 +35,8 @@ namespace ControladorEstacion
         {
             pictureBox1 = new PictureBox();
             panel1 = new Panel();
-            button1 = new Button();
             button2 = new Button();
+            button1 = new Button();
             ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
             panel1.SuspendLayout();
             SuspendLayout();
@@ -57,32 +57,21 @@ namespace ControladorEstacion
             // 
             panel1.BackColor = Color.FromArgb(1, 5, 29, 56);
             panel1.BackgroundImage = Properties.Resources.Visualizador_03__1_;
+            panel1.BackgroundImageLayout = ImageLayout.Stretch;
             panel1.Controls.Add(button2);
             panel1.Controls.Add(button1);
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
-            panel1.Size = new Size(900, 512);
+            panel1.Size = new Size(1217, 749);
             panel1.TabIndex = 0;
-            // 
-            // button1
-            // 
-            button1.BackColor = Color.FromArgb(5, 29, 56);
-            button1.Font = new Font("Segoe UI", 15.75F, FontStyle.Regular, GraphicsUnit.Point);
-            button1.ForeColor = Color.FromArgb(124, 197, 252);
-            button1.Location = new Point(575, 132);
-            button1.Name = "button1";
-            button1.Size = new Size(208, 64);
-            button1.TabIndex = 0;
-            button1.Text = "Reporte de lecturas";
-            button1.UseVisualStyleBackColor = false;
-            button1.Click += button1_Click;
+            panel1.Paint += panel1_Paint;
             // 
             // button2
             // 
             button2.BackColor = Color.FromArgb(5, 29, 56);
             button2.Font = new Font("Segoe UI", 15.75F, FontStyle.Regular, GraphicsUnit.Point);
             button2.ForeColor = Color.FromArgb(124, 197, 252);
-            button2.Location = new Point(575, 202);
+            button2.Location = new Point(760, 106);
             button2.Name = "button2";
             button2.Size = new Size(208, 64);
             button2.TabIndex = 1;
@@ -90,13 +79,26 @@ namespace ControladorEstacion
             button2.UseVisualStyleBackColor = false;
             button2.Click += button2_Click;
             // 
+            // button1
+            // 
+            button1.BackColor = Color.FromArgb(5, 29, 56);
+            button1.Font = new Font("Segoe UI", 15.75F, FontStyle.Regular, GraphicsUnit.Point);
+            button1.ForeColor = Color.FromArgb(124, 197, 252);
+            button1.Location = new Point(509, 106);
+            button1.Name = "button1";
+            button1.Size = new Size(208, 64);
+            button1.TabIndex = 0;
+            button1.Text = "Reporte de lecturas";
+            button1.UseVisualStyleBackColor = false;
+            button1.Click += button1_Click;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.Control;
             BackgroundImage = Properties.Resources.Visualizador__Fondo__1_;
-            ClientSize = new Size(884, 499);
+            ClientSize = new Size(1216, 749);
             Controls.Add(pictureBox1);
             Controls.Add(panel1);
             Name = "Form1";

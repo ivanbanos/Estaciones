@@ -21,5 +21,6 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public string ResolutionNumber { get; set; }
         public string Prefix { get; set; }
         public int Current { get; set; }
+        public bool MultiplicarPorDies { get; set; }
     }
 }

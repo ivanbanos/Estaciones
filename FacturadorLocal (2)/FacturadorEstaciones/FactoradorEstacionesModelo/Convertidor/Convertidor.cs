@@ -613,7 +613,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                 dt.AsEnumerable().Select(dr => new Fidelizado()
                 {
                     Puntos = (float)dr.Field<double>("puntos"),
-                    Documento = dr.Field<string>("documento"),
+                    Documento = dr.Field<string>("documento")
                 }
             ));
             return response;

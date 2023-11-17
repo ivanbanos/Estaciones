@@ -41,7 +41,7 @@ namespace FacturadorEstacionesPOSWinForm
                     MessageBox.Show("Debe diligenciar documento");
                 }
                 _fidelizacion.SubirPuntops((float)_factura.Total, textBox1.Text, _factura.DescripcionResolucion + "-" + _factura.Consecutivo).Wait();
-                var fidelizados =  _fidelizacion.GetFidelizados().Result;
+                var fidelizados =  _fidelizacion.GetFidelizados(textBox1.Text).Result;
                 foreach (var fidelizado in fidelizados)
                 {
                     _estacionesRepositorio.AddFidelizado(fidelizado.Documento, fidelizado.Puntos);

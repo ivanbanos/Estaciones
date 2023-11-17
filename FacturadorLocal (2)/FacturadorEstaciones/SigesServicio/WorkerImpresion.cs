@@ -21,11 +21,12 @@ namespace SigesServicio
         private string firstMacAddress;
         private readonly Guid estacionFuente;
         private readonly IEstacionesRepositorio _estacionesRepositorio;
+        private readonly IFidelizacion _fidelizacion;
 
         private readonly bool generaFacturaElectronica;
         private readonly InfoEstacion _infoEstacion;
         private readonly List<CaraImpresora> _caraImpresoras;
-        public WorkerImpresion( IEstacionesRepositorio estacionesRepositorio, IOptions<InfoEstacion> infoEstacion, IOptions<List<CaraImpresora>> caraImpresoras)
+        public WorkerImpresion(IEstacionesRepositorio estacionesRepositorio, IOptions<InfoEstacion> infoEstacion, IOptions<List<CaraImpresora>> caraImpresoras, IFidelizacion fidelizacion)
         {
             _estacionesRepositorio = estacionesRepositorio;
             _infoEstacion = infoEstacion.Value;
@@ -36,6 +37,7 @@ namespace SigesServicio
         .Where(nic => nic.OperationalStatus == OperationalStatus.Up && nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
         .Select(nic => nic.GetPhysicalAddress().ToString())
         .FirstOrDefault();
+            _fidelizacion = fidelizacion;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(async () =>
@@ -43,7 +45,7 @@ namespace SigesServicio
             var estacionFuente = new Guid(_infoEstacion.EstacionFuente);
 
 
-             Logger.Info(_infoEstacion.Razon);
+            Logger.Info(_infoEstacion.Razon);
             ImpresionAutomatica = _infoEstacion.ImpresionAutomatica;
             impresionFormaDePagoOrdenDespacho = _infoEstacion.ImpresionFormaDePagoOrdenDespacho;
             var generaFacturaElectronica = _infoEstacion.GeneraFacturaElectronica;
@@ -51,7 +53,7 @@ namespace SigesServicio
 
             formas = _estacionesRepositorio.BuscarFormasPagosSiges();
 
-             Logger.Info("formas");
+            Logger.Info("formas");
             imprimiendo = 0;
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -69,19 +71,19 @@ namespace SigesServicio
                         var turnoimprimir = _estacionesRepositorio.getTurnosSinImprimir();
                         if (imprimiendo == 0 && turnoimprimir != null)
                         {
-                                if (imprimiendo == 0)
-                                {
-                                    imprimiendo++;
+                            if (imprimiendo == 0)
+                            {
+                                imprimiendo++;
                                 Logger.Info($"imprimirnedo {JsonConvert.SerializeObject(turnoimprimir)} ");
-                                    ImprimirTurno(turnoimprimir);
-                                    turnoimprimir.impresa++;
+                                ImprimirTurno(turnoimprimir);
+                                turnoimprimir.impresa++;
 
-                                    _estacionesRepositorio.ActualizarTurnoImpreso(turnoimprimir.Id);
-                                }
-                                else
-                                {
-                                    Thread.Sleep(100);
-                                }
+                                _estacionesRepositorio.ActualizarTurnoImpreso(turnoimprimir.Id);
+                            }
+                            else
+                            {
+                                Thread.Sleep(100);
+                            }
                             Thread.Sleep(1000);
                         }
                         var factura = _estacionesRepositorio.getFacturasImprimir();
@@ -123,8 +125,8 @@ namespace SigesServicio
                 {
 
                     imprimiendo = 0;
-                     Logger.Info("Error " + ex.Message);
-                     Logger.Info("Error " + ex.StackTrace);
+                    Logger.Info("Error " + ex.Message);
+                    Logger.Info("Error " + ex.StackTrace);
                     Thread.Sleep(1000);
                 }
 
@@ -165,8 +167,8 @@ namespace SigesServicio
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                 Logger.Info("Error " + ex.Message);
-                 Logger.Info("Error " + ex.StackTrace);
+                Logger.Info("Error " + ex.Message);
+                Logger.Info("Error " + ex.StackTrace);
                 Thread.Sleep(5000);
             }
         }
@@ -184,12 +186,14 @@ namespace SigesServicio
             lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Direccion, false));
             lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Telefono, false));
             lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
-            lineasImprimirTurno.Add(new LineasImprimir("Empleado:       "+turnoimprimir.Empleado, false));
-            lineasImprimirTurno.Add(new LineasImprimir("Isla:           "+turnoimprimir.Isla, false));
+            lineasImprimirTurno.Add(new LineasImprimir("Empleado:       " + turnoimprimir.Empleado, false));
+            lineasImprimirTurno.Add(new LineasImprimir("Isla:           " + turnoimprimir.Isla, false));
             lineasImprimirTurno.Add(new LineasImprimir("Fecha apertura: " + turnoimprimir.FechaApertura.ToString(), false));
-            if (turnoimprimir.FechaCierre.HasValue) {
+            var reporteCierrePorTotal = new List<FacturaSiges>();
+            if (turnoimprimir.FechaCierre.HasValue)
+            {
                 lineasImprimirTurno.Add(new LineasImprimir("Fecha cierre:   " + turnoimprimir.FechaCierre.Value.ToString(), false));
-               
+                reporteCierrePorTotal = _estacionesRepositorio.GetReporteCierrePorTotal(turnoimprimir.Id);
             }
 
 
@@ -198,26 +202,38 @@ namespace SigesServicio
             lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
             foreach (var turnosurtidor in turnoimprimir.turnoSurtidores)
             {
-                lineasImprimirTurno.Add(new LineasImprimir($"Manguera:       {turnosurtidor.Manguera.Descripcion}", false));
-                lineasImprimirTurno.Add(new LineasImprimir($"Combustible:    {turnosurtidor.Combustible.Descripcion}", false));
-                lineasImprimirTurno.Add(new LineasImprimir($"Apertura:       {turnosurtidor.Apertura}", false));
+                lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Manguera :", turnosurtidor.Manguera.Descripcion), false));
+                lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Combustible :", turnosurtidor.Combustible.Descripcion), false));
+                lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Precio :", $"${string.Format("{0:N2}", turnosurtidor.Combustible.Precio)}"), false));
+                lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Apertura :", turnosurtidor.Apertura.ToString()), false));
                 if (turnoimprimir.FechaCierre.HasValue)
                 {
-                    lineasImprimirTurno.Add(new LineasImprimir($"Cierre:         {turnosurtidor.Cierre}", false));
-                    lineasImprimirTurno.Add(new LineasImprimir($"Cantidad:       {string.Format("{0:N2}", (turnosurtidor.Cierre - turnosurtidor.Apertura))}", false));
-                    lineasImprimirTurno.Add(new LineasImprimir($"Total:          {string.Format("{0:N2}", (turnosurtidor.Cierre - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio)}", false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Cierre :", turnosurtidor.Cierre.ToString()), false));
+                    if (reporteCierrePorTotal!=null && turnosurtidor != null && turnosurtidor.Manguera!=null && reporteCierrePorTotal.Any(x=>x.Manguera.Id == turnosurtidor.Manguera.Id))
+                    {
+                        var facturasManguera = reporteCierrePorTotal.Where(x => x.Manguera.Id == turnosurtidor.Manguera.Id);
+                        lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Cantidad :", string.Format("{0:N2}", facturasManguera.Sum(x => x.Cantidad))), false));
+                        lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", facturasManguera.Sum(x => x.Total))}"), false));
+
+                    }
+                    else
+                    {
+                        lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Cantidad :", string.Format("{0:N2}", 0d)), false));
+                        lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", 0d)}"), false));
+
+                    }
                 }
 
                 lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
             }
             if (turnoimprimir.FechaCierre.HasValue)
             {
-                var reporteCierrePorTotal = _estacionesRepositorio.GetReporteCierrePorTotal(turnoimprimir.Id);
-                if (reporteCierrePorTotal.Any())
+                if (reporteCierrePorTotal != null && reporteCierrePorTotal.Any())
                 {
 
                     //Por forma
                     lineasImprimirTurno.Add(new LineasImprimir($"Resumen por forma de pago", true));
+                    lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
                     var groupForma = reporteCierrePorTotal.GroupBy(x => x.codigoFormaPago);
                     Logger.Info("facturas turno " + JsonConvert.SerializeObject(groupForma));
 
@@ -225,11 +241,11 @@ namespace SigesServicio
                     {
                         if (formas.Any(x => x.Id == forma.Key))
                         {
-                            lineasImprimirTurno.Add(new LineasImprimir($"{formas.First(x => x.Id == forma.Key).Descripcion.Trim()}: {forma.Sum(x => x.Total)}", false));
+                            lineasImprimirTurno.Add(new LineasImprimir(formatoTotales($"{formas.First(x => x.Id == forma.Key).Descripcion.Trim()} :", $"${string.Format("{0:N2}", forma.Sum(x => x.Total))}"), false));
 
                         }
                     }
-                    lineasImprimirTurno.Add(new LineasImprimir($"Total: {reporteCierrePorTotal.Sum(x => x.Total)}", false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", reporteCierrePorTotal.Sum(x => x.Total))}"), false));
 
 
                     lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
@@ -237,14 +253,20 @@ namespace SigesServicio
                     lineasImprimirTurno.Add(new LineasImprimir($"Resumen por Combustibles", true));
                     //Totalizador
                     lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
-                    lineasImprimirTurno.Add(new LineasImprimir($"Combustible : {reporteCierrePorTotal.First().Combustible}", false));
-                    lineasImprimirTurno.Add(new LineasImprimir($"Precio : {reporteCierrePorTotal.First().Precio}", false));
-                    lineasImprimirTurno.Add(new LineasImprimir($"Subtotal : {reporteCierrePorTotal.Sum(x => x.Subtotal)}", false));
-                    lineasImprimirTurno.Add(new LineasImprimir($"Calibracion : 0.0", false));
-                    lineasImprimirTurno.Add(new LineasImprimir($"Descuento : {reporteCierrePorTotal.Sum(x => x.Descuento)}", false));
-                    lineasImprimirTurno.Add(new LineasImprimir($"Total : {reporteCierrePorTotal.Sum(x => x.Total)}", false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Combustible :", reporteCierrePorTotal.First().Combustible), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Precio :", $"${string.Format("{0:N2}", reporteCierrePorTotal.First().Precio)}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Subtotal :", $"${reporteCierrePorTotal.Sum(x => x.Subtotal).ToString()}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Calibracion :", "$0,00"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Descuento :", $"${string.Format("{0:N2}", reporteCierrePorTotal.Sum(x => x.Descuento))}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", reporteCierrePorTotal.Sum(x => x.Total))}"), false));
 
                     lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+
+                    lineasImprimirTurno.Add(new LineasImprimir("Fabricado por:" + " SIGES SOLUCIONES SAS ", true));
+                    lineasImprimirTurno.Add(new LineasImprimir("Nit:" + " 901430393-2 ", true));
+                    lineasImprimirTurno.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress ?? ""), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(".", true));
                 }
 
             }
@@ -276,7 +298,7 @@ namespace SigesServicio
                     if (_caraImpresoras.Any(x => x.Cara == factura.Cara))
                     {
 
-                         Logger.Info("Selecionando impresora " + _caraImpresoras.First(x => x.Cara == factura.Cara).Impresora.Trim());
+                        Logger.Info("Selecionando impresora " + _caraImpresoras.First(x => x.Cara == factura.Cara).Impresora.Trim());
                         pd.PrinterSettings.PrinterName = _caraImpresoras.First(x => x.Cara == factura.Cara).Impresora.Trim();
                     }
 
@@ -297,15 +319,15 @@ namespace SigesServicio
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                 Logger.Info("Error " + ex.Message);
-                 Logger.Info("Error " + ex.StackTrace);
+                Logger.Info("Error " + ex.Message);
+                Logger.Info("Error " + ex.StackTrace);
                 Thread.Sleep(5000);
             }
         }
 
         private void getLineasImprimir()
         {
-            
+
 
             if (_infoEstacion.CaracteresPorPagina == 0)
             {
@@ -369,7 +391,7 @@ namespace SigesServicio
                 {
                     lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", _factura.Tercero.Nombre.Trim()) + "", false));
 
-                    lineasImprimir.Add(getPuntos(_factura.Tercero.identificacion));
+                    lineasImprimir.AddRange(getPuntos(_factura.ventaId));
                 }
                 if (string.IsNullOrEmpty(_factura.Tercero.identificacion))
                 {
@@ -490,22 +512,27 @@ namespace SigesServicio
             lineasImprimir.Add(new LineasImprimir("Fabricado por:" + " SIGES SOLUCIONES SAS ", true));
             lineasImprimir.Add(new LineasImprimir("Nit:" + " 901430393-2 ", true));
             lineasImprimir.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress??""), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress ?? ""), false));
             lineasImprimir.Add(new LineasImprimir(".", true));
 
         }
 
-        private LineasImprimir getPuntos(string identificacion)
+        private IEnumerable<LineasImprimir> getPuntos(int ventaId)
         {
-            var fidelizado = _estacionesRepositorio.getFidelizado(identificacion);
-            if (fidelizado != null)
+            var fidelizado = _estacionesRepositorio.getFidelizado(ventaId);
+            if(fidelizado != null)
             {
-                return new LineasImprimir("Puntos: " + fidelizado.Puntos, false);
+                fidelizado = _fidelizacion.GetFidelizados(fidelizado.Documento).Result != null ? _fidelizacion.GetFidelizados(fidelizado.Documento).Result.FirstOrDefault() : fidelizado;
+                if (fidelizado != null)
+                {
+                    return new List<LineasImprimir>() {
+                    new LineasImprimir(formatoTotales("Fidelizado:", fidelizado.Nombre??fidelizado.Documento), false)
+                , new LineasImprimir(formatoTotales("Puntos:", fidelizado.Puntos.ToString()), false)};
+                }
             }
-            else
-            {
-                return new LineasImprimir("Usuario no fidelizado" , false);
-            }
+            return new List<LineasImprimir>() { new LineasImprimir("Usuario no fidelizado", false) };
+            
+
         }
 
         private void pd_PrintPageOnly(object sender, PrintPageEventArgs ev)
@@ -547,8 +574,8 @@ namespace SigesServicio
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                 Logger.Info("Error " + ex.Message);
-                 Logger.Info("Error " + ex.StackTrace);
+                Logger.Info("Error " + ex.Message);
+                Logger.Info("Error " + ex.StackTrace);
                 Thread.Sleep(5000);
             }
 
@@ -593,8 +620,8 @@ namespace SigesServicio
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                 Logger.Info("Error " + ex.Message);
-                 Logger.Info("Error " + ex.StackTrace);
+                Logger.Info("Error " + ex.Message);
+                Logger.Info("Error " + ex.StackTrace);
                 Thread.Sleep(5000);
             }
 

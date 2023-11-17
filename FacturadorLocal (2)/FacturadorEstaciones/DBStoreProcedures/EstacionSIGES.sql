@@ -3040,7 +3040,9 @@ CREATE TYPE [dbo].[VehiculosType] AS TABLE(
 	[capacidad] [varchar](max) NULL,
 	[estado] [int] NULL,
 	[motivo] [varchar](max) NULL,
-	[motivoTexto] [varchar](max) NULL
+	[motivoTexto] [varchar](max) NULL,
+	[surtido] [int] NULL,
+	[isla] [varchar](max) NULL
 )
 END
 GO
@@ -3219,13 +3221,14 @@ GO
 drop procedure [dbo].GetFidelizado
 GO
 CREATE procedure [dbo].GetFidelizado
-(@documento varchar(50))
+(@ventaId int)
 as
 begin try
     set nocount on;
 	select *
 	from dbo.Fidelizado 
-	where Fidelizado.documento = @documento
+    inner join VentaFidelizada on Fidelizado.documento = VentaFidelizada.identificacion
+	where VentaFidelizada.ventaId = @ventaId
     
     
 end try
@@ -3709,3 +3712,104 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'GetTerceroByQuery')
+	DROP PROCEDURE [dbo].[GetTerceroByQuery]
+GO
+CREATE procedure [dbo].[GetTerceroByQuery]
+( 
+    @identificacion CHAR (15) 
+)
+as
+begin try
+    set nocount on;
+	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, terceros.estado, COD_CLI 
+	from dbo.terceros 
+    inner join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
+    where REPLACE(@identificacion, ' ', '') = identificacion
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+GO
+
+	IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='VentaFidelizada' and xtype='U')
+BEGIN
+    create table dbo.[VentaFidelizada](
+    Id INT PRIMARY KEY IDENTITY (1, 1),
+    identificacion VARCHAR (50) NOT NULL,
+    ventaId int NOT NULL
+);
+END
+    GO
+    GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ActualizarFacturaFidelizada')
+	DROP PROCEDURE [dbo].[ActualizarFacturaFidelizada]
+GO
+CREATE procedure [dbo].[ActualizarFacturaFidelizada]
+( 
+    @identificacion varchar (50) ,
+    @ventaId int
+)
+as
+begin try
+    set nocount on;
+	insert into VentaFidelizada(identificacion, ventaId)
+    values(@identificacion, @ventaId)
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'BuscarFechasReportesNoEnviadasSiges')
+	DROP PROCEDURE [dbo].BuscarFechasReportesNoEnviadasSiges
+GO
+CREATE procedure [dbo].[BuscarFechasReportesNoEnviadasSiges]
+as
+begin try
+    set nocount on;
+	select top(50) v.Id as IdVentaLocal, turno.FechaApertura as FechaReporte from venta v
+	left JOIN  FacturasPOS f on f.ventaId = v.Id
+	left JOIN  ORdenesdedespacho o ON o.ventaId = v.Id
+	left join turno on v.idturno = turno.id 
+	
+	WHERE (f.ventaID is not null and (f.reporteEnviado is null or f.reporteEnviado = 0) and f.enviada = 1 	) or
+	(o.ventaID is not null and (o.reporteEnviado is null or o.reporteEnviado = 0) and o.enviada = 1 	)
+	order by v.Id desc 
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch; 
+GO 

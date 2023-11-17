@@ -63,6 +63,16 @@ namespace ControladorEstacion.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap Visualizador___Surtidor_1 {
+            get {
+                object obj = ResourceManager.GetObject("Visualizador - Surtidor 1", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap Visualizador___Surtidor_1__2_ {
             get {
                 object obj = ResourceManager.GetObject("Visualizador - Surtidor 1 (2)", resourceCulture);

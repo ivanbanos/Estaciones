@@ -858,6 +858,17 @@ namespace FacturadorEstacionesRepositorio
             return _convertidor.ConvertirFacturaFechaReporte(dt2);
         }
 
+
+        public List<FacturaFechaReporte> BuscarFechasReportesNoEnviadasSiges()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.estacion, "BuscarFechasReportesNoEnviadasSiges",
+                         parameters);
+            return _convertidor.ConvertirFacturaFechaReporte(dt2);
+        }
+
         public string ObtenerCodigoInterno(string placa, string identificacion)
         {
             var parameters = new Dictionary<string, object>
@@ -965,10 +976,6 @@ namespace FacturadorEstacionesRepositorio
             return _convertidor.ConvertirFacturasSiges(dt2);
         }
 
-        public object BuscarFechasReportesNoEnviadasSiges()
-        {
-            throw new NotImplementedException();
-        }
 
         public TurnoSiges ObtenerTurnoIsla(int idIsla)
         {
@@ -1001,12 +1008,12 @@ namespace FacturadorEstacionesRepositorio
             return _convertidor.ConvertirPuntos(dt).FirstOrDefault();
         }
 
-        public Fidelizado getFidelizado(string identificacion)
+        public Fidelizado getFidelizado(int ventaId)
         {
             DataTable dt = LoadDataTableFromStoredProc(_connectionString.EstacionSiges, "GetFidelizado",
                             new Dictionary<string, object>{
 
-                    {"@documento", identificacion }
+                    {"@ventaId", ventaId }
                             });
             return _convertidor.ConvertirFidelizado(dt).FirstOrDefault();
         }
@@ -1058,6 +1065,17 @@ namespace FacturadorEstacionesRepositorio
                 turno.turnoSurtidores = _convertidor.ConvertirTurnoSurtidoresSiges(dt3);
             }
             return turnos;
+        }
+
+        public IEnumerable<TurnoSurtidor> ObtenerTurnoInfo(int id)
+        {
+            var parameters2 = new Dictionary<string, object>
+                {
+                 {"@Id",id },
+                };
+            DataTable dt3 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnoSurtidorInfo",
+                         parameters2);
+            return _convertidor.ConvertirTurnoSurtidoresSiges(dt3);
         }
     }
 }

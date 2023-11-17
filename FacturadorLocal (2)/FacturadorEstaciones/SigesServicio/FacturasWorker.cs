@@ -106,13 +106,29 @@ namespace SigesServicio
                 }
             }
 
-            var tercerosRecibidos = _conexionEstacionRemota.RecibirTercerosActualizados(Guid.Parse(_infoEstacion.EstacionFuente), token);
-            foreach (var tercero in tercerosRecibidos)
+            var facturasFechas = _estacionesRepositorio.BuscarFechasReportesNoEnviadasSiges();
+            if (facturasFechas.Any())
             {
 
-                _estacionesRepositorio.ActuralizarTerceros(tercero);
+                var okFacturasFechas = _conexionEstacionRemota.AgregarFechaReporteFactura(facturasFechas, Guid.Parse(_infoEstacion.EstacionFuente), token);
+                if (okFacturasFechas)
+                {
+                    _estacionesRepositorio.ActuralizarFechasReportesEnviadas(facturasFechas.Select(x => x.IdVentaLocal));
+                }
+                else
+                {
 
+                    Logger.Warn("No subieron facturas");
+                }
             }
+
+            //var tercerosRecibidos = _conexionEstacionRemota.RecibirTercerosActualizados(Guid.Parse(_infoEstacion.EstacionFuente), token);
+            //foreach (var tercero in tercerosRecibidos)
+            //{
+
+            //    _estacionesRepositorio.ActuralizarTerceros(tercero);
+
+            //}
             var facturasIdImprimir = _conexionEstacionRemota.RecibirFacturasImprimir(Guid.Parse(_infoEstacion.EstacionFuente), token);
             var ordenesIdImprimir = _conexionEstacionRemota.RecibirOrdenesImprimir(Guid.Parse(_infoEstacion.EstacionFuente), token);
 
@@ -126,11 +142,6 @@ namespace SigesServicio
                 _estacionesRepositorio.MandarImprimir(factura.IdVentaLocal);
             }
 
-            var fidelizados = _fidelizacon.GetFidelizados().Result;
-            foreach(var fidelizado in fidelizados)
-            {
-                _estacionesRepositorio.AddFidelizado(fidelizado.Documento, fidelizado.Puntos.HasValue? fidelizado.Puntos.Value:0);
-            }
         }
     }
 

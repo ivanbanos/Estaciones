@@ -63,13 +63,14 @@ namespace FacturadorEstacionesRepositorio
         FacturaCanastilla BuscarFacturaCanastillaPorConsecutivo(int consecutivo);
         void SetFacturaCanastillaImpresa(int facturasCanastillaId);
         List<FacturaSiges> BuscarFacturasNoEnviadasSiges();
-        object BuscarFechasReportesNoEnviadasSiges();
+        List<FacturaFechaReporte> BuscarFechasReportesNoEnviadasSiges();
         TurnoSiges ObtenerTurnoIsla(int idIsla);
         void AddFidelizado(string documento, float? puntos);
         Puntos GetVentaFidelizarAutomatica(int id);
-        Fidelizado getFidelizado(string identificacion);
+        Fidelizado getFidelizado(int ventaId);
         List<FacturaSiges> GetReporteCierrePorTotal(int id);
         IEnumerable<FacturaSiges> GetFacturasPorFechas(DateTime desde, DateTime hasta);
         IEnumerable<TurnoSiges> GetTurnosByFechas(DateTime desde, DateTime hasta);
+        IEnumerable<TurnoSurtidor> ObtenerTurnoInfo(int id);
     }
 }

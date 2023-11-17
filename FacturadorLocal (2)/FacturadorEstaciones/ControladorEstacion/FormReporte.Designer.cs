@@ -42,7 +42,8 @@ namespace ControladorEstacion
             // 
             // dateTimePicker1
             // 
-            dateTimePicker1.Location = new Point(34, 48);
+            dateTimePicker1.CalendarFont = new Font("Segoe UI", 15.75F, FontStyle.Regular, GraphicsUnit.Point);
+            dateTimePicker1.Location = new Point(34, 70);
             dateTimePicker1.Name = "dateTimePicker1";
             dateTimePicker1.Size = new Size(200, 23);
             dateTimePicker1.TabIndex = 0;
@@ -51,11 +52,12 @@ namespace ControladorEstacion
             // 
             label1.AutoSize = true;
             label1.BackColor = Color.FromArgb(1, 1, 1, 1);
-            label1.Location = new Point(34, 18);
+            label1.Font = new Font("Segoe UI", 15.75F, FontStyle.Regular, GraphicsUnit.Point);
+            label1.Location = new Point(34, 27);
             label1.Name = "label1";
-            label1.Size = new Size(38, 15);
+            label1.Size = new Size(71, 30);
             label1.TabIndex = 1;
-            label1.Text = "label1";
+            label1.Text = "Desde";
             // 
             // button1
             // 
@@ -73,15 +75,17 @@ namespace ControladorEstacion
             // 
             label2.AutoSize = true;
             label2.BackColor = Color.FromArgb(1, 1, 1, 1);
-            label2.Location = new Point(34, 86);
+            label2.Font = new Font("Segoe UI", 15.75F, FontStyle.Regular, GraphicsUnit.Point);
+            label2.Location = new Point(34, 105);
             label2.Name = "label2";
-            label2.Size = new Size(38, 15);
+            label2.Size = new Size(66, 30);
             label2.TabIndex = 4;
-            label2.Text = "label2";
+            label2.Text = "Hasta";
             // 
             // dateTimePicker2
             // 
-            dateTimePicker2.Location = new Point(34, 116);
+            dateTimePicker2.CalendarFont = new Font("Segoe UI", 15.75F, FontStyle.Regular, GraphicsUnit.Point);
+            dateTimePicker2.Location = new Point(34, 148);
             dateTimePicker2.Name = "dateTimePicker2";
             dateTimePicker2.Size = new Size(200, 23);
             dateTimePicker2.TabIndex = 3;

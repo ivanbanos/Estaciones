@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Net.Http.Headers;
 using Dominio.Entidades;
 using Modelo;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace FacturadorEstacionesRepositorio
 {
@@ -31,19 +32,26 @@ namespace FacturadorEstacionesRepositorio
 
         public async Task SubirPuntops(float total, string documentoFidelizado, string factura)
         {
-            var puntos = new Puntos(total, factura, documentoFidelizado, _infoEstacion.NitCentroVenta);
-            using (var client = new HttpClient())
+            try
             {
-                var token = await GetToken();
-                client.DefaultRequestHeaders.Authorization =
-    new AuthenticationHeaderValue("Bearer", token);
-                var path = $"/api/Puntos";
-                var content = new StringContent(JsonConvert.SerializeObject(puntos));
-                content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-                var response = await client.PostAsync($"{_infoEstacion.UrlFidelizacion}{path}", content);
-                response.EnsureSuccessStatusCode();
 
-                string responseBody = await response.Content.ReadAsStringAsync();
+                var puntos = new Puntos(total, factura, documentoFidelizado, _infoEstacion.NitCentroVenta);
+                using (var client = new HttpClient())
+                {
+                    var token = await GetToken();
+                    client.DefaultRequestHeaders.Authorization =
+        new AuthenticationHeaderValue("Bearer", token);
+                    var path = $"/api/Puntos";
+                    var content = new StringContent(JsonConvert.SerializeObject(puntos));
+                    content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+                    var response = await client.PostAsync($"{_infoEstacion.UrlFidelizacion}{path}", content);
+                    response.EnsureSuccessStatusCode();
+
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                }
+            } catch(Exception ex)
+            {
+
             }
         }
 
@@ -61,8 +69,9 @@ namespace FacturadorEstacionesRepositorio
             }
         }
 
-        public async Task<IEnumerable<Fidelizado>> GetFidelizados()
+        public async Task<IEnumerable<Fidelizado>> GetFidelizados(string documentoFidelizado)
         {
+            try { 
             using (var client = new HttpClient())
             {
                 var token = await GetToken();
@@ -70,13 +79,17 @@ namespace FacturadorEstacionesRepositorio
                 Console.WriteLine($"{token}");
                 client.DefaultRequestHeaders.Authorization =
     new AuthenticationHeaderValue("Bearer", token);
-                var path = $"/api/Fidelizados/CentroVenta/{_infoEstacion.CentroVenta}";
+                var path = $"/api/Fidelizados/CentroVenta/{_infoEstacion.CentroVenta}/Fidelizado/{documentoFidelizado}";
                 Console.WriteLine($"{_infoEstacion.UrlFidelizacion}{path}");
                 var response = await client.GetAsync($"{_infoEstacion.UrlFidelizacion}{path}");
                 response.EnsureSuccessStatusCode();
                 string responseBody = await response.Content.ReadAsStringAsync();
                 return JsonConvert.DeserializeObject<IEnumerable<Fidelizado>>(responseBody);
             }
-        }
+        } catch(Exception ex)
+            {
+                return null;
+            }
+}
     }
 }

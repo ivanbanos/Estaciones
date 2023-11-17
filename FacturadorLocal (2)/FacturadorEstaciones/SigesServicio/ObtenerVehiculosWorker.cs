@@ -91,7 +91,11 @@ namespace ManejadorSurtidor
                         _estacionesRepositorio.ActualizarCarros(vehiculos);
                         vehiculos.Clear();
                     }
-                } catch(Exception ex) { }
+                } catch(Exception ex)
+                {
+                    Logger.Log(LogLevel.Error, $"Error. {ex.Message}.{ex.StackTrace}");
+                    Thread.Sleep(1000 * 60 * 5);
+                }
                 
             }
             try
@@ -105,7 +109,11 @@ namespace ManejadorSurtidor
                     vehiculos.Clear();
                 }
             }
-            catch (Exception ex) { }
+            catch (Exception ex)
+            {
+                Logger.Log(LogLevel.Error, $"Error. {ex.Message}.{ex.StackTrace}");
+                Thread.Sleep(1000 * 60 * 5);
+            }
            
         }
     }

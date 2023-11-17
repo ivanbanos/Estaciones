@@ -23,7 +23,7 @@ namespace ControladorEstacion
             {
                 var newSurtidor = new Surtidor(surtidor);
                 surtidoresComponets.Add(newSurtidor);
-                newSurtidor.Location = new System.Drawing.Point(83, 135 + (115 * posActual));
+                newSurtidor.Location = new System.Drawing.Point(131, 208 + (209 * posActual));
                 newSurtidor.Name = surtidor.Descripcion;
                 this.Controls.Add(newSurtidor);
                 messageReceiver.Subscribe(newSurtidor);
@@ -34,7 +34,7 @@ namespace ControladorEstacion
 
         private void button1_Click(object sender, EventArgs e)
         {
-            var formreporte = new FormReporte("lecturas",_estacionesRepositorio, _infoEstacion);
+            var formreporte = new FormReporte("lecturas", _estacionesRepositorio, _infoEstacion);
             formreporte.ShowDialog();
         }
 
@@ -43,6 +43,11 @@ namespace ControladorEstacion
 
             var formreporte = new FormReporte("ventas", _estacionesRepositorio, _infoEstacion);
             formreporte.ShowDialog();
+        }
+
+        private void panel1_Paint(object sender, PaintEventArgs e)
+        {
+
         }
     }
 }

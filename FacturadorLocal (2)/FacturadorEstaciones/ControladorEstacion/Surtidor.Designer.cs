@@ -46,11 +46,11 @@ namespace ControladorEstacion
             // 
             Nombre.AutoSize = true;
             Nombre.BackColor = Color.FromArgb(5, 29, 56);
-            Nombre.Font = new Font("Segoe UI", 18F, FontStyle.Bold, GraphicsUnit.Point);
+            Nombre.Font = new Font("Segoe UI", 27.75F, FontStyle.Bold, GraphicsUnit.Point);
             Nombre.ForeColor = Color.White;
-            Nombre.Location = new Point(113, 18);
+            Nombre.Location = new Point(230, 39);
             Nombre.Name = "Nombre";
-            Nombre.Size = new Size(28, 32);
+            Nombre.Size = new Size(43, 50);
             Nombre.TabIndex = 0;
             Nombre.Text = "1";
             // 
@@ -58,11 +58,11 @@ namespace ControladorEstacion
             // 
             EstadoPar.AutoSize = true;
             EstadoPar.BackColor = Color.FromArgb(1, 5, 29, 56);
-            EstadoPar.Font = new Font("Segoe UI", 6F, FontStyle.Regular, GraphicsUnit.Point);
+            EstadoPar.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             EstadoPar.ForeColor = Color.White;
-            EstadoPar.Location = new Point(70, 80);
+            EstadoPar.Location = new Point(141, 153);
             EstadoPar.Name = "EstadoPar";
-            EstadoPar.Size = new Size(57, 11);
+            EstadoPar.Size = new Size(81, 15);
             EstadoPar.TabIndex = 2;
             EstadoPar.Text = "Desautorizada";
             // 
@@ -70,11 +70,11 @@ namespace ControladorEstacion
             // 
             EstadoImpar.AutoSize = true;
             EstadoImpar.BackColor = Color.FromArgb(1, 5, 29, 56);
-            EstadoImpar.Font = new Font("Segoe UI", 6F, FontStyle.Regular, GraphicsUnit.Point);
+            EstadoImpar.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
             EstadoImpar.ForeColor = Color.White;
-            EstadoImpar.Location = new Point(151, 80);
+            EstadoImpar.Location = new Point(299, 153);
             EstadoImpar.Name = "EstadoImpar";
-            EstadoImpar.Size = new Size(57, 11);
+            EstadoImpar.Size = new Size(81, 15);
             EstadoImpar.TabIndex = 4;
             EstadoImpar.Text = "Desautorizada";
             // 
@@ -82,10 +82,11 @@ namespace ControladorEstacion
             // 
             Turno.AutoSize = true;
             Turno.BackColor = Color.FromArgb(1, 5, 29, 56);
+            Turno.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
             Turno.ForeColor = Color.White;
-            Turno.Location = new Point(249, 42);
+            Turno.Location = new Point(479, 77);
             Turno.Name = "Turno";
-            Turno.Size = new Size(86, 15);
+            Turno.Size = new Size(114, 21);
             Turno.TabIndex = 5;
             Turno.Text = "Turno: Cerrado";
             // 
@@ -93,17 +94,19 @@ namespace ControladorEstacion
             // 
             Islero.AutoSize = true;
             Islero.BackColor = Color.FromArgb(1, 5, 29, 56);
+            Islero.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
             Islero.ForeColor = Color.White;
-            Islero.Location = new Point(249, 83);
+            Islero.Location = new Point(479, 147);
             Islero.Name = "Islero";
-            Islero.Size = new Size(63, 15);
+            Islero.Size = new Size(82, 21);
             Islero.TabIndex = 6;
             Islero.Text = "Empleado:";
             // 
             // panel1
             // 
             panel1.BackColor = Color.FromArgb(1, 5, 29, 56);
-            panel1.BackgroundImage = Properties.Resources.Visualizador___Surtidor_1__3_;
+            panel1.BackgroundImage = Properties.Resources.Visualizador___Surtidor_1;
+            panel1.BackgroundImageLayout = ImageLayout.Stretch;
             panel1.Controls.Add(Nombre);
             panel1.Controls.Add(EstadoImpar);
             panel1.Controls.Add(Islero);
@@ -111,7 +114,7 @@ namespace ControladorEstacion
             panel1.Controls.Add(EstadoPar);
             panel1.Location = new Point(0, 0);
             panel1.Name = "panel1";
-            panel1.Size = new Size(400, 110);
+            panel1.Size = new Size(773, 209);
             panel1.TabIndex = 7;
             // 
             // Surtidor
@@ -122,7 +125,7 @@ namespace ControladorEstacion
             BackgroundImage = Properties.Resources.Visualizador__Fondo__1_;
             Controls.Add(panel1);
             Name = "Surtidor";
-            Size = new Size(400, 110);
+            Size = new Size(776, 209);
             panel1.ResumeLayout(false);
             panel1.PerformLayout();
             ResumeLayout(false);

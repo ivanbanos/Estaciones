@@ -19,6 +19,7 @@ namespace ManejadorSurtidor.SICOM
 
         public async Task<string> leerBoton(string puerto, int surtidorNumero, bool caraPAr, Logger _logger)
         {
+            resultado = "";
             cant = 0;
             System.ComponentModel.IContainer components = null;
             components = new System.ComponentModel.Container();
@@ -57,7 +58,10 @@ namespace ManejadorSurtidor.SICOM
                 _logger.Log(NLog.LogLevel.Info, $"Leyendo boton {iButton}");
                 return iButton;
             }
-            catch (Exception) {
+            catch (Exception ex) {
+
+                _logger.Log(NLog.LogLevel.Info, $"Error Leyendo boton {ex.Message}");
+                _logger.Log(NLog.LogLevel.Info, $"Error Leyendo boton {ex.StackTrace}");
                 return "fail";
             }
         }
@@ -138,12 +142,12 @@ namespace ManejadorSurtidor.SICOM
         public void DataReceiverHandler(object sender,
             SerialDataReceivedEventArgs e)
         {
+            resultado = "";
             try
             {
                 SerialPort sp = (SerialPort)sender;
 
                 cant = 0;
-                resultado = "";
                 while (resultado.ToLower().Contains("4e-42") || resultado.Length < 16)
                 {
                     if (sp.BytesToRead > 0)
@@ -169,6 +173,8 @@ namespace ManejadorSurtidor.SICOM
             }catch(Exception ex)
             {
 
+                _logger.Log(NLog.LogLevel.Info, $"Error Leyendo boton {ex.Message}");
+                _logger.Log(NLog.LogLevel.Info, $"Error Leyendo boton {ex.StackTrace}");
             }
            
             
