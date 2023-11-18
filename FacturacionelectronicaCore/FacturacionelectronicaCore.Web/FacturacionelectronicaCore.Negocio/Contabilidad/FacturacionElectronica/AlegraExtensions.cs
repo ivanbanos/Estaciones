@@ -15,7 +15,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            services.AddScoped<IFacturacionElectronicaFacade, AlegraFacade>();
+            services.AddScoped<IFacturacionElectronicaFacade, FacturacionDataico>();
 
             services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options)); 
             return services;
