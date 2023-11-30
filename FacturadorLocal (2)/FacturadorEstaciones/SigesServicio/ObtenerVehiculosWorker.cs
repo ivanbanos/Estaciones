@@ -84,6 +84,14 @@ namespace ManejadorSurtidor
                         motivo = line[8],
                         motivoTexto = line[9],
                     });
+                } catch(Exception ex)
+                {
+                    Logger.Log(LogLevel.Error, $"Error. {ex.Message}.{ex.StackTrace}");
+                    
+                }
+                try
+                {
+
                     if (vehiculos.Count() == 10000)
                     {
 
@@ -91,12 +99,13 @@ namespace ManejadorSurtidor
                         _estacionesRepositorio.ActualizarCarros(vehiculos);
                         vehiculos.Clear();
                     }
-                } catch(Exception ex)
+
+                }
+                catch (Exception ex)
                 {
                     Logger.Log(LogLevel.Error, $"Error. {ex.Message}.{ex.StackTrace}");
                     Thread.Sleep(1000 * 60 * 5);
                 }
-                
             }
             try
             {

@@ -346,6 +346,7 @@ namespace EnviadorInformacionService
             RequestCambiarFechasReporte request = new RequestCambiarFechasReporte();
             request.facturas = facturasFechas;
             request.Estacion = estacionFuente;
+            Logger.Info(JsonConvert.SerializeObject(request));
             using (var client = new HttpClient())
             {
                 client.Timeout = new TimeSpan(0, 0, 1, 0, 0);

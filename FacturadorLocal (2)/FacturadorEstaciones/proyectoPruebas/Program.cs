@@ -2,7 +2,8 @@
 Console.WriteLine("Hello, World!");
 
 EnergiaEnRuta.ENRWSREGISTERSALEPortTypeClient canal = new EnergiaEnRuta.ENRWSREGISTERSALEPortTypeClient();
-canal.Endpoint.Address = new System.ServiceModel.EndpointAddress("http://3.236.155.113/enr-devs/testing-qa/energia-en-ruta/public/api/ws/SalesServices");
+//canal.Endpoint.Address = new System.ServiceModel.EndpointAddress("http://3.236.155.113/enr-devs/testing-qa/energia-en-ruta/public/api/ws/SalesServices");
+canal.Endpoint.Address = new System.ServiceModel.EndpointAddress("https://energiaenruta.com/public/index.php/api/ws/SalesServices");
 
 //< soapenv:Header >
 //< enr:Credencial >
@@ -21,7 +22,7 @@ EnergiaEnRuta.RegistrarVentaCombustibleRequest solicitud = new EnergiaEnRuta.Reg
 
 solicitud.name = new EnergiaEnRuta.solicitud_registro_venta() { 
     Placa = "",
-    CodigoEDS = "",
+    CodigoEDS = "141",
     TotalVenta = 0,
 };
 //var response = await canal.RegistrarVentaCombustibleAsync(solicitud);
@@ -33,7 +34,8 @@ solicitud2.name = new EnergiaEnRuta.solicitud_autorizacion()
 {
     CodigoEDS="141",
     TipoIdentificador = "Chip",
-    NumeroIdentificador = "9000000187057E01",
+    NumeroIdentificador = "63000001CE6B5901",
+    
 };
 var response2 = await canal.SolicitarAutorizacionCreditoAsync(solicitud2);
 Console.Read();

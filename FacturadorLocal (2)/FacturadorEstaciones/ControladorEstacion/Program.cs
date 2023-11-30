@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Modelo;
+using NLog.Targets;
 using NLog.Web;
 using System.Reflection.Metadata;
 
@@ -21,8 +22,26 @@ namespace ControladorEstacion
         static void Main(string[] args)
         {
             // NLog: setup the logger first to catch all errors
-            var configFilename = "nlog.config";
-            var logger = NLogBuilder.ConfigureNLog(configFilename).GetCurrentClassLogger();
+            var config = new NLog.Config.LoggingConfiguration();
+
+            // Targets where to log to: File and Console
+            var logfile = new NLog.Targets.FileTarget("logfile")
+            {
+                Layout = "${longdate} ${logger} ${message} ${exception}",
+                FileName = "${basedir}/logs/${shortdate}.log",
+                ArchiveNumbering = ArchiveNumberingMode.DateAndSequence,
+                ArchiveAboveSize = 5000000,
+            };
+            var logconsole = new NLog.Targets.ConsoleTarget("logconsole");
+            // Rules for mapping loggers to targets            
+            config.AddRule(NLog.LogLevel.Trace, NLog.LogLevel.Fatal, logconsole);
+            config.AddRule(NLog.LogLevel.Trace, NLog.LogLevel.Fatal, logfile);
+
+            // Apply config           
+            NLog.LogManager.Configuration = config;
+            var logger = NLog.LogManager.GetCurrentClassLogger();
+            logger.Info("Iniciando");
+
 
             try
             {
@@ -41,9 +60,11 @@ namespace ControladorEstacion
             catch (Exception ex)
             {
                 //NLog: catch setup errors
+                //NLog: catch setup errors
+                logger.Info(ex.Message);
+                logger.Info(ex.StackTrace);
                 Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
-                logger.Error("Failed to start.", ex);
                 Environment.Exit(1);
             }
             Console.Read();

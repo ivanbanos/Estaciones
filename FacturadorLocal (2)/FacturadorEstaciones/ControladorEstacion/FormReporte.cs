@@ -32,14 +32,17 @@ namespace ControladorEstacion
                     reporteText.Append($"<b>Reporte de Control de Lecturas de Turnos<b>").AppendLine();
                     reporteText.Append($"<b>Desde {dateTimePicker1.Value} Hasta {dateTimePicker2.Value}<b><br />").AppendLine();
                     var reporteLecturasGeneralResponse = new ReporteLecturasGeneralResponse(_infoEstacion.Nombre, _infoEstacion.NIT);
+                    var facturas = _estacionesRepositorio.GetFacturasPorFechas(this.dateTimePicker1.Value.Date, this.dateTimePicker2.Value.AddDays(1).Date);
+
                     var turnos = _estacionesRepositorio.GetTurnosByFechas(this.dateTimePicker1.Value.Date, this.dateTimePicker2.Value.AddDays(1).Date);
 
-
+                    var cantidadTotal = 0d;
+                    var ventaTotal = 0d;
                     reporteText.Append($"<table class=\"tableReporte\"><tr><th>Fecha</th><th>Turno</th><th>Isla</th><th>Manguera</th><th>Articulo</th><th>Precio</th><th>Lectura inicial</th><th>Lectura final</th><th>Diferencia</th><th>Ventas</th></tr>").AppendLine();
                     foreach (var turno in turnos)
                     {
                         var turnoinfo = _estacionesRepositorio.ObtenerTurnoInfo(turno.Id);
-
+                        var reporteCierrePorTotal = _estacionesRepositorio.GetReporteCierrePorTotal(turno.Id);
                         foreach (var turnosurtidor in turnoinfo)
                         {
                             if (!turnosurtidor.Cierre.HasValue)
@@ -47,6 +50,9 @@ namespace ControladorEstacion
 
                                 continue;
                             }
+                            var facturasManguera = reporteCierrePorTotal.Where(x => x.Mangueras == turnosurtidor.Manguera.Descripcion);
+                            cantidadTotal+= facturasManguera.Sum(x => x.Cantidad);
+                            ventaTotal += facturasManguera.Sum(x => x.Cantidad) * turnosurtidor.Combustible.Precio;
                             reporteText.Append($"<tr>").AppendLine();
                             reporteText.Append($"<td>{turno.FechaApertura}</td>").AppendLine();
                             reporteText.Append($"<td>{turno.Id}</td>").AppendLine();
@@ -54,16 +60,30 @@ namespace ControladorEstacion
                             reporteText.Append($"<td>{turnosurtidor.Manguera.Descripcion}</td>").AppendLine();
                             reporteText.Append($"<td>{turnosurtidor.Combustible.Descripcion}</td>").AppendLine();
                             reporteText.Append($"<td>{turnosurtidor.Combustible.Precio}</td>").AppendLine();
-                            reporteText.Append($"<td>{turnosurtidor.Apertura}</td>").AppendLine();
-                            reporteText.Append($"<td>{turnosurtidor.Cierre ?? 0}</td>").AppendLine();
-                            reporteText.Append($"<td>{turnosurtidor.Cierre.Value - turnosurtidor.Apertura}</td>").AppendLine();
-                            reporteText.Append($"<td>${String.Format("{0:#,0.00}", (turnosurtidor.Cierre.Value - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio)}</td>").AppendLine();
+                            reporteText.Append($"<td>{String.Format("{0:#,0.00}", turnosurtidor.Apertura)}</td>").AppendLine();
+                            reporteText.Append($"<td>{String.Format("{0:#,0.00}", turnosurtidor.Cierre ?? 0)}</td>").AppendLine();
+                            reporteText.Append($"<td>{String.Format("{0:#,0.00}", facturasManguera.Sum(x=>x.Cantidad))}</td>").AppendLine();
+                            reporteText.Append($"<td>${String.Format("{0:#,0.00}", facturasManguera.Sum(x => x.Cantidad) * turnosurtidor.Combustible.Precio)}</td>").AppendLine();
 
 
                             reporteText.Append($"</tr>").AppendLine();
                         }
 
                     }
+                    reporteText.Append($"<tr>").AppendLine();
+                    reporteText.Append($"<td>Total</td>").AppendLine();
+                    reporteText.Append($"<td></td>").AppendLine();
+                    reporteText.Append($"<td></td>").AppendLine();
+                    reporteText.Append($"<td></td>").AppendLine();
+                    reporteText.Append($"<td></td>").AppendLine();
+                    reporteText.Append($"<td></td>").AppendLine();
+                    reporteText.Append($"<td></td>").AppendLine();
+                    reporteText.Append($"<td></td>").AppendLine();
+                    reporteText.Append($"<td>{String.Format("{0:#,0.00}", cantidadTotal)}</td>").AppendLine();
+                    reporteText.Append($"<td>${String.Format("{0:#,0.00}", ventaTotal)}</td>").AppendLine();
+
+
+                    reporteText.Append($"</tr>").AppendLine();
                     reporteText.Append($"</table>").AppendLine();
                 }
                 else
@@ -154,7 +174,7 @@ namespace ControladorEstacion
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error generando reporte. Por favor, comunicarse con asistencia.{ex.Message},{ex.StackTrace}");
+                MessageBox.Show($"Error generando reporte. Pruebe cerrando el archivo ya generado. Si persiste el error, por favor, comunicarse con asistencia.");
                 this.Close();
 
             }

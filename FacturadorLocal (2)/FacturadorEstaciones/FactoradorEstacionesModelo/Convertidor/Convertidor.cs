@@ -522,7 +522,7 @@ namespace FactoradorEstacionesModelo.Convertidor
             response.AddRange(
                 dt2.AsEnumerable().Select(dr => new FacturaFechaReporte()
                 {
-                    FechaReporte = dr.Field<DateTime>("FechaReporte"),
+                    FechaReporte = dr.Field<DateTime?>("FechaReporte"),
                     IdVentaLocal = dr.Field<int>("IdVentaLocal")
                 })
             );

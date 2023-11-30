@@ -1,0 +1,18 @@
+{
+  "ExtendedData": {
+    "inputs": [
+      "../../../../../../../../../Downloads/SalesServices.xml"
+    ],
+    "collectionTypes": [
+      "System.Array",
+      "System.Collections.Generic.Dictionary`2"
+    ],
+    "messageContract": true,
+    "namespaceMappings": [
+      "*, EnergiaEnRuta"
+    ],
+    "sync": true,
+    "targetFramework": "net6.0",
+    "typeReuseMode": "All"
+  }
+}

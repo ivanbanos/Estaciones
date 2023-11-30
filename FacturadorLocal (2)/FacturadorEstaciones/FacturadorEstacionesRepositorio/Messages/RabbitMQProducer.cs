@@ -21,7 +21,12 @@ namespace ManejadorSurtidor.Messages
         public RabbitMQProducer(IOptions<InfoEstacion> infoEstacion)
         {
             _infoEstacion = infoEstacion.Value; 
-            factory = new ConnectionFactory() { HostName = _infoEstacion.RabbitHost, UserName = "siges", Password = "siges", Port = Protocols.DefaultProtocol.DefaultPort };
+            factory = new ConnectionFactory() { 
+                HostName = _infoEstacion.RabbitHost, UserName = "siges", Password = "siges", 
+                Port = Protocols.DefaultProtocol.DefaultPort,
+                DispatchConsumersAsync = false,
+                ConsumerDispatchConcurrency = 1,
+            };
 
              connection = factory.CreateConnection();
         }

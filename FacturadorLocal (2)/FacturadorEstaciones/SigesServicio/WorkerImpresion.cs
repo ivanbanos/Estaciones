@@ -137,11 +137,11 @@ namespace SigesServicio
         {
 
             _turno = turnoimprimir;
-            getLineasImprimirTurno(turnoimprimir);
             //imprimir
             try
             {
 
+                getLineasImprimirTurno(turnoimprimir);
                 try
                 {
                     printFont = new Font("Console", 9);
@@ -209,19 +209,13 @@ namespace SigesServicio
                 if (turnoimprimir.FechaCierre.HasValue)
                 {
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Cierre :", turnosurtidor.Cierre.ToString()), false));
-                    if (reporteCierrePorTotal!=null && turnosurtidor != null && turnosurtidor.Manguera!=null && reporteCierrePorTotal.Any(x=>x.Manguera.Id == turnosurtidor.Manguera.Id))
-                    {
-                        var facturasManguera = reporteCierrePorTotal.Where(x => x.Manguera.Id == turnosurtidor.Manguera.Id);
-                        lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Cantidad :", string.Format("{0:N2}", facturasManguera.Sum(x => x.Cantidad))), false));
-                        lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", facturasManguera.Sum(x => x.Total))}"), false));
 
-                    }
-                    else
-                    {
-                        lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Cantidad :", string.Format("{0:N2}", 0d)), false));
-                        lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", 0d)}"), false));
+                    Logger.Info("reporte " + JsonConvert.SerializeObject(reporteCierrePorTotal));
+                    Logger.Info("turno surtidor " + JsonConvert.SerializeObject(turnosurtidor));
+                    var facturasManguera = reporteCierrePorTotal.Where(x => x.Mangueras == turnosurtidor.Manguera.Descripcion);
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Cantidad :", string.Format("{0:N2}", turnosurtidor.Cierre- turnosurtidor.Apertura)), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", (turnosurtidor.Cierre - turnosurtidor.Apertura)*turnosurtidor.Combustible.Precio)}"), false));
 
-                    }
                 }
 
                 lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
@@ -260,16 +254,17 @@ namespace SigesServicio
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Descuento :", $"${string.Format("{0:N2}", reporteCierrePorTotal.Sum(x => x.Descuento))}"), false));
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", reporteCierrePorTotal.Sum(x => x.Total))}"), false));
 
-                    lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
-
-                    lineasImprimirTurno.Add(new LineasImprimir("Fabricado por:" + " SIGES SOLUCIONES SAS ", true));
-                    lineasImprimirTurno.Add(new LineasImprimir("Nit:" + " 901430393-2 ", true));
-                    lineasImprimirTurno.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress ?? ""), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(".", true));
+                    
                 }
 
             }
+            lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+
+            lineasImprimirTurno.Add(new LineasImprimir("Fabricado por:" + " SIGES SOLUCIONES SAS ", true));
+            lineasImprimirTurno.Add(new LineasImprimir("Nit:" + " 901430393-2 ", true));
+            lineasImprimirTurno.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
+            lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress ?? ""), false));
+            lineasImprimirTurno.Add(new LineasImprimir(".", true));
         }
 
         private Font printFont;

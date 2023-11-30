@@ -448,7 +448,7 @@ namespace FacturadorEstacionesRepositorio
             return turno;
         }
 
-        public void EnviarTotalizadorCierre(int idSurtidor, int? idTurno, int idManguera, string total)
+        public void EnviarTotalizadorCierre(int idSurtidor, int? idTurno, int idManguera, double total)
         {
             var parameters = new Dictionary<string, object>
             {
@@ -461,7 +461,7 @@ namespace FacturadorEstacionesRepositorio
                          parameters);
         }
 
-        public void EnviarTotalizadorApertura(int idSurtidor, int? idTurno, int idManguera, string total)
+        public void EnviarTotalizadorApertura(int idSurtidor, int? idTurno, int idManguera, double total)
         {
             var parameters = new Dictionary<string, object>
             {

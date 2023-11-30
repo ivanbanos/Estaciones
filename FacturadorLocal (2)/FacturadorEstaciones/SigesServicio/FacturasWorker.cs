@@ -110,7 +110,7 @@ namespace SigesServicio
             if (facturasFechas.Any())
             {
 
-                var okFacturasFechas = _conexionEstacionRemota.AgregarFechaReporteFactura(facturasFechas, Guid.Parse(_infoEstacion.EstacionFuente), token);
+                var okFacturasFechas = _conexionEstacionRemota.AgregarFechaReporteFactura(facturasFechas.Where(x=>x.FechaReporte != null).ToList(), Guid.Parse(_infoEstacion.EstacionFuente), token);
                 if (okFacturasFechas)
                 {
                     _estacionesRepositorio.ActuralizarFechasReportesEnviadas(facturasFechas.Select(x => x.IdVentaLocal));

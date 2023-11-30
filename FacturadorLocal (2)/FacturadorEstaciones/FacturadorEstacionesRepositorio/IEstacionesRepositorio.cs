@@ -38,8 +38,8 @@ namespace FacturadorEstacionesRepositorio
         FacturaSiges getFacturasImprimir();
         void SetFacturaImpresa(int ventaId);
         TurnoSiges ObtenerTurnoSurtidor(int id);
-        void EnviarTotalizadorCierre(int idSurtidor, int? idTurno, int idManguera, string total);
-        void EnviarTotalizadorApertura(int idSurtidor, int? idTurno, int idManguera, string total);
+        void EnviarTotalizadorCierre(int idSurtidor, int? idTurno, int idManguera, double total);
+        void EnviarTotalizadorApertura(int idSurtidor, int? idTurno, int idManguera, double total);
         void ActualizarCarros(List<VehiculoSuic> vehiculos);
         TurnoSiges getTurnosSinImprimir();
         void ActualizarTurnoImpreso(int  id);

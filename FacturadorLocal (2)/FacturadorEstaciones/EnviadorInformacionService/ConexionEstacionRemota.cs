@@ -4,6 +4,7 @@ using FactoradorEstacionesModelo.Objetos;
 using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Entities;
 using FacturacionelectronicaCore.Web.Controllers;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using ReporteFacturas;
@@ -219,6 +220,7 @@ namespace EnviadorInformacionService
             RequestCambiarFechasReporte request = new RequestCambiarFechasReporte();
             request.facturas = facturasFechas;
             request.Estacion = estacionFuente;
+            Logger.Info(JsonConvert.SerializeObject(request));
             using (var client = new HttpClient())
             {
                 client.Timeout = new TimeSpan(0, 0, 1, 0, 0);

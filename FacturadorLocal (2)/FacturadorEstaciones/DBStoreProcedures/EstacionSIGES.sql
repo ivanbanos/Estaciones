@@ -1747,10 +1747,10 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaPorConsecutivo')
-	DROP PROCEDURE [dbo].getFacturaPorConsecutivo
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaPorIdVenta')
+	DROP PROCEDURE [dbo].[getFacturaPorIdVenta]
 GO
-ALTER procedure [dbo].[getFacturaPorIdVenta]
+create procedure [dbo].[getFacturaPorIdVenta]
 (
 	@idVenta int
 )
@@ -3466,7 +3466,9 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
-ALTER procedure [dbo].GetFacturasPorFechas
+drop procedure [dbo].GetFacturasPorFechas
+GO
+create procedure [dbo].GetFacturasPorFechas
 (@fechaInicio datetime, @fechaFin datetime)
 as
 begin try
@@ -3813,3 +3815,4 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch; 
 GO 
+

@@ -24,7 +24,12 @@ namespace ControladorEstacion.Messages
         public RabbitMQMessagesReceiver(IOptions<InfoEstacion> infoEstacion)
         {
             _infoEstacion = infoEstacion.Value;
-            var factory = new ConnectionFactory() { HostName = _infoEstacion.RabbitHost, UserName="siges", Password="siges", Port = Protocols.DefaultProtocol.DefaultPort };
+            var factory = new ConnectionFactory() { 
+                HostName = _infoEstacion.RabbitHost, UserName="siges", Password="siges",
+                Port = Protocols.DefaultProtocol.DefaultPort,
+                DispatchConsumersAsync = false,
+                ConsumerDispatchConcurrency = 1,
+            };
             var connection = factory.CreateConnection();
             var channel = connection.CreateModel();
 

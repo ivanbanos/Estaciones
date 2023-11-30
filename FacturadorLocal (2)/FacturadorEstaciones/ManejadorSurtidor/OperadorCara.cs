@@ -115,34 +115,34 @@ namespace ManejadorSurtidor
                                 surtidor.idTurno = surtidor.turno.Id;
                                 if (surtidor.turno.IdEstado == 1)
                                 {
-                                    // _logger.Log(NLog.LogLevel.Info, $"Abriendo turno {surtidor.Descripcion}");
+                                    _logger.Log(NLog.LogLevel.Info, $"Abriendo turno {surtidor.Descripcion}");
                                     foreach (var manguera in surtidor.mangueras)
                                     {
-
                                         await sendEstado(surtidor.Id, manguera.Ubicacion, "Abriendo", surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
                                         manguera.Estado = "Totalizadores";
-                                        // _logger.Log(NLog.LogLevel.Info, $"Buscando totalizador Manguera {manguera.Descripcion}");
+                                         _logger.Log(NLog.LogLevel.Info, $"Buscando totalizador Manguera {manguera.Descripcion}");
                                         await totalizadorManguera(surtidor, manguera, stoppingToken);
 
-                                        // _logger.Log(NLog.LogLevel.Info, $"Abriendo {manguera.Descripcion} {surtidor.turno.Id} {manguera.totalizador}");
-                                        _estacionesRepositorio.EnviarTotalizadorApertura(surtidor.Id, surtidor.turno.Id, manguera.Id, manguera.totalizador.ToString());
+                                         _logger.Log(NLog.LogLevel.Info, $"Abriendo {manguera.Descripcion} {surtidor.turno.Id} {manguera.totalizador}");
+                                        _estacionesRepositorio.EnviarTotalizadorApertura(surtidor.Id, surtidor.turno.Id, manguera.Id, manguera.totalizador);
                                         await sendEstado(surtidor.Id, manguera.Ubicacion, "Abierta",  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-                                        await desautorizarManguera(surtidor, manguera, stoppingToken);
+                                        _logger.Log(NLog.LogLevel.Info, $"Abrierta {manguera.Descripcion} {surtidor.turno.Id} {manguera.totalizador}");
+
                                     }
                                 }
-                                else if (surtidor.turno.IdEstado == 3)
+                                else if (surtidor.turno.IdEstado == 3 || surtidor.turno.IdEstado == 4)
                                 {
-                                    //_logger.Log(NLog.LogLevel.Info, $"Cerrando turno {surtidor.Descripcion}");
+                                    _logger.Log(NLog.LogLevel.Info, $"Cerrando turno {surtidor.Descripcion}");
                                     foreach (var manguera in surtidor.mangueras)
                                     {
                                         await sendEstado(surtidor.Id, manguera.Ubicacion, "Cerrando",  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
                                         manguera.Estado = "Totalizadores";
-                                        // _logger.Log(NLog.LogLevel.Info, $"Buscando totalizador Manguera {manguera.Descripcion}");
+                                         _logger.Log(NLog.LogLevel.Info, $"Buscando totalizador Manguera {manguera.Descripcion}");
                                         await totalizadorManguera(surtidor, manguera, stoppingToken);
-                                        // _logger.Log(NLog.LogLevel.Info, $"Cerrando {manguera.Descripcion} {surtidor.turno.Id} {manguera.totalizador}");
-                                        _estacionesRepositorio.EnviarTotalizadorCierre(surtidor.Id, surtidor.turno.Id, manguera.Id, manguera.totalizador.ToString());
+                                         _logger.Log(NLog.LogLevel.Info, $"Cerrando {manguera.Descripcion} {surtidor.turno.Id} {manguera.totalizador}");
+                                        _estacionesRepositorio.EnviarTotalizadorCierre(surtidor.Id, surtidor.turno.Id, manguera.Id, manguera.totalizador);
                                         await sendEstado(surtidor.Id, manguera.Ubicacion, "Cerrada",  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-                                        await desautorizarManguera(surtidor, manguera, stoppingToken);
+                                        _logger.Log(NLog.LogLevel.Info, $"Cerrada {manguera.Descripcion} {surtidor.turno.Id} {manguera.totalizador}");
 
                                     }
                                 }
@@ -262,7 +262,7 @@ namespace ManejadorSurtidor
                                                                     }
                                                                     if (vender)
                                                                     {
-                                                                        await sendEstado(surtidor.Id, manguera.Ubicacion, "Total ultima venta" + manguera.ultimaVenta,  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
+                                                                        await sendEstado(surtidor.Id, manguera.Ubicacion, "Total ultima venta " + manguera.ultimaVenta,  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
 
                                                                         // _logger.Log(NLog.LogLevel.Info, $"Guardando venta");
                                                                         _estacionesRepositorio.AgregarVenta(manguera.Id, manguera.ultimaVenta, manguera.Vehiculo.idrom);
@@ -636,13 +636,13 @@ namespace ManejadorSurtidor
             iniciolector += 2;
             totalventa += hexString.Substring(iniciolector, 1);
             iniciolector += 2;
-            totalventa += "." + hexString.Substring(iniciolector, 1);
+            totalventa +=  hexString.Substring(iniciolector, 1);
             iniciolector += 2;
             totalventa += hexString.Substring(iniciolector, 1);
 
 
 
-            return double.Parse(totalventa);
+            return double.Parse(totalventa)/100;
 
 
 
