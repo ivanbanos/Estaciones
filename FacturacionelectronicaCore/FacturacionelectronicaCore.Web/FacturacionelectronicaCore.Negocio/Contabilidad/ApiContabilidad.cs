@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Net.Http;
 
@@ -6,7 +7,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 {
     public class ApiContabilidad : IApiContabilidad
     {
-        public void EnviarFacturas(IEnumerable<Modelo.Factura> facturas)
+        public void EnviarFacturas(IEnumerable<FacturaSilog> facturas)
         {
             foreach(var factura in facturas)
             {
