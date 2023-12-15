@@ -25,6 +25,10 @@ namespace ControladorEstacion
             try
             {
                 var reporteText = new StringBuilder();
+                var facturas = _estacionesRepositorio.GetFacturasPorFechas(this.dateTimePicker1.Value.Date, this.dateTimePicker2.Value.AddDays(1).Date);
+
+                var turnos = _estacionesRepositorio.GetTurnosByFechas(this.dateTimePicker1.Value.Date, this.dateTimePicker2.Value.AddDays(1).Date);
+
                 if (tipoReporte == "lecturas")
                 {
                     reporteText.Append($"<h2>{_infoEstacion.Razon}</h2>").AppendLine();
@@ -32,10 +36,7 @@ namespace ControladorEstacion
                     reporteText.Append($"<b>Reporte de Control de Lecturas de Turnos<b>").AppendLine();
                     reporteText.Append($"<b>Desde {dateTimePicker1.Value} Hasta {dateTimePicker2.Value}<b><br />").AppendLine();
                     var reporteLecturasGeneralResponse = new ReporteLecturasGeneralResponse(_infoEstacion.Nombre, _infoEstacion.NIT);
-                    var facturas = _estacionesRepositorio.GetFacturasPorFechas(this.dateTimePicker1.Value.Date, this.dateTimePicker2.Value.AddDays(1).Date);
-
-                    var turnos = _estacionesRepositorio.GetTurnosByFechas(this.dateTimePicker1.Value.Date, this.dateTimePicker2.Value.AddDays(1).Date);
-
+                   
                     var cantidadTotal = 0d;
                     var ventaTotal = 0d;
                     reporteText.Append($"<table class=\"tableReporte\"><tr><th>Fecha</th><th>Turno</th><th>Isla</th><th>Manguera</th><th>Articulo</th><th>Precio</th><th>Lectura inicial</th><th>Lectura final</th><th>Diferencia</th><th>Ventas</th></tr>").AppendLine();
@@ -50,9 +51,8 @@ namespace ControladorEstacion
 
                                 continue;
                             }
-                            var facturasManguera = reporteCierrePorTotal.Where(x => x.Mangueras == turnosurtidor.Manguera.Descripcion);
-                            cantidadTotal+= facturasManguera.Sum(x => x.Cantidad);
-                            ventaTotal += facturasManguera.Sum(x => x.Cantidad) * turnosurtidor.Combustible.Precio;
+                            cantidadTotal+= turnosurtidor.Cierre.Value -turnosurtidor.Apertura;
+                            ventaTotal += (turnosurtidor.Cierre.Value - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio;
                             reporteText.Append($"<tr>").AppendLine();
                             reporteText.Append($"<td>{turno.FechaApertura}</td>").AppendLine();
                             reporteText.Append($"<td>{turno.Id}</td>").AppendLine();
@@ -62,8 +62,8 @@ namespace ControladorEstacion
                             reporteText.Append($"<td>{turnosurtidor.Combustible.Precio}</td>").AppendLine();
                             reporteText.Append($"<td>{String.Format("{0:#,0.00}", turnosurtidor.Apertura)}</td>").AppendLine();
                             reporteText.Append($"<td>{String.Format("{0:#,0.00}", turnosurtidor.Cierre ?? 0)}</td>").AppendLine();
-                            reporteText.Append($"<td>{String.Format("{0:#,0.00}", facturasManguera.Sum(x=>x.Cantidad))}</td>").AppendLine();
-                            reporteText.Append($"<td>${String.Format("{0:#,0.00}", facturasManguera.Sum(x => x.Cantidad) * turnosurtidor.Combustible.Precio)}</td>").AppendLine();
+                            reporteText.Append($"<td>{String.Format("{0:#,0.00}", turnosurtidor.Cierre.Value - turnosurtidor.Apertura)}</td>").AppendLine();
+                            reporteText.Append($"<td>${String.Format("{0:#,0.00}", (turnosurtidor.Cierre.Value - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio)}</td>").AppendLine();
 
 
                             reporteText.Append($"</tr>").AppendLine();
@@ -89,7 +89,6 @@ namespace ControladorEstacion
                 else
                 {
                     var reporteArticuloResponse = new ReporteArticuloResponse(_infoEstacion.Nombre, _infoEstacion.NIT);
-                    var facturas = _estacionesRepositorio.GetFacturasPorFechas(this.dateTimePicker1.Value.Date, this.dateTimePicker2.Value.AddDays(1).Date);
                     var formasPago = _estacionesRepositorio.BuscarFormasPagosSiges();
                     var groupForma = facturas.GroupBy(x => x.codigoFormaPago);
 
@@ -102,6 +101,25 @@ namespace ControladorEstacion
 
                     var groupArticulo = facturas.GroupBy(x => x.Combustible);
 
+                    var cantidadTotal = 0d;
+                    var ventaTotal = 0d;
+                    foreach (var turno in turnos)
+                    {
+                        var turnoinfo = _estacionesRepositorio.ObtenerTurnoInfo(turno.Id);
+                        var reporteCierrePorTotal = _estacionesRepositorio.GetReporteCierrePorTotal(turno.Id);
+
+                        foreach (var turnosurtidor in turnoinfo)
+                        {
+                            if (!turnosurtidor.Cierre.HasValue)
+                            {
+
+                                continue;
+                            }
+                            cantidadTotal += turnosurtidor.Cierre.Value - turnosurtidor.Apertura;
+                            ventaTotal += (turnosurtidor.Cierre.Value - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio;
+
+                        }
+                    }
                     reporteText.Append($"<table class=\"tableReporte\">").AppendLine();
                     reporteText.Append($"<tr><th>Articulo</th><th>No Ventas</th><th>Cantidad</th><th>Valor Neto</th><th>Subtotal</th><th>Descuento</th><th>Recaudo</th><th>Total</th></tr>").AppendLine();
                     foreach (var articulo in groupArticulo)
@@ -109,11 +127,11 @@ namespace ControladorEstacion
                         reporteText.Append($"<tr>").AppendLine();
                         reporteText.Append($"<td>{articulo.Key}</td>").AppendLine();
                         reporteText.Append($"<td>{articulo.Count()}</td>").AppendLine();
-                        reporteText.Append($"<td>{String.Format("{0:#,0.00}", articulo.Sum(x => x.Cantidad))}</td>").AppendLine();
-                        reporteText.Append($"<td>${String.Format("{0:#,0.00}", articulo.Sum(x => x.Subtotal))}</td>").AppendLine();
+                        reporteText.Append($"<td>{String.Format("{0:#,0.00}", cantidadTotal)}</td>").AppendLine();
+                        reporteText.Append($"<td>${String.Format("{0:#,0.00}", ventaTotal)}</td>").AppendLine();
                         reporteText.Append($"<td>${String.Format("{0:#,0.00}", articulo.Sum(x => x.Descuento))}</td>").AppendLine();
                         reporteText.Append($"<td>$0.00</td>").AppendLine();
-                        reporteText.Append($"<td>${String.Format("{0:#,0.00}", articulo.Sum(x => x.Total))}</td>").AppendLine();
+                        reporteText.Append($"<td>${String.Format("{0:#,0.00}", ventaTotal)}</td>").AppendLine();
 
                         reporteText.Append($"</tr>").AppendLine();
 
@@ -121,11 +139,11 @@ namespace ControladorEstacion
                     reporteText.Append($"<tr>").AppendLine();
                     reporteText.Append($"<td>Total</td>").AppendLine();
                     reporteText.Append($"<td>{facturas.Count()}</td>").AppendLine();
-                    reporteText.Append($"<td>{String.Format("{0:#,0.00}", facturas.Sum(x => x.Cantidad))}</td>").AppendLine();
-                    reporteText.Append($"<td>${String.Format("{0:#,0.00}", facturas.Sum(x => x.Subtotal))}</td>").AppendLine();
+                    reporteText.Append($"<td>{String.Format("{0:#,0.00}", cantidadTotal)}</td>").AppendLine();
+                    reporteText.Append($"<td>${String.Format("{0:#,0.00}", ventaTotal)}</td>").AppendLine();
                     reporteText.Append($"<td>${String.Format("{0:#,0.00}", facturas.Sum(x => x.Descuento))}</td>").AppendLine();
                     reporteText.Append($"<td>$0.00</td>").AppendLine();
-                    reporteText.Append($"<td>${String.Format("{0:#,0.00}", facturas.Sum(x => x.Total))}</td>").AppendLine();
+                    reporteText.Append($"<td>${String.Format("{0:#,0.00}", ventaTotal)}</td>").AppendLine();
 
                     reporteText.Append($"</tr>").AppendLine();
                     reporteText.Append($"</table >").AppendLine();
@@ -134,11 +152,17 @@ namespace ControladorEstacion
                     reporteText.Append($"<b>Reporte de Formas de Pagos<b>").AppendLine();
                     reporteText.Append($"<table class=\"tableReporte\">").AppendLine();
                     reporteText.Append($"<tr><th>Código forma de pago</th><th>No Ventas</th><th>Cantidad</th><th>Total</th></tr>").AppendLine();
+
+
+                    var cantidadTotalmenosEfectivo = 0d;
+                    var ventaTotalmenosEfectivo = 0d;
                     foreach (var forma in groupForma)
                     {
-                        if (formasPago.Any(x => x.Id == forma.Key))
+                        if (formasPago.Any(x => x.Id == forma.Key) && forma.Key!=1)
                         {
 
+                             cantidadTotalmenosEfectivo += forma.Sum(x => x.Cantidad);
+                             ventaTotalmenosEfectivo += forma.Sum(x => x.Total);
                             reporteText.Append($"<tr>").AppendLine();
                             reporteText.Append($"<td>{formasPago.First(x => x.Id == forma.Key).Id} {formasPago.First(x => x.Id == forma.Key).Descripcion}</td>").AppendLine();
                             reporteText.Append($"<td>{forma.Count()}</td>").AppendLine();
@@ -148,11 +172,19 @@ namespace ControladorEstacion
                             reporteText.Append($"</tr>").AppendLine();
                         }
                     }
+
+                    reporteText.Append($"<tr>").AppendLine();
+                    reporteText.Append($"<td>{formasPago.First(x => x.Id == 1).Id} {formasPago.First(x => x.Id == 1).Descripcion}</td>").AppendLine();
+                    reporteText.Append($"<td>{groupForma.Where(x=>x.Key==1).Count()}</td>").AppendLine();
+                    reporteText.Append($"<td>{String.Format("{0:#,0.00}", cantidadTotal-cantidadTotalmenosEfectivo)}</td>").AppendLine();
+                    reporteText.Append($"<td>${String.Format("{0:#,0.00}", ventaTotal-ventaTotalmenosEfectivo)}</td>").AppendLine();
+
+                    reporteText.Append($"</tr>").AppendLine();
                     reporteText.Append($"<tr>").AppendLine();
                     reporteText.Append($"<td>Total</td>").AppendLine();
                     reporteText.Append($"<td>{facturas.Count()}</td>").AppendLine();
-                    reporteText.Append($"<td>{String.Format("{0:#,0.00}", facturas.Sum(x => x.Cantidad))}</td>").AppendLine();
-                    reporteText.Append($"<td>${String.Format("{0:#,0.00}", facturas.Sum(x => x.Total))}</td>").AppendLine();
+                    reporteText.Append($"<td>{String.Format("{0:#,0.00}", cantidadTotal)}</td>").AppendLine();
+                    reporteText.Append($"<td>${String.Format("{0:#,0.00}", ventaTotal)}</td>").AppendLine();
 
                     reporteText.Append($"</tr>").AppendLine();
                     reporteText.Append($"</table>").AppendLine();

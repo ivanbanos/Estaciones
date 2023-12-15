@@ -20,7 +20,10 @@ CREATE procedure [dbo].[ObtenerCaras]
 as
 begin try
     set nocount on;
-	select COD_CAR, DESCRIPCION, POS, NUM_POS, COD_SUR from dbo.CARAS where ESTADO = 'A'
+	select CARAS.COD_CAR, CARAS.DESCRIPCION, CARAS.POS, CARAS.NUM_POS, CARAS.COD_SUR, ISLAS.COD_ISL IdIsla, ISLAS.DESCRIPCION Isla from dbo.CARAS
+	 
+	 inner join dbo.ISLAS on CARAS.COD_ISL = ISLAS.COD_ISL
+	 where CARAS.ESTADO = 'A'
      
 end try
 begin catch
@@ -492,6 +495,38 @@ begin try
 
 	update VENTAS set PLACA = @placa
 	where CONSECUTIVO = @ventaId
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+
+
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerTurnoIsla')
+	DROP PROCEDURE [dbo].[ObtenerTurnoIsla]
+GO
+CREATE procedure [dbo].[ObtenerTurnoIsla]
+(@IdIsla int)
+as
+begin try
+    set nocount on;
+	select  NUM_TUR as Id, EMPLEADO.NOMBRE, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(FECHA) as FechaApertura ,null as FechaCierre 
+ from TURN_EST
+inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
+inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL
+ where estado != 'C' and ISLAS.COD_ISL = @IdISla
+     
 end try
 begin catch
     declare 

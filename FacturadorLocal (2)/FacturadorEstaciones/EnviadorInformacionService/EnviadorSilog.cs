@@ -76,7 +76,7 @@ namespace EnviadorInformacionService
                     }
                     
 
-                    Thread.Sleep(15000);
+                    Thread.Sleep(300000);
                 }
                 catch (Exception ex)
                 {

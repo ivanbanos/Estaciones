@@ -197,7 +197,8 @@ namespace SigesServicio
             }
 
 
-
+            var totalCantidad = 0d;
+            var totalVenta = 0d;
 
             lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
             foreach (var turnosurtidor in turnoimprimir.turnoSurtidores)
@@ -212,7 +213,8 @@ namespace SigesServicio
 
                     Logger.Info("reporte " + JsonConvert.SerializeObject(reporteCierrePorTotal));
                     Logger.Info("turno surtidor " + JsonConvert.SerializeObject(turnosurtidor));
-                    var facturasManguera = reporteCierrePorTotal.Where(x => x.Mangueras == turnosurtidor.Manguera.Descripcion);
+                    totalCantidad += turnosurtidor.Cierre.Value - turnosurtidor.Apertura;
+                    totalVenta += (turnosurtidor.Cierre.Value - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio;
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Cantidad :", string.Format("{0:N2}", turnosurtidor.Cierre- turnosurtidor.Apertura)), false));
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", (turnosurtidor.Cierre - turnosurtidor.Apertura)*turnosurtidor.Combustible.Precio)}"), false));
 
@@ -231,15 +233,21 @@ namespace SigesServicio
                     var groupForma = reporteCierrePorTotal.GroupBy(x => x.codigoFormaPago);
                     Logger.Info("facturas turno " + JsonConvert.SerializeObject(groupForma));
 
+                    var cantidadTotalmenosEfectivo = 0d;
+                    var ventaTotalmenosEfectivo = 0d;
                     foreach (var forma in groupForma)
                     {
-                        if (formas.Any(x => x.Id == forma.Key))
+                        if (formas.Any(x => x.Id == forma.Key) && forma.Key != 1)
                         {
+                            cantidadTotalmenosEfectivo += forma.Sum(x => x.Cantidad);
+                            ventaTotalmenosEfectivo += forma.Sum(x => x.Total);
                             lineasImprimirTurno.Add(new LineasImprimir(formatoTotales($"{formas.First(x => x.Id == forma.Key).Descripcion.Trim()} :", $"${string.Format("{0:N2}", forma.Sum(x => x.Total))}"), false));
 
                         }
                     }
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", reporteCierrePorTotal.Sum(x => x.Total))}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales($"{formas.First(x => x.Id == 1).Descripcion.Trim()} :", $"${string.Format("{0:N2}", totalVenta - ventaTotalmenosEfectivo)}"), false));
+
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", totalVenta)}"), false));
 
 
                     lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
@@ -249,10 +257,10 @@ namespace SigesServicio
                     lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Combustible :", reporteCierrePorTotal.First().Combustible), false));
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Precio :", $"${string.Format("{0:N2}", reporteCierrePorTotal.First().Precio)}"), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Subtotal :", $"${reporteCierrePorTotal.Sum(x => x.Subtotal).ToString()}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Subtotal :", $"${string.Format("{0:N2}", totalVenta)}"), false));
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Calibracion :", "$0,00"), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Descuento :", $"${string.Format("{0:N2}", reporteCierrePorTotal.Sum(x => x.Descuento))}"), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", reporteCierrePorTotal.Sum(x => x.Total))}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Descuento :", $"${string.Format("{0:N2}", totalVenta)}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", totalVenta)}"), false));
 
                     
                 }

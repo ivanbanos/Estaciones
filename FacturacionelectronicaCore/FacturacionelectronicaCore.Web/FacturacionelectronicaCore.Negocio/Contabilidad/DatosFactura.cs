@@ -1,11 +1,12 @@
-﻿using System;
+﻿using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
+using System;
 
 namespace FacturacionelectronicaCore.Negocio.Contabilidad
 {
     public class DatosFactura
     {
 
-        public DatosFactura(Modelo.Factura factura)
+        public DatosFactura(FacturaSilog factura)
 		{
 			Consecutivo = factura.Consecutivo+"";
 			Detalles = "Detalles";

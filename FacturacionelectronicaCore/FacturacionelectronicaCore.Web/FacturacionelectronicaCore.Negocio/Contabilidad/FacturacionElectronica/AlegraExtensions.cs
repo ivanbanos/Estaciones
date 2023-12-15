@@ -15,9 +15,19 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            services.AddScoped<IFacturacionElectronicaFacade, FacturacionDataico>();
+            services.AddScoped<IFacturacionElectronicaFacade, AlegraFacade>();
 
-            services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options)); 
+            services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
+            return services;
+        }
+
+        public static IServiceCollection AddSilog(
+            this IServiceCollection services,
+            IConfiguration configuration)
+        {
+            services.AddScoped<IFacturacionElectronicaFacade, FacturacionSilog>();
+
+            services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
             return services;
         }
 

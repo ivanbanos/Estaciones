@@ -152,7 +152,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                     codigoFormaPago = dr.Field<int>("codigoFormaPago"),
 
                     Tercero = new Tercero() {
-                        COD_CLI = dr.Field<string>("COD_CLI"),
+                        COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI"),
                         Direccion = dr.Field<string>("direccion"),
                         Nombre = dr.Field<string>("Nombre"),
                         Telefono = dr.Field<string>("Telefono"),
@@ -175,7 +175,7 @@ namespace FactoradorEstacionesModelo.Convertidor
             response.AddRange(
                 dt.AsEnumerable().Select(dr => new Tercero()
                 {
-                    COD_CLI = dr.Field<string>("COD_CLI"),
+                    COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI"),
                     Direccion = dr.Field<string>("direccion"),
                     Nombre = dr.Field<string>("Nombre"),
                     Telefono = dr.Field<string>("Telefono"),
@@ -285,7 +285,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                     fc.enviada = dr.Field<bool>("enviada");
                     fc.terceroId = new Tercero();
 
-                    fc.terceroId.COD_CLI = dr.Field<string>("COD_CLI");
+                    fc.terceroId.COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI");
                     fc.terceroId.Direccion = dr.Field<string>("direccion");
                     fc.terceroId.Nombre = dr.Field<string>("Nombre");
                     fc.terceroId.Telefono = dr.Field<string>("Telefono");

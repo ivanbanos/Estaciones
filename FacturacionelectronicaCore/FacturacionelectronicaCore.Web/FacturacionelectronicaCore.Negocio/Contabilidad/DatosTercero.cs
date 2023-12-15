@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -7,7 +8,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
     public class DatosTercero
     {
 
-        public DatosTercero(Modelo.Factura factura)
+        public DatosTercero(FacturaSilog factura)
         {
             Identificacion = factura.Tercero.Identificacion;
             if(factura.Tercero.DescripcionTipoIdentificacion.ToLower().Contains("nit"))

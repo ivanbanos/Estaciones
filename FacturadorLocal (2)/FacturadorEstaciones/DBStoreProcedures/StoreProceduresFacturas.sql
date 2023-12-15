@@ -268,7 +268,7 @@ DECLARE @idtipoIdentificaciones int
 select @idtipoIdentificaciones = TipoIdentificacionId from TipoIdentificaciones
 if @idtipoIdentificaciones is null
 begin
-	insert into TipoIdentificaciones (descripcion, codigoDian)values('Cédula Ciudadanía', 1)
+	insert into TipoIdentificaciones (descripcion, codigoDian)values('Cï¿½dula Ciudadanï¿½a', 1)
 	insert into TipoIdentificaciones (descripcion, codigoDian)values('Nit', 2)
 	insert into TipoIdentificaciones (descripcion, codigoDian)values('No especificada', 0)
 end
@@ -1519,7 +1519,7 @@ begin try
 	select 
 	top(100)ventaId
 	from OrdenesDeDespacho
-    where enviada = 0 or enviada is null
+    where enviadaFacturacion = 0 or enviadaFacturacion is null
 	order by ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int
@@ -2075,4 +2075,69 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 
+GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'MandarImprimirConsecutivo')
+	DROP PROCEDURE [dbo].[MandarImprimirConsecutivo]
+GO
+CREATE procedure [dbo].[MandarImprimirConsecutivo]
+(
+	@consecutivo int )
+as
+begin try
+		declare @impresa int
+		
+		select @impresa = impresa from FacturasPOS
+				where FacturasPOS.consecutivo = @consecutivo or FacturasPOS.ventaid = @consecutivo
+
+		if @impresa >=0
+		begin
+		Update FacturasPOS
+				set impresa = -1,
+				enviada=0
+				from FacturasPOS
+				where FacturasPOS.consecutivo = @consecutivo or FacturasPOS.ventaid = @consecutivo
+		end
+		else begin
+		
+		Update FacturasPOS
+				set impresa = impresa-1,
+				enviada=0
+				from FacturasPOS
+				where FacturasPOS.consecutivo = @consecutivo or FacturasPOS.ventaid = @consecutivo
+		end
+
+
+		
+		select @impresa = impresa from OrdenesDeDespacho
+				where OrdenesDeDespacho.ventaId = @consecutivo
+		if @impresa >=0
+		begin
+		Update OrdenesDeDespacho
+				set impresa = -1,
+				enviada=0
+				from OrdenesDeDespacho
+				where OrdenesDeDespacho.ventaId = @consecutivo
+		end
+		else begin
+		
+		Update OrdenesDeDespacho
+				set impresa = impresa-1,
+				enviada=0
+				from OrdenesDeDespacho
+				where OrdenesDeDespacho.ventaId = @consecutivo
+		end
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
 GO

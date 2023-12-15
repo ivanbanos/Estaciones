@@ -3816,3 +3816,6 @@ begin catch
 end catch; 
 GO 
 
+--UPDATE Fidelizado SET PUNTOS = puntos + 60 
+
+-- select 'values('+convert(varchar,IdFidelizado)+',"'+Fidelizado+'",'+convert(varchar,Puntos)+'),' from fidelizado

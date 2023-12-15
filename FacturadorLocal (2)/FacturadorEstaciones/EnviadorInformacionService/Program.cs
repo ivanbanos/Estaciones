@@ -38,12 +38,12 @@ namespace EnviadorInformacionService
             // Apply config           
             NLog.LogManager.Configuration = config;
 
-            ServiceBase[] ServicesToRun;
-            ServicesToRun = new ServiceBase[]
-            {
-                new Service1()
-            };
-            ServiceBase.Run(ServicesToRun);
+            //ServiceBase[] ServicesToRun;
+            //ServicesToRun = new ServiceBase[]
+            //{
+            //    new Service1()
+            //};
+            //ServiceBase.Run(ServicesToRun);
             //var service = new Service1();
             //service.OnStart(null);
 
@@ -62,8 +62,8 @@ namespace EnviadorInformacionService
             //enviadorDeInformacionThread.Start();
             //var enviadorDeInformacion = new EnviadorDeInformacion();
             //enviadorDeInformacion.EnviarInformacion();
-            //var enviadorSilog = new EnviadorSilog();
-            //enviadorSilog.EnviarInformacion();
+            var enviadorSilog = new EnviadorSilog();
+            enviadorSilog.EnviarInformacion();
             //var canastillaService = new CanastillaService();
             //canastillaService.ProcesoCanastilla();
 
