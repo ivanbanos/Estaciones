@@ -15,7 +15,15 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			Surtidor = factura.Surtidor;
 			Cara = factura.Cara;
 			Manguera = factura.Manguera;
-			FechaFacturacion = factura.Fecha.ToString("yyyy-MM-dd");
+			if(DateTime.Now.Date < factura.Fecha.Date)
+            {
+                FechaFacturacion = DateTime.Now.ToString("yyyy-MM-dd");
+			}
+			else
+			{
+
+                FechaFacturacion = factura.Fecha.ToString("yyyy-MM-dd");
+            }
 			Tercero = factura.Tercero.Identificacion;
 			Usuario = usuario;
 
