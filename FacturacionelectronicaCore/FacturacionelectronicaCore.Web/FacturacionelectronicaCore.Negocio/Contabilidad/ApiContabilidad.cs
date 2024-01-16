@@ -11,7 +11,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
         {
             foreach(var factura in facturas)
             {
-                RequestContabilidad request = new RequestContabilidad(factura);
+                RequestContabilidad request = new RequestContabilidad(factura,"");
                 using (var client = new HttpClient())
                 {
                     var path = $"/api/ManejadorInformacionLocal/EnviarFacturas";
