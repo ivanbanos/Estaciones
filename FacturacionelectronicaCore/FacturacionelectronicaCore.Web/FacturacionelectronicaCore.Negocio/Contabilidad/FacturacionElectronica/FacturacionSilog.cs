@@ -13,6 +13,7 @@ using System.Configuration;
 using System.Text.RegularExpressions;
 using System.Numerics;
 using FacturacionelectronicaCore.Repositorio.Entities;
+using Amazon.Runtime.Internal;
 
 namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
@@ -25,14 +26,16 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         private readonly ResolucionesHandler resolucionesHandler;
         private readonly ResolucionNumber _resolucionNumber;
         private readonly IResolucionRepositorio _resolucionRepositorio;
+        private readonly IEmpleadoRepositorio _empleadoRepositorio;
 
-        public FacturacionSilog(IOptions<Alegra> alegra, ResolucionNumber resolucionNumber, IResolucionRepositorio resolucionRepositorio)
+        public FacturacionSilog(IOptions<Alegra> alegra, ResolucionNumber resolucionNumber, IResolucionRepositorio resolucionRepositorio, IEmpleadoRepositorio empleadoRepositorio)
         {
             alegraOptions = alegra.Value;
 
             _resolucionNumber = resolucionNumber;
 
             _resolucionRepositorio = resolucionRepositorio;
+            _empleadoRepositorio = empleadoRepositorio;
         }
 
         public async Task ActualizarTercero(Modelo.Tercero tercero, string idFacturacion)
@@ -49,7 +52,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 Console.WriteLine(JsonConvert.SerializeObject(invoice));
                 Regex regex = new Regex(@"[ ]{2,}", RegexOptions.None);
                 var str = regex.Replace(factura.Tercero.Nombre, @" ");
-                RequestContabilidad request = new RequestContabilidad(invoice);
+                var cedula = await _empleadoRepositorio.GetEmpleadoByName(factura.Vendedor);
+                RequestContabilidad request = new RequestContabilidad(invoice, cedula);
 
                 using (var client = new HttpClient())
                 {
@@ -289,7 +293,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 Console.WriteLine(JsonConvert.SerializeObject(invoice));
                 Regex regex = new Regex(@"[ ]{2,}", RegexOptions.None);
                 var str = regex.Replace(orden.Tercero.Nombre, @" ");
-                RequestContabilidad request = new RequestContabilidad(invoice);
+                var cedula = await _empleadoRepositorio.GetEmpleadoByName(orden.Vendedor);
+                RequestContabilidad request = new RequestContabilidad(invoice, cedula);
 
                 using (var client = new HttpClient())
                 {
