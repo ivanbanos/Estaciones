@@ -52,7 +52,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 Console.WriteLine(JsonConvert.SerializeObject(invoice));
                 Regex regex = new Regex(@"[ ]{2,}", RegexOptions.None);
                 var str = regex.Replace(factura.Tercero.Nombre, @" ");
+                Console.WriteLine(factura.Vendedor);
                 var cedula = await _empleadoRepositorio.GetEmpleadoByName(factura.Vendedor);
+                Console.WriteLine(cedula);
                 RequestContabilidad request = new RequestContabilidad(invoice, cedula);
 
                 using (var client = new HttpClient())
