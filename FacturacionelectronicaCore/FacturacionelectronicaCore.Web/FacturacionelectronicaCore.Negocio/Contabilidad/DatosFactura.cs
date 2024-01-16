@@ -26,8 +26,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			Total = String.Format("{0:0.##}", factura.Precio * factura.Cantidad);
 			SubTotal = factura.SubTotal;
 			FechaProximoMantenimiento = factura.FechaProximoMantenimiento;
+			Guid = factura.Guid;
 
-			if (factura.FormaDePago.ToLower().Contains("efectivo"))
+            if (factura.FormaDePago.ToLower().Contains("efectivo"))
 			{
 				FormaPago = "1";
 			}
@@ -73,6 +74,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 		public DateTime? FechaProximoMantenimiento { get; set; }
 		public decimal SubTotal { get; set; }
         public string Usuario { get; set; }
+        public Guid Guid { get; set; }
 
     }
 }
