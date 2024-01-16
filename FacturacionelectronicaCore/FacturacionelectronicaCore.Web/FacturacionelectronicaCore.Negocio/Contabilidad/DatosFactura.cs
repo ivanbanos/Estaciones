@@ -24,7 +24,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			Descuento = "0";
 			Iva = "0";
 			Total = String.Format("{0:0.##}", factura.Precio * factura.Cantidad);
-			SubTotal = String.Format("{0:0.##}", factura.SubTotal);
+			Subtotal = String.Format("{0:0.##}", factura.SubTotal);
 			FechaProximoMantenimiento = factura.FechaProximoMantenimiento;
 			Guid = factura.Guid;
 			Prefijo = factura.Prefijo.Substring(0, factura.Prefijo.Length-Consecutivo.Length);
@@ -72,7 +72,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 		public string Iva { get; set; }
 		public string Total { get; set; }
 		public DateTime? FechaProximoMantenimiento { get; set; }
-		public string SubTotal { get; set; }
+		public string Subtotal { get; set; }
         public string Usuario { get; set; }
         public string Prefijo { get; set; }
         public Guid Guid { get; set; }
