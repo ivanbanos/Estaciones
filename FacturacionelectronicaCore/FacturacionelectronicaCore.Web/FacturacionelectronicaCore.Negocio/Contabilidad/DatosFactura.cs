@@ -6,9 +6,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
     public class DatosFactura
     {
 
-        public DatosFactura(FacturaSilog factura, string usuario)
+		public DatosFactura(FacturaSilog factura, string usuario)
 		{
-			Consecutivo = factura.Consecutivo+"";
+			Consecutivo = factura.Consecutivo + "";
 			Detalles = "Detalles";
 			Placa = factura.Placa;
 			Kilometraje = factura.Kilometraje;
@@ -16,10 +16,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			Cara = factura.Cara;
 			Manguera = factura.Manguera;
 			FechaFacturacion = factura.Fecha.ToString("yyyy-MM-dd");
-            Tercero = factura.Tercero.Identificacion;
-            Usuario = usuario;
+			Tercero = factura.Tercero.Identificacion;
+			Usuario = usuario;
 
-            Cantidad = factura.Cantidad + "";
+			Cantidad = factura.Cantidad + "";
 			Precio = factura.Precio + "";
 			Descuento = "0";
 			Iva = "0";
@@ -27,7 +27,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			SubTotal = String.Format("{0:0.##}", factura.SubTotal);
 			FechaProximoMantenimiento = factura.FechaProximoMantenimiento;
 			Guid = factura.Guid;
-			Prefijo = factura.Prefijo;
+			Prefijo = factura.Prefijo.Substring(0, factura.Prefijo.Length-Consecutivo.Length);
             if (factura.FormaDePago.ToLower().Contains("efectivo"))
 			{
 				FormaPago = "1";
