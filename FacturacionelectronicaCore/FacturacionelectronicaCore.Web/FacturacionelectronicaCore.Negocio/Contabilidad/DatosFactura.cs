@@ -16,9 +16,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			Cara = factura.Cara;
 			Manguera = factura.Manguera;
 			FechaFacturacion = factura.Fecha.ToString("yyyy-MM-dd");
-			Tercero = factura.Tercero.Identificacion;
-			
-			Cantidad = factura.Cantidad + "";
+            Tercero = factura.Tercero.Identificacion;
+            Usuario = factura.Tercero.Identificacion;
+
+            Cantidad = factura.Cantidad + "";
 			Precio = factura.Precio + "";
 			Descuento = "0";
 			Iva = "0";
@@ -72,7 +73,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 		public string Total { get; set; }
 		public DateTime? FechaProximoMantenimiento { get; set; }
 		public decimal SubTotal { get; set; }
-		public string Vendedor { get; set; }
+        public string Vendedor { get; set; }
+        public string Usuario { get; set; }
 
-	}
+    }
 }
