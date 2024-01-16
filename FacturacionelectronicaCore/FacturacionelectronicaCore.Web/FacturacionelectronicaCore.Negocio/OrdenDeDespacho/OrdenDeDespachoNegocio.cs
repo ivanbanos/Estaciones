@@ -65,7 +65,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             
             try
             {
-                var response = await _alegraFacade.GenerarFacturaElectronica(ordenDeDespacho, ordenDeDespacho.Tercero);
+                var response = await _alegraFacade.GenerarFacturaElectronica(ordenDeDespacho, ordenDeDespacho.Tercero, Guid.Parse(((OrdenesMongo)ordenDeDespachoEntity).EstacionGuid));
                 if (response != "Combustible no creado")
                 {
 

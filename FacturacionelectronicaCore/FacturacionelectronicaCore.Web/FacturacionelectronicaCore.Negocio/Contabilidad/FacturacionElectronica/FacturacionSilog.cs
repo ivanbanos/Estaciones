@@ -40,12 +40,12 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             await contactsHandler.ActualizarCliente(idFacturacion, tercero.ConvertirAContact(), alegraOptions);
         }
 
-        public async Task<string> GenerarFacturaElectronica(Modelo.Factura factura, Modelo.Tercero tercero)
+        public async Task<string> GenerarFacturaElectronica(Modelo.Factura factura, Modelo.Tercero tercero, Guid estacionGuid)
         {
             try
             {
 
-                var invoice = await GetFacturaSilog(factura, tercero);
+                var invoice = await GetFacturaSilog(factura, tercero, estacionGuid);
                 Console.WriteLine(JsonConvert.SerializeObject(invoice));
                 Regex regex = new Regex(@"[ ]{2,}", RegexOptions.None);
                 var str = regex.Replace(factura.Tercero.Nombre, @" ");
@@ -95,7 +95,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
         }
 
-        public async Task<FacturaSilog> GetFacturaSilog(Modelo.Factura x, Modelo.Tercero tercero)
+        public async Task<FacturaSilog> GetFacturaSilog(Modelo.Factura x, Modelo.Tercero tercero, Guid estacionGuid)
         {
             var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(alegraOptions.Prefix);
 
@@ -122,7 +122,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
             return new FacturaSilog()
             {
-                Guid = Guid.Parse(ConfigurationManager.AppSettings["estacionFuente"]),
+                Guid = estacionGuid,
                 Consecutivo = x.Consecutivo,
                 Combustible = x.Combustible,
                 Cantidad = x.Cantidad,
@@ -217,7 +217,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     return "PERSONA_NATURAL";
             }
         }
-        public async Task<FacturaSilog> GetFacturaSilog(Modelo.OrdenDeDespacho x, Modelo.Tercero tercero)
+        public async Task<FacturaSilog> GetFacturaSilog(Modelo.OrdenDeDespacho x, Modelo.Tercero tercero, Guid estacionGuid)
         {
             var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(alegraOptions.Prefix);
             var nombre = "";
@@ -241,9 +241,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 nombre = nombreCompleto;
                 apellido = tercero.Apellidos;
             }
+
             return new FacturaSilog()
             {
-                Guid = Guid.Parse(ConfigurationManager.AppSettings["estacionFuente"]),
+                Guid = estacionGuid,
             Consecutivo = x.IdVentaLocal,
             Combustible = x.Combustible,
             Cantidad = (decimal)x.Cantidad,
@@ -278,13 +279,13 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         };
         }
 
-        public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero)
+        public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero, Guid estacionGuid)
         {
 
             try
             {
 
-                var invoice = await GetFacturaSilog(orden, tercero);
+                var invoice = await GetFacturaSilog(orden, tercero, estacionGuid);
                 Console.WriteLine(JsonConvert.SerializeObject(invoice));
                 Regex regex = new Regex(@"[ ]{2,}", RegexOptions.None);
                 var str = regex.Replace(orden.Tercero.Nombre, @" ");

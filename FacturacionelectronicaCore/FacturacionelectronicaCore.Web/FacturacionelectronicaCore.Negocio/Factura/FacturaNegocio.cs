@@ -291,7 +291,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             factura.Tercero = tercero;
             
             
-                var response = await _alegraFacade.GenerarFacturaElectronica(factura, factura.Tercero);
+                var response = await _alegraFacade.GenerarFacturaElectronica(factura, factura.Tercero, Guid.Parse(((FacturaMongo)facturaEntity).EstacionGuid));
                 if (response != "Combustible no creado")
                 {
 
@@ -320,6 +320,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             foreach (var guid in facturasGuids)
             {
                 var facturaEntity = (await _facturasRepository.ObtenerFacturaPorGuid(guid.Guid)).FirstOrDefault();
+                
                 if (facturaEntity == null)
                 {
                     _validadorGuidAFacturaElectronica.SacarFacturas(guids);

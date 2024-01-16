@@ -32,7 +32,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             await contactsHandler.ActualizarCliente(idFacturacion, tercero.ConvertirAContact(), alegraOptions);
         }
 
-        public async Task<string> GenerarFacturaElectronica(Modelo.Factura factura, Modelo.Tercero tercero)
+        public async Task<string> GenerarFacturaElectronica(Modelo.Factura factura, Modelo.Tercero tercero, Guid estacionGuid)
         {
             var item = await GetItem(factura.Combustible);
             if (item == null)
@@ -43,7 +43,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             return invoice.numberTemplate.prefix + invoice.numberTemplate.number + ":" + invoice.id;// + ":"+JsonConvert.SerializeObject(invoice);
         }
 
-        public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero)
+        public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero, Guid estacionGuid)
         {
             var item = await GetItem(orden.Combustible);
             if (item == null)
