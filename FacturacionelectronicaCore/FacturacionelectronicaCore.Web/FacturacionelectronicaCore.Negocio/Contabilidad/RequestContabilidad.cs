@@ -9,10 +9,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 	{
 		public DatosTercero datosTercero { get; set; }
 		public DatosFactura datosFactura { get; set; }
-		public RequestContabilidad(FacturaSilog factura)
+		public RequestContabilidad(FacturaSilog factura, string usuario)
 		{
 			datosTercero = new DatosTercero(factura);
-			datosFactura = new DatosFactura(factura);
+			datosFactura = new DatosFactura(factura, usuario);
 		}
 
     }

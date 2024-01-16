@@ -6,7 +6,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
     public class DatosFactura
     {
 
-        public DatosFactura(FacturaSilog factura)
+        public DatosFactura(FacturaSilog factura, string usuario)
 		{
 			Consecutivo = factura.Consecutivo+"";
 			Detalles = "Detalles";
@@ -17,7 +17,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			Manguera = factura.Manguera;
 			FechaFacturacion = factura.Fecha.ToString("yyyy-MM-dd");
             Tercero = factura.Tercero.Identificacion;
-            Usuario = factura.Tercero.Identificacion;
+            Usuario = usuario;
 
             Cantidad = factura.Cantidad + "";
 			Precio = factura.Precio + "";
@@ -26,7 +26,6 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			Total = String.Format("{0:0.##}", factura.Precio * factura.Cantidad);
 			SubTotal = factura.SubTotal;
 			FechaProximoMantenimiento = factura.FechaProximoMantenimiento;
-			Vendedor = factura.Vendedor;
 
 			if (factura.FormaDePago.ToLower().Contains("efectivo"))
 			{
@@ -73,7 +72,6 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 		public string Total { get; set; }
 		public DateTime? FechaProximoMantenimiento { get; set; }
 		public decimal SubTotal { get; set; }
-        public string Vendedor { get; set; }
         public string Usuario { get; set; }
 
     }

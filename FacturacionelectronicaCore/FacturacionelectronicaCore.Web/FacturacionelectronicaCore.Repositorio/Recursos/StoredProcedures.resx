@@ -318,4 +318,7 @@
   <data name="getFacturaCanastilla" xml:space="preserve">
     <value>[dbo].[getFacturaCanastilla]</value>
   </data>
+  <data name="GetEmpleadosByNombre" xml:space="preserve">
+    <value>[dbo].[GetEmpleadosByNombre]</value>
+  </data>
 </root>
