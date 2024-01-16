@@ -314,7 +314,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         var respuestaSilog = JsonConvert.DeserializeObject<REspuestaSilog>(responseBody);
                         if (responseBody.ToLower().Contains("error"))
                         {
-                            throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
+                            throw new AlegraException(responseBody + JsonConvert.SerializeObject(request));
 
                         }
                         else
