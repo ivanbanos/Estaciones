@@ -24,7 +24,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			Descuento = "0";
 			Iva = "0";
 			Total = String.Format("{0:0.##}", factura.Precio * factura.Cantidad);
-			Subtotal = String.Format("{0:0.##}", factura.SubTotal);
+			SubTotal = String.Format("{0:0.##}", factura.SubTotal);
 			FechaProximoMantenimiento = factura.FechaProximoMantenimiento;
 			Guid = factura.Guid;
 			Prefijo = factura.Prefijo.Substring(0, factura.Prefijo.Length-Consecutivo.Length);
@@ -38,11 +38,11 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			}
 			if (factura.Combustible.ToLower().Contains("corriente"))
 			{
-				Combustible = "100";
+				Combustible = "2"+ factura.Combustible;
 			}
-			else if (factura.Combustible.ToLower().Contains("acpm"))
+			else if (factura.Combustible.ToLower().Contains("Diesel"))
 			{
-				Combustible = "200";
+				Combustible = "1"+ factura.Combustible;
 			}
 			else if (factura.Combustible.ToLower().Contains("extra"))
 			{
