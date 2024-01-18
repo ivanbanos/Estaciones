@@ -31,7 +31,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			Precio = factura.Precio + "";
 			Descuento = "0";
 			Iva = "0";
-			Total = String.Format("{0:0.##}", factura.Precio * factura.Cantidad);
+			Total = String.Format("{0:0.##}", factura.SubTotal);
 			Subtotal = String.Format("{0:0.##}", factura.SubTotal);
 			FechaProximoMantenimiento = factura.FechaProximoMantenimiento;
 			Guid = factura.Guid;
