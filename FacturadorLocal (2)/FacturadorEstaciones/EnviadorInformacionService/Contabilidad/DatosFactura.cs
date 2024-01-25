@@ -41,7 +41,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			{
 				Combustible = ConfigurationManager.AppSettings["codigocorriente"];
 			}
-			else if (factura.Combustible.ToLower().Contains("acpm") || factura.Combustible.ToLower().Contains("a.c.p.m"))
+			else if (factura.Combustible.ToLower().Contains("acpm") || factura.Combustible.ToLower().Contains("diesel") || factura.Combustible.ToLower().Contains("a.c.p.m"))
 			{
 				Combustible = ConfigurationManager.AppSettings["codigoacpm"];
 			}

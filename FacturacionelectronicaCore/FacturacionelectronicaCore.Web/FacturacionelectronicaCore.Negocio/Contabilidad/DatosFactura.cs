@@ -36,6 +36,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			FechaProximoMantenimiento = factura.FechaProximoMantenimiento;
 			Guid = factura.Guid;
 			Prefijo = factura.Prefijo.Substring(0, factura.Prefijo.Length-Consecutivo.Length);
+			Console.WriteLine();
             if (factura.FormaDePago.ToLower().Contains("efectivo"))
 			{
 				FormaPago = "1";
@@ -48,7 +49,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			{
 				Combustible = "11GASOLINA";
 			}
-			else if (factura.Combustible.ToLower().Contains("Diesel") || factura.Combustible.ToLower().Contains("acpm"))
+			else if (factura.Combustible.ToLower().Contains("diesel") || factura.Combustible.ToLower().Contains("acpm"))
 			{
 				Combustible = "12ACPM";
 			}
