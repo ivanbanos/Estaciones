@@ -36,7 +36,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
                 }
                 else
                 {
-                    PrimerApellido = "No";
+                    PrimerApellido = "";
                 }
                 if (nombres.Length > 2)
                 {
@@ -45,12 +45,12 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
                 }
                 else
                 {
-                    SegundoApellido = "No";
+                    SegundoApellido = "";
                 }
             }
             if(SegundoApellido == null)
             {
-                SegundoApellido = "No";
+                SegundoApellido = "";
             }
             Direccion = string.IsNullOrWhiteSpace(factura.Tercero.Direccion)?"No especificada": factura.Tercero.Direccion;
             Correo = string.IsNullOrWhiteSpace(factura.Tercero.Correo)|| !factura.Tercero.Correo.Contains("@") ? "correo@correo.com": factura.Tercero.Correo;
