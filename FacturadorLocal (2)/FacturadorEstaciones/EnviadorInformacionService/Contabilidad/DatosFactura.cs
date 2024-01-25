@@ -10,8 +10,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 		{
 			Consecutivo = factura.Consecutivo+"";
 			Prefijo = factura.Prefijo;
-			Detalles = "Detalles";
-			Placa = factura.Placa;
+            Detalles = $"Placa: {factura.Placa}, Kilometraje : {factura.Kilometraje}";
+            Placa = factura.Placa;
 			Kilometraje = string.IsNullOrEmpty(factura.Kilometraje)?"0.0":factura.Kilometraje.Replace(",", ".");
 			Surtidor = factura.Surtidor;
 			Cara = factura.Cara;

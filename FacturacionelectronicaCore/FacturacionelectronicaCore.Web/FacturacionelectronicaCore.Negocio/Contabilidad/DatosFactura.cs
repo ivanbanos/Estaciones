@@ -9,7 +9,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 		public DatosFactura(FacturaSilog factura, string usuario)
 		{
 			Consecutivo = factura.Consecutivo + "";
-			Detalles = "Detalles";
+			Detalles = $"Placa: {factura.Placa}, Kilometraje : {factura.Kilometraje}";
 			Placa = factura.Placa;
 			Kilometraje = factura.Kilometraje;
 			Surtidor = factura.Surtidor;
