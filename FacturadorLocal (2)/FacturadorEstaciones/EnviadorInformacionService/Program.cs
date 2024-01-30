@@ -24,11 +24,12 @@ namespace EnviadorInformacionService
             var config = new NLog.Config.LoggingConfiguration();
 
             // Targets where to log to: File and Console
-            var logfile = new NLog.Targets.FileTarget("logfile") {
-            Layout = "${longdate} ${logger} ${message} ${exception}",
-            FileName = "${basedir}/logs/${shortdate}.log",
-            ArchiveNumbering = ArchiveNumberingMode.DateAndSequence,
-            ArchiveAboveSize = 5000000,
+            var logfile = new NLog.Targets.FileTarget("logfile")
+            {
+                Layout = "${longdate} ${logger} ${message} ${exception}",
+                FileName = "${basedir}/logs/${shortdate}.log",
+                ArchiveNumbering = ArchiveNumberingMode.DateAndSequence,
+                ArchiveAboveSize = 5000000,
             };
             var logconsole = new NLog.Targets.ConsoleTarget("logconsole");
             // Rules for mapping loggers to targets            
@@ -38,14 +39,16 @@ namespace EnviadorInformacionService
             // Apply config           
             NLog.LogManager.Configuration = config;
 
-            //ServiceBase[] ServicesToRun;
-            //ServicesToRun = new ServiceBase[]
-            //{
-            //    new Service1()
-            //};
-            //ServiceBase.Run(ServicesToRun);
+            ServiceBase[] ServicesToRun;
+            ServicesToRun = new ServiceBase[]
+            {
+                new Service1()
+            };
+            ServiceBase.Run(ServicesToRun);
             //var service = new Service1();
             //service.OnStart(null);
+        }
+
 
             //var impresionService = new ImpresionService();
             //var enviadorDeInformacion = new EnviadorDeInformacion();
@@ -61,12 +64,12 @@ namespace EnviadorInformacionService
             //impresionThread.Start();
             //enviadorDeInformacionThread.Start();
             //var enviadorDeInformacion = new EnviadorDeInformacion();
-            //enviadorDeInformacion.EnviarInformacion();
-            var enviadorSilog = new EnviadorSilog();
-            enviadorSilog.EnviarInformacion();
+            ////enviadorDeInformacion.EnviarInformacion();
+            //var enviadorSilog = new EnviadorSilog();
+            //enviadorSilog.EnviarInformacion();
             //var canastillaService = new CanastillaService();
             //canastillaService.ProcesoCanastilla();
 
         }
     }
-}
+

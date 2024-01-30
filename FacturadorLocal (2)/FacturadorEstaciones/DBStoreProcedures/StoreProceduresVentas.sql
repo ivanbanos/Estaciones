@@ -472,6 +472,7 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
+use Ventas
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'setKilimetrajeVenta')
 	DROP PROCEDURE [dbo].[setKilimetrajeVenta]
 GO
@@ -479,7 +480,8 @@ CREATE procedure [dbo].[setKilimetrajeVenta]
 (
 	@ventaId int,
 	@Kilometraje varchar(50) = null,
-	@placa varchar(9) = null
+	@placa varchar(9) = null,
+	@codigoFormaPago int = null
 
 )
 as
@@ -492,8 +494,12 @@ begin try
 	
 	update VENTAS set KIL_ACT = CONVERT(DECIMAL(14, 2), @kilometrajeNum) 
 	where @kilometrajeNum<100000000000.00 and CONSECUTIVO = @ventaId
-
+	
 	update VENTAS set PLACA = @placa
+	where CONSECUTIVO = @ventaId
+
+	
+	update VENTAS set COD_FOR_PAG = @codigoFormaPago
 	where CONSECUTIVO = @ventaId
 end try
 begin catch

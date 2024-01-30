@@ -2058,7 +2058,7 @@ begin try
 	and ventaId = @ventaID
 	select 'Ok' as result
 	
-	--exec Estacion.dbo.setKilimetrajeVenta @ventaId, @Kilometraje, @Placa
+	exec Estacion.dbo.setKilimetrajeVenta @ventaId, @Kilometraje, @Placa, @codigoFormaPago
 
 end try
 begin catch

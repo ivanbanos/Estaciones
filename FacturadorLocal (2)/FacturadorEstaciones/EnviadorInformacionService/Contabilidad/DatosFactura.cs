@@ -33,10 +33,15 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			{
 				FormaPago = ConfigurationManager.AppSettings["codigoefectivo"];
 			}
-			else
-			{
+			else if (factura.FormaDePago.ToLower().Contains("credito"))
+            {
 				FormaPago = ConfigurationManager.AppSettings["codigocredito"];
 			}
+			else
+            {
+                FormaPago = ConfigurationManager.AppSettings["codigovoucher"];
+				TipoTarjeta = ConfigurationManager.AppSettings[factura.FormaDePago.Trim()];
+            }
 			if (factura.Combustible.ToLower().Contains("corriente"))
 			{
 				Combustible = ConfigurationManager.AppSettings["codigocorriente"];
@@ -67,7 +72,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 		public string FechaFacturacion { get; set; }
 		public string Tercero { get; set; }
 		public string FormaPago { get; set; }
-		public string Combustible { get; set; }
+        public string TipoTarjeta { get; set; }
+        public string Combustible { get; set; }
 		public string Cantidad { get; set; }
 		public string Precio { get; set; }
 		public string Descuento { get; set; }
