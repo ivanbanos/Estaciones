@@ -32,14 +32,13 @@ namespace EnviadorInformacionService
                         var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadasFacturacion();
 
                         var formas = _estacionesRepositorio.BuscarFormasPagos();
-                        if (!facturas.Any(x => x.Venta.COD_FOR_PAG == 4 || x.Venta.COD_FOR_PAG == 6))
+                        if (!facturas.Any())
                         {
 
                             Logger.Info("No se encontraron faturas");
                             Thread.Sleep(15000);
                             continue;
                         }
-                        facturas = facturas.Where(x => x.Venta.COD_FOR_PAG == 4 || x.Venta.COD_FOR_PAG == 6).ToList();
 
 
                         var facturasNoEnviadas = facturas; 

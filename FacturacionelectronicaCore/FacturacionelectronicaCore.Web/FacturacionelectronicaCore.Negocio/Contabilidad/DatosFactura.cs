@@ -42,7 +42,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
             {
                 FormaPago = "1";
             }
-            else if (factura.FormaDePago.ToLower().Contains("credito"))
+            else if (factura.FormaDePago.ToLower().Contains("dito"))
             {
                 FormaPago = "3";
             }

@@ -33,7 +33,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			{
 				FormaPago = ConfigurationManager.AppSettings["codigoefectivo"];
 			}
-			else if (factura.FormaDePago.ToLower().Contains("credito"))
+			else if (factura.FormaDePago.ToLower().Contains("dito"))
             {
 				FormaPago = ConfigurationManager.AppSettings["codigocredito"];
 			}
