@@ -41,6 +41,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
             {
                 FormaPago = ConfigurationManager.AppSettings["codigovoucher"];
 				TipoTarjeta = ConfigurationManager.AppSettings[factura.FormaDePago.Trim()];
+				NroTransaccion = factura.Kilometraje;
             }
 			if (factura.Combustible.ToLower().Contains("corriente"))
 			{
@@ -73,6 +74,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 		public string Tercero { get; set; }
 		public string FormaPago { get; set; }
         public string TipoTarjeta { get; set; }
+        public string NroTransaccion { get; set; }
         public string Combustible { get; set; }
 		public string Cantidad { get; set; }
 		public string Precio { get; set; }

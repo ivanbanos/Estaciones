@@ -50,6 +50,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
             {
                 FormaPago = "2";
                 TipoTarjeta = GetByFormaPago(factura.FormaDePago.Trim());
+                NroTransaccion = factura.Kilometraje;
             }
 
 
@@ -111,6 +112,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
         public string Tercero { get; set; }
         public string FormaPago { get; set; }
         public string TipoTarjeta { get; set; }
+        public string NroTransaccion { get; set; }
         public string Combustible { get; set; }
         public string Cantidad { get; set; }
         public string Precio { get; set; }
