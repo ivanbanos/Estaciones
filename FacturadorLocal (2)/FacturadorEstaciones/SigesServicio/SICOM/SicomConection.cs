@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using NLog;
 using System;
 using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
@@ -37,6 +38,7 @@ namespace ManejadorSurtidor.SICOM
             {
                 try
                 {
+                    System.Net.ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
 
                     var path = $"/chip/{iButton}";
 
@@ -69,6 +71,7 @@ namespace ManejadorSurtidor.SICOM
             {
                 try
                 {
+                    System.Net.ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
 
                     var path = $"/consumo/{iButton}";
 
@@ -107,6 +110,7 @@ namespace ManejadorSurtidor.SICOM
             {
                 try
                 {
+                    System.Net.ServicePointManager.SecurityProtocol |= SecurityProtocolType.Tls12 | SecurityProtocolType.Tls11 | SecurityProtocolType.Tls;
 
                     var path = $"/certificados/";
 
