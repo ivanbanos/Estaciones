@@ -41,6 +41,7 @@ namespace EnviadorInformacionService
                         }
 
 
+
                         var facturasNoEnviadas = facturas; 
                         var enviarFacturasEfevtivo = bool.Parse(ConfigurationManager.AppSettings["EnviarFacturasEfevtivo"]);
                         if (!enviarFacturasEfevtivo)
@@ -90,6 +91,7 @@ namespace EnviadorInformacionService
 
         private int ObtenerUltimaFilaOcupada(ExcelWorksheet firstWorksheet)
         {
+
             int i = 6;
             while (true)
             {

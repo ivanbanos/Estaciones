@@ -74,13 +74,13 @@ namespace ManejadorSurtidor
                     vehiculos.Add(new VehiculoSuic()
                     {
                         idrom = line[0],
-                        fechaInicio = DateTime.Parse(line[1]),
-                        fechaFin = DateTime.Parse(line[2]),
+                        fechaInicio = string.IsNullOrEmpty(line[1])?DateTime.MinValue :DateTime.Parse(line[1]),
+                        fechaFin = string.IsNullOrEmpty(line[2]) ? DateTime.MinValue : DateTime.Parse(line[2]),
                         placa = line[3],
                         vin = line[4],
                         servicio = line[5],
                         capacidad = line[6],
-                        estado = Int32.Parse(line[7]),
+                        estado = string.IsNullOrEmpty(line[7]) ? 0 : Int32.Parse(line[7]),
                         motivo = line[8],
                         motivoTexto = line[9],
                     });

@@ -45,6 +45,8 @@ namespace ManejadorSurtidor
             while (!stoppingToken.IsCancellationRequested)
             {
                 var ventas = _estacionesRepositorio.getVentaSinSubirSICOM();
+
+                Logger.Log(NLog.LogLevel.Error, $"Subiendo. {ventas.Count} ventas a sicom. Ventas {JsonConvert.SerializeObject(ventas.Select(x => x.ventaId))}");
                 if (ventas.Any(x => x.IButton != ""))
                 {
 
@@ -55,8 +57,13 @@ namespace ManejadorSurtidor
 
                             await _sicomConection.enviarVenta(venta.IButton, (float)venta.Cantidad);
                             _estacionesRepositorio.actualizarVentaSubidaSicom(venta.ventaId);
+                            Logger.Log(NLog.LogLevel.Error, $"Subida {venta.ventaId}");
+
                         }
-                        catch (Exception ex) { }
+                        catch (Exception ex) {
+
+                            Logger.Log(NLog.LogLevel.Error, $"Error. {ex.Message}.{ex.StackTrace}");
+                        }
                     }
                 }
                 Thread.Sleep(300000);
