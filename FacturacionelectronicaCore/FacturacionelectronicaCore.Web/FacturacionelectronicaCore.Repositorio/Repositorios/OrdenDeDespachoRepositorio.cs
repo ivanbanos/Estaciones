@@ -231,12 +231,12 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             filters.Add(Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", idVentaLocal));
 
             var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "ordenes", filters);
-            if (facturasMongo.Any())
-            {
-                return facturasMongo.Where(x => x.EstacionGuid == estacion.ToString()); 
-            }
-            else
-            {
+            //if (facturasMongo.Any())
+            //{
+            //    return facturasMongo.Where(x => x.EstacionGuid == estacion.ToString()); 
+            //}
+            //else
+            //{
                 var facturas = await _sqlHelper.GetsAsync<OrdenDeDespacho>(StoredProcedures.GetOrdenesDeDespacho, paramList);
                 var tasks = new List<Task>();
                 foreach (var factura in facturas)
@@ -245,7 +245,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 }
                 await Task.WhenAll(tasks);
                 return facturas;
-            }
+            //}
         }
     }
 }
