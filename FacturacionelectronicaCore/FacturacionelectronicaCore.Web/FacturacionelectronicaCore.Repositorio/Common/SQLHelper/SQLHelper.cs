@@ -24,7 +24,8 @@ namespace EstacionesServicio.Repositorio.Common.SQLHelper
             {
                 var result = c.Query<T>(
                     sql: spName,
-                    commandType: CommandType.StoredProcedure);
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: 300);
                 return result;
             });
         }
@@ -37,7 +38,8 @@ namespace EstacionesServicio.Repositorio.Common.SQLHelper
                 var result = c.Query<T>(
                     sql: spName,
                     param: parms,
-                    commandType: CommandType.StoredProcedure);
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: 300);
                 return result;
             });
         }
@@ -50,7 +52,8 @@ namespace EstacionesServicio.Repositorio.Common.SQLHelper
                 var result = c.Query<T>(
                     sql: spName,
                     param: entity,
-                    commandType: CommandType.StoredProcedure);
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: 300);
                 return result;
             });
         }
@@ -63,7 +66,8 @@ namespace EstacionesServicio.Repositorio.Common.SQLHelper
                 var result = c.Execute(
                     sql: spName,
                     param: param,
-                    commandType: CommandType.StoredProcedure);
+                    commandType: CommandType.StoredProcedure,
+                    commandTimeout: 300);
                 return result;
             });
         }
