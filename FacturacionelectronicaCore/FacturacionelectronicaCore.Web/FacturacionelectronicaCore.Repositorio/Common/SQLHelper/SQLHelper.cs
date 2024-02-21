@@ -109,7 +109,7 @@ namespace EstacionesServicio.Repositorio.Common.SQLHelper
             {
                 var result = c.QueryAsync<T>(
                     sql: spName,
-                    commandType: CommandType.StoredProcedure);
+                    commandType: CommandType.StoredProcedure, commandTimeout: 300);
                 return result;
             });
         }
@@ -123,7 +123,7 @@ namespace EstacionesServicio.Repositorio.Common.SQLHelper
                 var result = c.QueryAsync<T>(
                     sql: spName,
                     param: parms,
-                    commandType: CommandType.StoredProcedure);
+                    commandType: CommandType.StoredProcedure, commandTimeout: 300);
                 return result;
             });
         }
@@ -133,7 +133,8 @@ namespace EstacionesServicio.Repositorio.Common.SQLHelper
         {
             return WithConnectionAsync(c =>
             {
-                var affectedRows = c.ExecuteScalarAsync<int>(spName, param);
+                var affectedRows = c.ExecuteScalarAsync<int>(spName, param,
+                    commandTimeout: 300);
 
                 return affectedRows;
             });
@@ -144,7 +145,8 @@ namespace EstacionesServicio.Repositorio.Common.SQLHelper
         {
             return WithConnectionAsync(c =>
             {
-                var affectedRows = c.ExecuteScalarAsync<int>(spName, entity, commandType: CommandType.StoredProcedure);
+                var affectedRows = c.ExecuteScalarAsync<int>(spName, entity, commandType: CommandType.StoredProcedure,
+                    commandTimeout: 300);
 
                 return affectedRows;
             });
