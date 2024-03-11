@@ -83,23 +83,55 @@ namespace FacturadorEstacionesRepositorio
                         cmd.CommandTimeout = timeout.Value;
                     }
 
-                   SetParameters(cmd, parameters);
+                    SetParameters(cmd, parameters);
 
                     conn.Open();
 
                     using (IDataReader reader = cmd.ExecuteReader())
                     {
-                       dt.Load(reader, LoadOption.OverwriteChanges);
+                        dt.Load(reader, LoadOption.OverwriteChanges);
                     }
 
-                     }
+                }
                 catch (SqlException e)
                 {
-                     throw;
+                    throw;
                 }
             }
 
             return dt;
+        }
+
+
+        public virtual DataSet LoadDataSetFromStoredProc(string connectionString, string procName, IDictionary<string, object> parameters, int? timeout = null)
+        {
+            DataSet ds = new DataSet();
+            using (SqlConnection conn = new SqlConnection(connectionString))
+            using (SqlCommand cmd = GetSqlStoredProcCommand(procName, conn))
+            {
+                try
+                {
+                    if (timeout != null)
+                    {
+                        cmd.CommandTimeout = timeout.Value;
+                    }
+
+                    SetParameters(cmd, parameters);
+
+                    conn.Open();
+
+                    var adapter = new SqlDataAdapter(cmd);
+
+                    adapter.Fill(ds);
+
+                }
+                catch (SqlException e)
+                {
+                    throw;
+                }
+            }
+
+            return ds;
         }
 
         private SqlCommand GetSqlStoredProcCommand(string commandText, SqlConnection conn)
@@ -670,6 +702,57 @@ namespace FacturadorEstacionesRepositorio
 
             factura.canastillas = _convertidor.ConvertirFacturaCanastillaDEtalle(dt2);
             return factura;
+        }
+
+        public List<Factura> GetFacturaSinEnviarTurno()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSinEnviarTurno",
+                         parameters);
+            var facturas = _convertidor.ConvertirFactura(dt2);
+            foreach (Factura factura in facturas)
+            {
+                DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "getVentaPorId",
+                           new Dictionary<string, object>{
+                {"@CONSECUTIVO",factura.ventaId }
+                           });
+
+                var ventas = _convertidor.ConvertirVenta(dt);
+                var manguera = _convertidor.ConvertirManguera(dt).Single();
+                factura.Venta = ventas.FirstOrDefault();
+                factura.Manguera = manguera;
+            }
+            return facturas.ToList();
+        }
+
+        public void ActuralizarFacturasEnviadosTurno(int factura)
+        {
+            var ventasIds = new DataTable();
+            ventasIds.Columns.Add(new DataColumn("ventaId", typeof(long))
+            {
+                AllowDBNull = false
+            });
+            var row = ventasIds.NewRow();
+            row["ventaId"] = factura;
+            ventasIds.Rows.Add(row);
+            var parameters = new Dictionary<string, object>
+            {
+                {"@facturas",ventasIds }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ActuralizarTurnoEnviadas",
+                         parameters);
+        }
+
+        public FacturacionelectronicaCore.Negocio.Modelo.Turno ObtenerTurnoIslaPorVenta(int ventaId)
+        {
+            var ds = LoadDataSetFromStoredProc(_connectionString.estacion, "ObtenerTurnoIslaPorVenta",
+                       new Dictionary<string, object>{
+                {"@ventaId",ventaId }
+                       });
+
+            return _convertidor.ConvertirTurno(ds);
         }
     }
 }

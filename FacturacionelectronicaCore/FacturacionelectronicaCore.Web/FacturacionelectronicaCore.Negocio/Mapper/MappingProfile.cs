@@ -23,6 +23,8 @@ namespace EstacionesServicio.Negocio.Mapper
             CreateMap<FacturacionelectronicaCore.Negocio.Modelo.FacturaCanastilla, FacturaCanastilla>().ReverseMap();
             CreateMap<FacturacionelectronicaCore.Negocio.Modelo.CanastillaFactura, CanastillaFactura>().ReverseMap();
             CreateMap<FacturacionelectronicaCore.Negocio.Modelo.FormasPagos, FormasPagos>().ReverseMap();
+            CreateMap<FacturacionelectronicaCore.Negocio.Modelo.Turno, Turno>().ReverseMap();
+            CreateMap<FacturacionelectronicaCore.Negocio.Modelo.TurnoSurtidor, TurnoSurtidor>().ReverseMap();
         }
     }
 }

@@ -426,6 +426,7 @@ namespace FactoradorEstacionesModelo.Convertidor
 
 
                     IButton = dr.Field<string>("Ibutton"),
+                    fecha = dr.Field<DateTime>("fecha"),
                 })
             );
             return response;

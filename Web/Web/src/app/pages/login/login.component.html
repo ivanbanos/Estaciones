@@ -1,0 +1,20 @@
+<div class="content">
+    <mat-toolbar color="primary">
+        <mat-toolbar-row><img src="../../../assets/img/Icono.png" class="toolbar-icon">SIGES</mat-toolbar-row>
+    </mat-toolbar>
+    <div class="container-fluid login-container">
+        <img src="../../../assets/img/profile.svg" class="main-page-image" />
+        <form class="login-form" (keydown.enter)="login()" ngNativeValidate>
+            <mat-form-field class="login-full-width">
+                <input matInput placeholder="Username" [(ngModel)]="username" name="username" required>
+            </mat-form-field>
+            <mat-form-field class="login-full-width">
+                <input matInput placeholder="Password" type="password" [(ngModel)]="password" name="password" required>
+            </mat-form-field>
+            <mat-spinner [style.display]="showSpinner ? 'block' : 'none'" class="spinner"></mat-spinner>
+            <button mat-raised-button (click)="login()" color="primary">Iniciar sesión</button>
+            <a href="javascript:void(0)" (click)="openPage('register')">crear nueva cuenta</a>
+            <p [style.display]="errorMessage ? 'block' : 'none'" [className]="'error'">{{ errorMessage }}</p>
+        </form>
+    </div>
+</div>

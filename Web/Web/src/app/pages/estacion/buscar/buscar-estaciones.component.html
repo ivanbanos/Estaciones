@@ -1,0 +1,18 @@
+<h1>Estaciones</h1>
+<div>
+    <form>
+        <mat-grid-list cols="2">
+            <button mat-raised-button color="primary" (click)="agregarEstacion()" class="btn">Agregar
+                Estaci&oacute;n</button>
+            <button *ngIf="loaded" mat-raised-button color="primary" (click)="borrarEstacion()" class="btn">Borrar
+                Estaci&oacute;n</button>
+        </mat-grid-list>
+    </form>
+</div>
+<div class="estaciones-container" *ngIf="estaciones$ | async as estaciones">
+    <app-estacion-item class="estacion" *ngFor="let estacion of estaciones" [estacion]="estacion"
+        (selectElement)="obtenerSeleccion($event, estaciones)" (editClicked)="showUpdate($event)"></app-estacion-item>
+</div>
+<div *ngIf="isLoading">
+    <mat-spinner class="spinner"></mat-spinner>
+</div>

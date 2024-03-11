@@ -1,0 +1,15 @@
+<h1>Terceros</h1> 
+<button mat-raised-button color="primary" (click)="showAdd()" class="btn">
+    Agregar
+</button>
+<app-table *ngIf="tercerosList$ | async as tercerosList" [displayedColumns]="columnas" [hasUpdate]="true"
+    (update)="showUpdate($event)" [dataSource]="tercerosList"></app-table>
+<div *ngIf="isLoading">
+    <mat-spinner class="spinner"></mat-spinner>
+</div>
+<div *ngIf="empty">
+    <div class="not-found-content">
+        <img src="../../../../assets/img/not-found.svg" class="not-found-img" />
+        <h1>No se encontraron elementos</h1>
+    </div>
+</div>

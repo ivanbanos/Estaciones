@@ -1,0 +1,30 @@
+<div *ngIf="facturaCanastilla">
+    
+    <mat-card>
+        <mat-card-header>
+            <mat-card-title>Factura de canastilla {{consecutivio}}
+                <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+            </mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+            <p><label>Nombre Tercero:</label> {{facturaCanastilla.nombre}} </p>
+            <p><label>Identificación:</label> {{facturaCanastilla.identificacion}}</p>
+            <p><label>Fecha de creación:</label> {{facturaCanastilla.fecha}}</p>
+            <p><label>Subtotal:</label> {{facturaCanastilla.subtotal}} </p>
+            <p><label>Descuento:</label> {{facturaCanastilla.descuento}}</p>
+            <p><label>Iva:</label> {{facturaCanastilla.iva}} </p>
+            <p><label>Total:</label> {{facturaCanastilla.total}} </p>
+            <p><label>Forma de pago:</label> {{facturaCanastilla.formaDePago}}</p>
+        
+        </mat-card-content>
+    </mat-card>
+    <mat-menu #menu="matMenu">
+        <button mat-menu-item (click)="imprimir()">
+          <mat-icon>print</mat-icon>
+          <span>Re-imprimir</span>
+        </button>
+      </mat-menu>
+</div>
+

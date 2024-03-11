@@ -6,7 +6,7 @@ namespace ManejadorSurtidor.SICOM
 {
     public class Consumo
     {
-        public float Volumen { get; set; }
-        public DateTime fecha { get; set; }
+        public float volumen { get; set; }
+        public String fecha { get; set; }
     }
 }

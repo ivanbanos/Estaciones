@@ -309,5 +309,40 @@ namespace EnviadorInformacionService
                 return JsonConvert.DeserializeObject<ResolucionElectronica>(response.Content.ReadAsStringAsync().Result);
             }
         }
+
+        public bool SetTurnoFactura(object ventaId, DateTime fechaApertura, string isla, int numero, Guid estacionFuente, string token)
+        {
+            using (var client = new HttpClient())
+            {
+                var path = $"/api/Factura/AgregarTurnoAFactura/{ventaId}/{fechaApertura}/{isla}/{numero}/{estacionFuente}";
+
+                client.Timeout = new TimeSpan(0, 0, 0, 5, 0);
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+                var response = client.GetAsync($"{url}{path}").Result;
+
+                return response.IsSuccessStatusCode;
+            }
+        }
+
+        public void SubirTurno(Turno turno, Guid estacionFuente, string token)
+        {
+            turno.EstacionGuid = estacionFuente.ToString();
+            turno.Id = Guid.NewGuid().ToString();
+            using (var client = new HttpClient())
+            {
+                client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
+                client.DefaultRequestHeaders.Authorization =
+    new AuthenticationHeaderValue("bearer", token);
+                var path = $"/api/manejadorinformacionlocal/AddFacturaCanastilla";
+
+                Logger.Info(JsonConvert.SerializeObject(turno));
+                var content = new StringContent(JsonConvert.SerializeObject(turno));
+                content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+                var response = client.PostAsync($"{url}{path}", content).Result;
+                response.EnsureSuccessStatusCode();
+                string responsebody = response.Content.ReadAsStringAsync().Result;
+            }
+        }
     }
 }

@@ -257,6 +257,35 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         }
 
+        public async Task AgregarTurnoAFactura(int idVentaLocal, string turnoGuid, Guid estacion)
+        {
+                var filter = Builders<FacturaMongo>.Filter.Eq("IdVentaLocal", idVentaLocal);
+                var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
+                if (facturasMongo.Any(x => x.EstacionGuid == estacion.ToString()))
+                {
+                    var facturaMongo = facturasMongo.First(x => x.EstacionGuid == estacion.ToString());
+                    var filterGuid = Builders<FacturaMongo>.Filter.Eq("_id", facturaMongo.Guid);
+                    var update = Builders<FacturaMongo>.Update
+                        .Set(x => x.TurnoGuid, turnoGuid);
+                    await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "factuas", filterGuid, update);
+
+                }
+                else
+                {
+                    var filtero = Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", idVentaLocal);
+                    var ordenesMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filtero);
+                    if (ordenesMongo.Any(x => x.EstacionGuid == estacion.ToString()))
+                    {
+                        var ordenMongo = ordenesMongo.First(x => x.EstacionGuid == estacion.ToString());
+                        var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", ordenMongo.guid);
+                        var update = Builders<OrdenesMongo>.Update
+                            .Set(x => x.TurnoGuid, turnoGuid);
+                        await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "ordenes", filterGuid, update);
+
+                    }
+                }
+
+        }
         public async Task SetIdFacturaElectronicaFactura(string idFacturaElectronica, string guid)
         {
             var filter = Builders<FacturaMongo>.Filter.Eq("_id", guid.ToString());

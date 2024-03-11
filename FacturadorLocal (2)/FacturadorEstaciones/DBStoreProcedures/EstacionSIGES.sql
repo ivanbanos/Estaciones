@@ -3098,7 +3098,7 @@ CREATE procedure [dbo].ActualizarTurnoImpreso
 as
 begin try
     set nocount on;
-	update turno set impreso+=1 from venta where turno.ID=@Id
+	update turno set impreso+=1 from Turno where Turno.ID=@Id
     
     
 end try
@@ -3293,7 +3293,7 @@ begin try
 	inner join Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
 	inner join Vehiculos on Vehiculos.idrom = Venta.Ibutton
 	inner join terceros on Vehiculos.terceroId = terceros.terceroId
-	inner join Fidelizado on Fidelizado.documento = terceros.identificacion
+	left join Fidelizado on Fidelizado.documento = terceros.identificacion
 	where venta.Idmanguera = @idManguera
 	order by venta.id desc
 
@@ -3819,3 +3819,34 @@ GO
 --UPDATE Fidelizado SET PUNTOS = puntos + 60 
 
 -- select 'values('+convert(varchar,IdFidelizado)+',"'+Fidelizado+'",'+convert(varchar,Puntos)+'),' from fidelizado
+
+GO
+/****** Object:  StoredProcedure [dbo].[GetVentasSinSubir]    Script Date: 28/02/2024 16:46:56 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER procedure [dbo].[GetVentasSinSubir]
+
+as
+begin try
+    set nocount on;
+	select Venta.Id, Venta.IButton, Venta.cantidad, Venta.fecha
+	from dbo.Venta 
+	where Venta.Sicom=0 or Venta.Sicom is null
+    
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;

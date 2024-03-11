@@ -9,6 +9,7 @@ using FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal;
 using FacturacionelectronicaCore.Negocio.OrdenDeDespacho;
 using FacturacionelectronicaCore.Negocio.Resolucion;
 using FacturacionelectronicaCore.Negocio.Tercero;
+using FacturacionelectronicaCore.Negocio.Turno;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -31,6 +32,7 @@ namespace EstacionesServicio.Negocio.Extention
             services.AddScoped<IResolucionNegocio, ResolucionNegocio>();
             services.AddScoped<ICanastillaNegocio, CanastillaNegocio>();
             services.AddScoped<IFacturaCanastillaNegocio, FacturaCanastillaNegocio>();
+            services.AddScoped<ITurnoNegocio, TurnoNegocio>();
             services.AddRespositoryDependencies(configuration);
             services.AddSingleton<IValidadorGuidAFacturaElectronica, ValidadorGuidAFacturaElectronica>();
             return services;

@@ -1,0 +1,31 @@
+.mat-card {
+    /*height: inherit;*/
+    display: flex;
+    margin: 5px;
+    /* max-width: 350px; */
+    width: 450px;
+    flex-direction: column;
+}
+
+p {
+    margin: 1px;
+}
+
+.select-margin {
+    margin-left: auto;
+}
+
+/* 
+mat-card-content {
+    overflow: hidden;
+    height: 40%;
+}
+
+mat-card-header {
+    display: flex;
+    justify-content: space-between;
+}
+
+mat-card-actions {
+    height: 10%;
+} */

@@ -40,5 +40,6 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         Task<IEnumerable<Factura>> ObtenerFacturaPorGuid(string facturaGuid);
         Task<IEnumerable<Factura>> ObtenerFacturaPorIdVentaLocal(int idVentaLocal, Guid estacion);
         Task SetIdFacturaElectronicaFactura(string idFacturaElectronica, string guid);
+        Task AgregarTurnoAFactura(int idVentaLocal, string turnoGuid, Guid estacion);
     }
 }

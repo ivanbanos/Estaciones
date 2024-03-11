@@ -1,0 +1,23 @@
+<div class="content">
+    <mat-toolbar color="primary">
+        <mat-toolbar-row><img src="../../../assets/img/Icono.png" class="toolbar-icon">SIGES</mat-toolbar-row>
+    </mat-toolbar>
+    <div class="container-fluid register-container">
+        <img src="../../../assets/img/profile.svg" class="main-page-image" />
+        <form class="register-form" (keydown.enter)="register()" ngNativeValidate>
+            <mat-form-field class="register-full-width">
+                <input matInput placeholder="Username" [(ngModel)]="username" name="username" required>
+            </mat-form-field>
+            <mat-form-field class="register-full-width">
+                <input matInput placeholder="Name" type="text" [(ngModel)]="name" name="name" required>
+            </mat-form-field>
+            <mat-form-field class="register-full-width">
+                <input matInput placeholder="Password" type="password" [(ngModel)]="password" name="password" required>
+            </mat-form-field>
+            <mat-spinner [style.display]="showSpinner ? 'block' : 'none'" class="spinner"></mat-spinner>
+            <button mat-raised-button (click)="register()" color="primary">Registrarse</button>
+            <a href="javascript:void(0);" routerLink="/login">volver a login</a>
+            <p [style.display]="errorMessage ? 'block' : 'none'" [className]="'error'">{{ errorMessage }}</p>
+        </form>
+    </div>
+</div>

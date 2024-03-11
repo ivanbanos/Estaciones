@@ -1,19 +1,11 @@
 ﻿
 using EnviadorInformacionService;
-using FactoradorEstacionesModelo.Objetos;
 using FacturacionelectronicaCore.Negocio.Contabilidad;
 using FacturadorEstacionesRepositorio;
-using ReporteFacturas;
 using System;
-using System.Collections.Generic;
 using System.Configuration;
-using System.Drawing;
-using System.Drawing.Printing;
 using System.Linq;
-using System.Net.NetworkInformation;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace EnviadorInformacion
 {
@@ -133,6 +125,35 @@ namespace EnviadorInformacion
             {
                 _estacionesRepositorio.MandarImprimir(factura.IdVentaLocal);
             }
+
+            var facturasPorturno = _estacionesRepositorio.GetFacturaSinEnviarTurno();
+            if (facturas.Any())
+            {
+                foreach(var factura in facturasPorturno)
+                {
+                    var turno = _estacionesRepositorio.ObtenerTurnoIslaPorVenta(factura.ventaId);
+                    var okFacturas = _conexionEstacionRemota.SetTurnoFactura(factura.ventaId, turno.FechaApertura, turno.Isla, turno.Numero, estacionFuente, token);
+                    if (okFacturas)
+                    {
+                        _estacionesRepositorio.ActuralizarFacturasEnviadosTurno(factura.ventaId);
+                    }
+                    else
+                    {
+                         _conexionEstacionRemota.SubirTurno(turno, estacionFuente, token);
+                        okFacturas = _conexionEstacionRemota.SetTurnoFactura(factura.ventaId, turno.FechaApertura, turno.Isla, turno.Numero, estacionFuente, token);
+                        if (okFacturas)
+                        {
+                            _estacionesRepositorio.ActuralizarFacturasEnviadosTurno(factura.ventaId);
+                        }
+                        else
+                        {
+
+                            Logger.Info("No subieron facturas");
+                        }
+                    }
+                }
+            }
+
 
         }
          }

@@ -1,0 +1,45 @@
+<mat-card class="centred-card">
+  <form *ngIf="canastilla">
+    <h2>Item de canastilla</h2>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="descripcion">Descripción</mat-label>
+          <input matInput id="descripcion" name="descripcion" [(ngModel)]="canastilla.descripcion">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="precio">Precio</mat-label>
+          <input matInput id="precio" name="precio"  (change)="setTotal()" [(ngModel)]="canastilla.precio">
+        
+          </mat-form-field>
+      </div>
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="unidad">Unidad</mat-label>
+          <input matInput id="unidad" name="unidad" [(ngModel)]="canastilla.unidad">
+        </mat-form-field>
+      </div>
+        <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="unidad">Iva</mat-label>
+          <input matInput id="iva" name="iva" [(ngModel)]="canastilla.iva">
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group col-md-6">
+          <label>Precio total {{ total }}</label>
+        
+    </div></div>
+    <button type="submit" class="btn btn-primary" (click)="onSubmit()">Guardar</button>
+    <button type="submit" class="btn btn-primary" (click)="borrar()">Borrar</button>
+    <button type="submit" class="btn btn-primary" (click)="back()">Atras</button>
+  </form>
+
+</mat-card>

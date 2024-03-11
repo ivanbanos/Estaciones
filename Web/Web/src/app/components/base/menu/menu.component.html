@@ -1,0 +1,59 @@
+<div class="main-container" [class.is-mobile]="mobileQuery.matches">
+  <mat-toolbar color="primary" class="toolbar">
+    <button mat-icon-button (click)="snav.toggle()">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <h1 class="app-name">SIGES</h1>
+    <p class="estacion-name" *ngIf="estacion">{{estacion}}</p>
+    <button mat-icon-button class="profile" [matMenuTriggerFor]="menu">
+      <mat-icon aria-hidden="false" aria-label="profile">account_circle</mat-icon>
+      <mat-menu #menu="matMenu">
+        <button mat-menu-item (click)="logout()">Cerrar sesión</button>
+      </mat-menu>
+    </button>
+  </mat-toolbar>
+
+  <mat-sidenav-container class="sidenav-container" [style.marginTop.px]="mobileQuery.matches ? 56 : 0">
+    <mat-sidenav #snav [mode]="mobileQuery.matches ? 'over' : 'side'" [fixedInViewport]="mobileQuery.matches" opened
+      fixedTopGap="56">
+      <mat-nav-list>
+        <a mat-list-item routerLink="/dashboard/facturas">
+          Facturas
+        </a>
+        <a mat-list-item routerLink="/dashboard/facturascanastillas">
+          Facturas canastillas
+        </a>
+        <a mat-list-item routerLink="/dashboard/terceros">
+          Terceros
+        </a>
+        <a mat-list-item routerLink="/dashboard/canastillas">
+          Items de Canastilla
+        </a>
+        <a mat-list-item routerLink="/dashboard/ordenesDeDespacho">
+          Ordenes de despacho
+        </a>
+        <a mat-list-item routerLink="/dashboard/estaciones">
+          Estaciones
+        </a>
+        <a mat-list-item routerLink="/dashboard/resoluciones">
+          Resoluciones
+        </a>
+        <a mat-list-item routerLink="/dashboard/reporte-consolidado">
+          Reporte Fiscal
+        </a>
+        <a mat-list-item routerLink="/dashboard/reporte-turnos">
+          Reporte Turnos
+        </a>
+      </mat-nav-list>
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+      <div class="content">
+        <div class="container-fluid">
+          <router-outlet></router-outlet>
+        </div>
+      </div>
+    </mat-sidenav-content>
+  </mat-sidenav-container>
+</div>
+<!-- End Navbar -->

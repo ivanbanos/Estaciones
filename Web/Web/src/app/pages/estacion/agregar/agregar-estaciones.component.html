@@ -1,0 +1,70 @@
+<mat-card class="centred-card">
+  <form>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="nit">Nit</mat-label>
+          <input matInput id="nit" name="nit" [(ngModel)]="estacion.nit" [disabled]="hasNit">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="nombre">Nombre</mat-label>
+          <input matInput id="nombre" name="nombre" [(ngModel)]="estacion.nombre" [disabled]="hasName">
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="direccion">Direccion</mat-label>
+          <input matInput id="direccion" name="direccion" [(ngModel)]="estacion.direccion">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="razon">Razón</mat-label>
+          <input matInput id="razon" name="razon" [(ngModel)]="estacion.razon">
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="linea1">Línea 1</mat-label>
+          <input matInput id="linea1" name="linea1" [(ngModel)]="estacion.linea1">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="linea2">Línea 2</mat-label>
+          <input matInput id="linea2" name="linea2" [(ngModel)]="estacion.linea2">
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="linea3">Línea 3</mat-label>
+          <input matInput id="linea3" name="linea3" [(ngModel)]="estacion.linea3">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="linea4">Línea 4</mat-label>
+          <input matInput id="linea4" name="linea4" [(ngModel)]="estacion.linea4">
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="telefono">Telefono</mat-label>
+          <input matInput id="telefono" name="telefono" [(ngModel)]="estacion.telefono">
+        </mat-form-field>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary" (click)="onSubmit()">Guardar</button>
+    <button type="submit" class="btn btn-primary" (click)="back()">Atras</button>
+  </form>
+</mat-card>

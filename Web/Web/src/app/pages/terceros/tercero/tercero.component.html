@@ -1,0 +1,169 @@
+<mat-card class="centred-card">
+  <form *ngIf="tercero">
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="identificacion">Identificacion</mat-label>
+          <input matInput id="identificacion" name="identificacion" [(ngModel)]="tercero.identificacion">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="descripcionTipoIdentificacion">Tipo Identificacion</mat-label>
+          <mat-select matInput id="descripcionTipoIdentificacion" name="descripcionTipoIdentificacion" [(ngModel)]="tercero.descripcionTipoIdentificacion" >
+            <mat-option *ngFor="let option of identificaciones$ | async as identificaciones" [value]="option">
+              {{option}}
+            </mat-option>  
+          </mat-select>
+          </mat-form-field>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="nombre">Primer Nombre</mat-label>
+          <input matInput id="nombre" name="nombre" [(ngModel)]="tercero.nombre">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="segundo">Segundo Nombre</mat-label>
+          <input matInput id="segundo" name="segundo" [(ngModel)]="tercero.segundo">
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="apellidos">Apellidos</mat-label>
+          <input matInput id="apellidos" name="apellidos" [(ngModel)]="tercero.apellidos">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="tipoPersona">Tipo de persona</mat-label>
+          <mat-select matInput id="tipoPersona" name="tipoPersona" [(ngModel)]="tercero.tipoPersona" >
+            <mat-option  [value]="1">Juridica</mat-option>
+            <mat-option  [value]="2">Natural</mat-option>  
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="responsabilidadTributaria">Responsabilidad tributaria</mat-label>
+          <mat-select matInput id="responsabilidadTributaria" name="responsabilidadTributaria" [(ngModel)]="tercero.responsabilidadTributaria" >
+            <mat-option  [value]="1">Responsable de IVA</mat-option>
+            <mat-option  [value]="2">No responsable de IVA</mat-option>  
+            <mat-option  [value]="3">No responsable del consumo</mat-option>  
+            <mat-option  [value]="4">Regimen especial</mat-option> 
+            <mat-option  [value]="5">Impuesto nacional al consumo</mat-option>   
+          </mat-select>
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="municipio">Municipio</mat-label>
+          <input matInput id="municipio" name="municipio" [(ngModel)]="tercero.municipio">
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="municipio">Municipio</mat-label>
+          <input matInput id="municipio" name="municipio" [(ngModel)]="tercero.municipio">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="departamento">Departamento</mat-label>
+          <input matInput id="departamento" name="departamento" [(ngModel)]="tercero.departamento">
+        </mat-form-field>
+      </div>
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="direccion">Dirección</mat-label>
+          <input matInput id="direccion" name="direccion" [(ngModel)]="tercero.direccion">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="pais">Pais</mat-label>
+          <input matInput id="pais" name="pais" [(ngModel)]="tercero.pais">
+        </mat-form-field>
+      </div>
+    </div>
+
+    
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="codigoPostal">Código postal</mat-label>
+          <input matInput id="codigoPostal" name="codigoPostal" [(ngModel)]="tercero.codigoPostal">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="celular">Celular</mat-label>
+          <input matInput id="celular" name="Celular" [(ngModel)]="tercero.celular">
+        </mat-form-field>
+      </div>
+    </div>
+
+    
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="telefono">Teléfono</mat-label>
+          <input matInput id="telefono" name="telefono" [(ngModel)]="tercero.telefono">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="telefono2">Teléfono 2</mat-label>
+          <input matInput id="telefono2" name="telefono2" [(ngModel)]="tercero.telefono2">
+        </mat-form-field>
+      </div>
+    </div>
+
+    
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="correo">Correo</mat-label>
+          <input matInput id="correo" name="correo" [(ngModel)]="tercero.correo">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="correo2">Correo 2</mat-label>
+          <input matInput id="correo2" name="correo2" [(ngModel)]="tercero.correo2">
+        </mat-form-field>
+      </div>
+    </div>
+
+    
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="vendedor">Vendedor</mat-label>
+          <input matInput id="vendedor" name="vendedor" [(ngModel)]="tercero.vendedor">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="comentarios">Comentarios</mat-label>
+          <input matInput id="comentarios" name="comentarios" [(ngModel)]="tercero.comentarios">
+        </mat-form-field>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary" (click)="onSubmit()">Guardar</button>
+    <button type="submit" class="btn btn-primary" (click)="back()">Atras</button>
+  </form>
+
+</mat-card>

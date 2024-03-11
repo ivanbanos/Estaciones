@@ -1,0 +1,54 @@
+.register-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 90%;
+}
+
+.content {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.toolbar-icon {
+    width: 70px;
+}
+
+.register-form {
+    width: 40%;
+    display: flex;
+    flex-direction: column;
+}
+
+.spinner {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+}
+
+.main-page-image {
+    width: 40%;
+    height: 40%;
+}
+
+::placeholder {
+    /* Chrome, Firefox, Opera, Safari 10.1+ */
+    color: grey;
+    opacity: 1;
+    /* Firefox */
+}
+
+.error {
+    color: red;
+}
+
+@media (max-width: 600px) {
+    .main-page-image {
+        display: none;
+    }
+    .register-form {
+        width: 90%;
+    }
+}

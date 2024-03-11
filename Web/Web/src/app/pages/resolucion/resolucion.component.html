@@ -1,0 +1,142 @@
+<h1>Resoluci&oacute;n de combustible</h1>
+<div>
+  <form>
+    <mat-grid-list cols="2" row="1">
+      <button mat-raised-button color="primary" (click)="agregarResolucion()" class="btn">Agregar Resolución</button>
+      <button mat-raised-button color="primary" (click)="habilitarResolucion()" class="btn">Habilitar
+        Resolución</button>
+      <mat-form-field appearance="standard">
+        <mat-label>Fecha Vencimiento</mat-label>
+        <input matInput [matDatepicker]="picker" class="form-control" id="fechaVencimiento" name="fechaVencimiento"
+          [(ngModel)]="fechaVencimiento" for="fechaVencimiento">
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+    </mat-grid-list>
+  </form>
+</div>
+<div class="card card-resolucion" *ngIf="resolucionCombustible">
+  <div class="card-body">
+    <h2 class="card-title"><strong>{{resolucionCombustible.descripcion}}</strong></h2>
+    <div class="container">
+      <div class="row row-resolucion">
+        <div class="col-sm">
+          <label class="title">Consecutivo Inicial:</label>
+          <label class="aling-label">{{resolucionCombustible.consecutivoInicial}}</label>
+        </div>
+        <div class="col-sm">
+          <label class="title">Consecutivo Final:</label>
+          <label class="aling-label">{{resolucionCombustible.consecutivoFinal}}</label>
+        </div>
+      </div>
+      <div class="row row-resolucion">
+        <div class="col-sm">
+          <label class="title">Fecha Inicial:</label>
+          <label class="aling-label">{{resolucionCombustible.fechaInicial | date}}</label>
+        </div>
+        <div class="col-sm">
+          <label class="title">Fecha Final:</label>
+          <label class="aling-label">{{resolucionCombustible.fechaFinal | date}}</label>
+        </div>
+      </div>
+      <div class="row row-resolucion">
+        <div class="col-sm">
+          <label class="title">Estado:</label>
+          <label class="aling-label">{{resolucionCombustible.estado}}</label>
+        </div>
+        <div class="col-sm">
+          <label class="title">Consecutivo Actual:</label>
+          <label class="aling-label">{{resolucionCombustible.consecutivoActual}}</label>
+        </div>
+      </div>
+      <div class="row row-resolucion">
+        <div class="col-sm">
+          <label class="title">Fecha:</label>
+          <label class="aling-label">{{resolucionCombustible.fecha | date}}</label>
+        </div>
+      </div>
+      <div class="row row-resolucion">
+        <div class="col-sm">
+          <label class="title">Habilitada:</label>
+          <label class="aling-label">{{resolucionCombustible.habilitada}}</label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h1>Resoluci&oacute;n de canastilla</h1>
+<div>
+  <form>
+    <mat-grid-list cols="2" row="1">
+      <button mat-raised-button color="primary" (click)="agregarResolucionCanastilla()" class="btn">Agregar Resolución</button>
+      <button mat-raised-button color="primary" (click)="habilitarResolucionCanastilla()" class="btn">Habilitar
+        Resolución</button>
+      <mat-form-field appearance="standard">
+        <mat-label>Fecha Vencimiento</mat-label>
+        <input matInput [matDatepicker]="picker2" class="form-control" id="fechaVencimientoCanastilla" name="fechaVencimientoCanastilla"
+          [(ngModel)]="fechaVencimientoCanastilla" for="fechaVencimientoCanastilla">
+        <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+        <mat-datepicker #picker2></mat-datepicker>
+      </mat-form-field>
+    </mat-grid-list>
+  </form>
+</div>
+<div class="card card-resolucion" *ngIf="resolucionCanastilla">
+  <div class="card-body">
+    <h2 class="card-title"><strong>{{resolucionCanastilla.descripcion}}</strong></h2>
+    <div class="container">
+      <div class="row row-resolucion">
+        <div class="col-sm">
+          <label class="title">Consecutivo Inicial:</label>
+          <label class="aling-label">{{resolucionCanastilla.consecutivoInicial}}</label>
+        </div>
+        <div class="col-sm">
+          <label class="title">Consecutivo Final:</label>
+          <label class="aling-label">{{resolucionCanastilla.consecutivoFinal}}</label>
+        </div>
+      </div>
+      <div class="row row-resolucion">
+        <div class="col-sm">
+          <label class="title">Fecha Inicial:</label>
+          <label class="aling-label">{{resolucionCanastilla.fechaInicial | date}}</label>
+        </div>
+        <div class="col-sm">
+          <label class="title">Fecha Final:</label>
+          <label class="aling-label">{{resolucionCanastilla.fechaFinal | date}}</label>
+        </div>
+      </div>
+      <div class="row row-resolucion">
+        <div class="col-sm">
+          <label class="title">Estado:</label>
+          <label class="aling-label">{{resolucionCanastilla.estado}}</label>
+        </div>
+        <div class="col-sm">
+          <label class="title">Consecutivo Actual:</label>
+          <label class="aling-label">{{resolucionCanastilla.consecutivoActual}}</label>
+        </div>
+      </div>
+      <div class="row row-resolucion">
+        <div class="col-sm">
+          <label class="title">Fecha:</label>
+          <label class="aling-label">{{resolucionCanastilla.fecha | date}}</label>
+        </div>
+      </div>
+      <div class="row row-resolucion">
+        <div class="col-sm">
+          <label class="title">Habilitada:</label>
+          <label class="aling-label">{{resolucionCanastilla.habilitada}}</label>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div *ngIf="isLoading">
+  <mat-spinner class="spinner"></mat-spinner>
+</div>
+<div *ngIf="empty">
+  <div class="not-found-content">
+    <img src="../../../../assets/img/not-found.svg" class="not-found-img" />
+    <h1>No se encontraron elementos</h1>
+  </div>
+</div>

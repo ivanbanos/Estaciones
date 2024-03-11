@@ -1,0 +1,29 @@
+<mat-card class="orden-item">
+    <mat-card-header>
+        <mat-card-title>{{ordenDeDespacho.idVentaLocal}}
+            <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+        </mat-card-title>
+        <mat-card-subtitle class="guia-subtitulo">{{ordenDeDespacho.combustible}}</mat-card-subtitle>
+        <mat-checkbox class="select-margin" [checked]="ordenDeDespacho.seleccionado" (change)="selectItem()">
+        </mat-checkbox>
+    </mat-card-header>
+    <mat-card-content>
+        <p><label>Nombre Tercero:</label> {{ordenDeDespacho.nombreTercero}}</p>
+        <p><label>Identificación:</label> {{ordenDeDespacho.identificacion}}</p>
+        <p><label>Placa:</label> {{ordenDeDespacho.placa ? ordenDeDespacho.placa : 'No registra'}}</p>
+        <p><label>Fecha de creación:</label> {{ordenDeDespacho.fecha}}</p>
+        <p><label>Estado de la orden:</label> {{ordenDeDespacho.estado}}</p>
+        <p><label>Subtotal:</label> {{ordenDeDespacho.subTotal}}</p>
+        <p><label>Descuento:</label> {{ordenDeDespacho.descuento}}</p>
+        <p><label>Total:</label> {{ordenDeDespacho.total}}<label>Forma de pago:</label> {{ordenDeDespacho.formaDePago}}</p>
+    </mat-card-content>
+</mat-card>
+
+<mat-menu #menu="matMenu">
+    <button mat-menu-item [disabled]="ordenDeDespacho.idFacturaElectronica" (click)="EnviarFacturacion()">
+      <mat-icon>launch</mat-icon>
+      <span>Factura electrónica</span>
+    </button>
+  </mat-menu>

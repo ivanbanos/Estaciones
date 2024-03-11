@@ -1,0 +1,52 @@
+<mat-card class="centred-card">
+  <form>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="consecutivoInicial">Consecutivo Inicial</mat-label>
+          <input matInput id="consecutivoInicial" name="consecutivoInicial" [(ngModel)]="consecutivoIni" >
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="consecutivoFinal">Consecutivo Final</mat-label>
+          <input matInput id="consecutivoFinal" name="consecutivoFinal" [(ngModel)]="consecutivoFi">
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label>Fecha inicial</mat-label>
+          <input matInput [matDatepicker]="picker" id="fechaInicial" name="fechaInicial" [(ngModel)]="fechaIni" for="fechaInicial">
+          <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+          <mat-datepicker #picker></mat-datepicker>
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+            <mat-label>Fecha final</mat-label>
+            <input matInput [matDatepicker]="picker2" id="fechaFinal" name="fechaFinal" [(ngModel)]="fechaFi" for="fechaFinal">
+            <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+            <mat-datepicker #picker2></mat-datepicker>
+        </mat-form-field>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="autorizacion">Autorización</mat-label>
+          <input matInput id="autorizacion" name="autorizacion" [(ngModel)]="creacionResolucion.autorizacion">
+        </mat-form-field>
+      </div>
+      <div class="form-group col-md-6">
+        <mat-form-field class="full-width" appearance="standard">
+          <mat-label for="descripcion">Prefijo</mat-label>
+          <input matInput id="descripcion" name="descripcion"  [(ngModel)]="creacionResolucion.descripcion">
+        </mat-form-field>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary" (click)="onSubmit()">Guardar</button>
+    <button type="submit" class="btn btn-primary" (click)="back()">Atras</button>
+  </form>
+</mat-card>

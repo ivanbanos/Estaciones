@@ -1,0 +1,25 @@
+export class OrdenDeDespachoUI {
+    constructor(
+        public idVentaLocal: number,
+        public identificacion: string,
+        public nombreTercero: string,
+        public combustible: string,
+        public cantidad: string,
+        public precio: number,
+        public total: number,
+        public idInterno: string,
+        public placa: string,
+        public kilometraje: number,
+        public surtidor: string,
+        public isla: string,
+        public manguera: string,
+        public fecha: Date,
+        public estado: string,
+        public guid: string,
+        public subTotal: number,
+        public descuento: number,
+        public nit: string,
+        public formaDePago: string,
+        public seleccionado: boolean,
+        public idFacturaElectronica :string ) { }
+}

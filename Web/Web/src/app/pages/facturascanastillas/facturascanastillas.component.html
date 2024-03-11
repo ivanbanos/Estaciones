@@ -1,0 +1,75 @@
+<h2>Facturas de canastilla</h2>
+<div>
+    <form [formGroup]="FormularioFactura" (ngSubmit)="onSubmit()">
+        <mat-grid-list cols="2" row="1">
+            <mat-form-field appearance="standard">
+                <mat-label>Fecha inicial</mat-label>
+                <input matInput [matDatepicker]="picker" formControlName="fechaInicial">
+                <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+                <mat-datepicker #picker></mat-datepicker>
+            </mat-form-field>
+            <mat-form-field appearance="standard">
+                <mat-label>Fecha final</mat-label>
+                <input matInput [matDatepicker]="picker2" formControlName="fechaFinal">
+                <mat-datepicker-toggle matSuffix [for]="picker2"></mat-datepicker-toggle>
+                <mat-datepicker #picker2></mat-datepicker>
+            </mat-form-field>
+            <mat-form-field appearance="standard">
+                <mat-label>Identificación Tercero</mat-label>
+                <input matInput formControlName="identificacion">
+            </mat-form-field>
+            <mat-form-field appearance="standard">
+                <mat-label>Nombre Tercero</mat-label>
+                <input matInput formControlName="nombreTercero">
+            </mat-form-field>
+            <button mat-raised-button color="primary" (click)="onSubmit()">Buscar</button>
+        </mat-grid-list>
+        
+        <div class="loaded" *ngIf="loaded">
+            
+            <button mat-raised-button color="primary" (click)="exportAsXLSX()" class="btn">
+                Exportar
+            </button>
+        </div>
+    </form>
+</div>
+<div class="facturas-container" *ngIf="facturas$ | async as facturas">
+
+    <mat-card class="reporte-item-100">
+        <mat-card-header>
+            <mat-card-title>Totales</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="container">
+            <div class="row row-resolucion">
+              <div class="col-sm">
+                <label class="title">Consecutivo Inicial:</label>
+                <label class="aling-label">{{consecutivoInicial}}</label>
+              </div>
+              <div class="col-sm">
+                <label class="title">Consecutivo Final:</label>
+                <label class="aling-label">{{consecutivoFinal}}</label>
+              </div>
+            </div>
+            <div class="row row-resolucion">
+              <div class="col-sm">
+                <label class="title">Total de facturas: </label>
+                <label class="aling-label">{{totalFacturas}}</label>
+              </div>
+              <div class="col-sm">
+                <label class="title">Total: </label>
+                <label class="aling-label">$ {{totalDinero}}</label>
+              </div>
+            </div>
+          </div>
+        </mat-card-content>
+    </mat-card>
+
+    <app-table *ngIf="facturas$ | async as facturas" [displayedColumns]="columnas" [hasUpdate]="true"
+    (update)="showUpdate($event)" [dataSource]="facturas"></app-table>
+</div>
+<app-info-busqueda *ngIf="firstSearch" class="info-busqueda"></app-info-busqueda>
+<div *ngIf="isLoading">
+    <mat-spinner class="spinner"></mat-spinner>
+</div>
+

@@ -55,9 +55,16 @@ namespace ManejadorSurtidor
                         try
                         {
 
-                            await _sicomConection.enviarVenta(venta.IButton, (float)venta.Cantidad);
-                            _estacionesRepositorio.actualizarVentaSubidaSicom(venta.ventaId);
-                            Logger.Log(NLog.LogLevel.Error, $"Subida {venta.ventaId}");
+                            if(await _sicomConection.enviarVenta(venta.IButton, (float)venta.Cantidad, venta.fecha) == true)
+                            {
+
+                                _estacionesRepositorio.actualizarVentaSubidaSicom(venta.ventaId);
+                                Logger.Log(NLog.LogLevel.Error, $"Subida {venta.ventaId}");
+                            } else
+                            {
+
+                                Logger.Log(NLog.LogLevel.Error, $"No Subida {venta.ventaId}");
+                            }
 
                         }
                         catch (Exception ex) {

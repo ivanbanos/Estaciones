@@ -1,0 +1,13 @@
+.mat-card {
+    height: inherit;
+    display: flex;
+    width: inherit;
+    flex-direction: column;
+}
+p {
+    margin: 1px;
+}
+
+.select-margin {
+    margin-left: auto;
+}

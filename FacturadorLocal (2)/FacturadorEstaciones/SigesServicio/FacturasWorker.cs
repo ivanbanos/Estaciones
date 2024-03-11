@@ -1,4 +1,5 @@
 ﻿using FactoradorEstacionesModelo;
+using FactoradorEstacionesModelo.Fidelizacion;
 using FacturadorEstacionesPOSWinForm;
 using FacturadorEstacionesPOSWinForm.Repo;
 using FacturadorEstacionesRepositorio;
@@ -129,6 +130,7 @@ namespace SigesServicio
             //    _estacionesRepositorio.ActuralizarTerceros(tercero);
 
             //}
+
             var facturasIdImprimir = _conexionEstacionRemota.RecibirFacturasImprimir(Guid.Parse(_infoEstacion.EstacionFuente), token);
             var ordenesIdImprimir = _conexionEstacionRemota.RecibirOrdenesImprimir(Guid.Parse(_infoEstacion.EstacionFuente), token);
 

@@ -1,0 +1,31 @@
+<mat-card>
+    <mat-card-header>
+        <mat-card-title>{{factura.descripcionResolucion}}-{{factura.consecutivo}}
+
+            <button mat-icon-button [matMenuTriggerFor]="menu" aria-label="Example icon-button with a menu">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+        </mat-card-title>
+        <mat-card-subtitle class="guia-subtitulo">{{factura.combustible}}</mat-card-subtitle>
+        <mat-checkbox class="select-margin" [checked]="factura.seleccionado" (change)="selectItem()">
+        </mat-checkbox>
+    </mat-card-header>
+    <mat-card-content>
+        <p><label>Nombre Tercero:</label> {{factura.nombre}} </p>
+        <p><label>Identificación:</label> {{factura.identificacion}}</p>
+        <p><label>Placa:</label> {{factura.placa ? factura.placa : 'No registra'}}</p>
+        <p><label>Fecha de creación:</label> {{factura.fecha}}</p>
+        <p><label>Estado de la factura:</label> {{factura.estado}}</p>
+        <p><label>Cantidad:</label> {{factura.cantidad}}</p> 
+        <p><label>Subtotal:</label> {{factura.subTotal}} <label>Descuento:</label> {{factura.descuento}}</p>
+        <p><label>Total:</label> {{factura.total}} <label>Forma de pago:</label> {{factura.formaDePago}}</p>
+    
+    </mat-card-content>
+</mat-card>
+
+<mat-menu #menu="matMenu">
+    <button mat-menu-item [disabled]="factura.idFacturaElectronica" (click)="EnviarFacturacion()">
+      <mat-icon>launch</mat-icon>
+      <span>Factura electrónica</span>
+    </button>
+  </mat-menu>

@@ -9,7 +9,7 @@ namespace ManejadorSurtidor.SICOM
     public interface ISicomConection
     {
         Task<VehiculoSuic> validateIButton(string iButton);
-        Task<bool> enviarVenta(string iButton, float consumo);
+        Task<bool> enviarVenta(string iButton, float consumo, DateTime fecha);
         Task<string> GetInfoCarros();
     }
 }

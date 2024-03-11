@@ -17,13 +17,14 @@ namespace FacturacionelectronicaCore.Negocio.Factura
     public class FacturaNegocio : IFacturaNegocio
     {
         private readonly IFacturasRepository _facturasRepository;
+        private readonly ITurnoRepositorio _turnoRepositorio;
         private readonly IOrdenDeDespachoRepositorio _ordenDeDespachoRepositorio;
         private readonly ITerceroRepositorio _terceroRepositorio;
         private readonly IMapper _mapper;
         private readonly IFacturacionElectronicaFacade _alegraFacade;
         private readonly Alegra _alegra;
         private readonly IValidadorGuidAFacturaElectronica _validadorGuidAFacturaElectronica;
-        public FacturaNegocio(IFacturasRepository facturasRepository, IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio, IMapper mapper, IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, ITerceroRepositorio terceroRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica)
+        public FacturaNegocio(IFacturasRepository facturasRepository, IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio, IMapper mapper, IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, ITerceroRepositorio terceroRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica, ITurnoRepositorio turnoRepositorio)
         {
             _facturasRepository = facturasRepository;
             _ordenDeDespachoRepositorio = ordenDeDespachoRepositorio;
@@ -32,6 +33,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             _alegra = alegra.Value;
             _terceroRepositorio = terceroRepositorio;
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
+            _turnoRepositorio = turnoRepositorio;
         }
 
         public async Task<Modelo.Factura> CrearFacturaOrdenesDeDespacho(IEnumerable<OrdenesDeDespachoGuids> ordenesDeDespacho)
@@ -382,6 +384,20 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                 return null;
             }
             return _mapper.Map<Repositorio.Entities.Factura, Modelo.Factura>(facturaEntity);
+        }
+
+        public async Task AgregarTurnoAFactura(int idVentaLocal, DateTime fecha, string isla, int numero, Guid estacion)
+        {
+            var turno = (await _turnoRepositorio.Get(fecha, numero, isla, estacion.ToString())).FirstOrDefault();
+            if(turno != null)
+            {
+               await _facturasRepository.AgregarTurnoAFactura(idVentaLocal, turno.Id, estacion);
+            }
+            else
+            {
+                throw new Exception();
+            }
+
         }
     }
 }

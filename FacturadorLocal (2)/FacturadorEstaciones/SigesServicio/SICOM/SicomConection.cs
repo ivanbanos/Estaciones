@@ -19,11 +19,10 @@ namespace ManejadorSurtidor.SICOM
         private Sicom sicom;
         private readonly InfoEstacion _infoEstacion;
 
-        private readonly ILogger<SicomConection> _logger;
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         public SicomConection(IOptions<Sicom> options, ILogger<SicomConection> logger, IOptions<InfoEstacion> infoEstacion)
         {
             sicom = options.Value;
-            _logger = logger;
             System.Net.ServicePointManager.ServerCertificateValidationCallback +=
      (se, cert, chain, sslerror) =>
      {
@@ -52,20 +51,20 @@ namespace ManejadorSurtidor.SICOM
                     response.EnsureSuccessStatusCode();
                     string responseBody = await response.Content.ReadAsStringAsync();
 
-                    _logger.LogInformation( $"Sicom respuesta {responseBody}");
+                    Logger.Log(NLog.LogLevel.Info, $"Sicom respuesta {responseBody}");
                     var chipResponse = JsonConvert.DeserializeObject<VehiculoSuic>(responseBody);
                     return chipResponse;
                 } catch(Exception ex)
                 {
-                    
-                    _logger.LogInformation( $"Sicom error {ex.Message}");
+
+                    Logger.Log(NLog.LogLevel.Error, $"Sicom error {ex.Message}");
                     return null;
                 }
             }
         }
 
 
-        public async Task<bool> enviarVenta(string iButton, float consumo)
+        public async Task<bool> enviarVenta(string iButton, float consumo, DateTime fecha)
         {
             using (var client = new HttpClient())
             {
@@ -82,24 +81,26 @@ namespace ManejadorSurtidor.SICOM
                     client.DefaultRequestHeaders.Add("APIKey", sicom.APIKey);
                     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", base64EncodedAuthenticationString);
 
-                    var person = new Consumo() { Volumen = consumo, fecha = DateTime.Now };
+                    var person = new Consumo() { volumen = consumo, fecha = fecha.ToString("yyyy-MM-ddTHH:mm:ss.902Z") };
 
                     var json = JsonConvert.SerializeObject(person);
+
+                    Logger.Log(NLog.LogLevel.Info, $"Enviando {json}");
                     var data = new StringContent(json, Encoding.UTF8, "application/json");
 
                     var response = await client.PostAsync(uri, data);
                     response.EnsureSuccessStatusCode();
                     string responseBody = await response.Content.ReadAsStringAsync();
 
-                    _logger.LogInformation( $"Sicom respuesta {responseBody}");
+                    Logger.Log(NLog.LogLevel.Info, $"Sicom respuesta {responseBody}");
                     //var chipResponse = JsonConvert.DeserializeObject<ChipResponse>(responseBody);
                     return true;
                 }
                 catch (Exception ex)
                 {
 
-                    _logger.LogInformation( $"Sicom error {ex.Message}");
-                    return true;
+                    Logger.Log(NLog.LogLevel.Error, $"Sicom error {ex.Message}");
+                    return false;
                 }
             }
         }
@@ -132,7 +133,7 @@ namespace ManejadorSurtidor.SICOM
                 catch (Exception ex)
                 {
 
-                    _logger.LogInformation( $"Sicom error {ex.Message}");
+                    Logger.Log(NLog.LogLevel.Error, $"Sicom error {ex.Message}");
                     return "Fail";
                 }
             }

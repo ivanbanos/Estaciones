@@ -1,0 +1,17 @@
+.orden-item {
+    /*height: inherit;*/
+    display: flex;
+    margin: 5px;
+    /* max-width: 350px; */
+    width: 400px;
+    flex-direction: column;
+    height: 350px;
+}
+
+p {
+    margin: 1px;
+}
+
+.select-margin {
+    margin-left: auto;
+}

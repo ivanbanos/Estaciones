@@ -1,27 +1,28 @@
 ﻿using FactoradorEstacionesModelo.Objetos;
+using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Entities;
-using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FacturadorEstacionesRepositorio
 {
     public interface IEstacionesRepositorio
     {
-        Resolucion BuscarResolucionActiva(IEnumerable<Resolucion> resolucionRemota);
+        FactoradorEstacionesModelo.Objetos.Resolucion BuscarResolucionActiva(IEnumerable<FactoradorEstacionesModelo.Objetos.Resolucion> resolucionRemota);
         void CambiarConsecutivoActual(int v);
-        List<Tercero> BuscarTercerosNoEnviados();
-        List<Factura> BuscarFacturasNoEnviadas();
+        List<FactoradorEstacionesModelo.Objetos.Tercero> BuscarTercerosNoEnviados();
+        List<FactoradorEstacionesModelo.Objetos.Factura> BuscarFacturasNoEnviadas();
         List<FormasPagos> BuscarFormasPagos();
         void ActuralizarTercerosEnviados(IEnumerable<int> enumerable);
         void ActuralizarFacturasEnviados(IEnumerable<int> enumerable);
-        void ActuralizarTerceros(Tercero tercero);
+        void ActuralizarTerceros(FactoradorEstacionesModelo.Objetos.Tercero tercero);
         void AgregarFacturaDesdeIdVenta();
         void MandarImprimir(int ventaId);
-        List<Factura> BuscarFacturasNoEnviadasFacturacion();
+        List<FactoradorEstacionesModelo.Objetos.Factura> BuscarFacturasNoEnviadasFacturacion();
+        List<FactoradorEstacionesModelo.Objetos.Factura> GetFacturaSinEnviarTurno();
         void ActuralizarFacturasEnviadosFacturacion(IEnumerable<int> facturas);
+        void ActuralizarFacturasEnviadosTurno(int factura);
         List<FacturaFechaReporte> BuscarFechasReportesNoEnviadas();
         void ActuralizarFechasReportesEnviadas(IEnumerable<int> facturas);
+        Turno ObtenerTurnoIslaPorVenta(int ventaId);
     }
 }
