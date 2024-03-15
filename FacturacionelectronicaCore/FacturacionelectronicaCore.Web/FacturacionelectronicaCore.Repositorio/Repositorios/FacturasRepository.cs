@@ -343,5 +343,18 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
             return await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ObtenerFacturaPorIdVentaLocal, paramList);
         }
+
+        public async Task<IEnumerable<Factura>> ObtenerFacturasPorTurnoId(Guid turno)
+        {
+
+            List<FilterDefinition<FacturaMongo>> filters = new List<FilterDefinition<FacturaMongo>>();
+
+
+                filters.Add(Builders<FacturaMongo>.Filter.Gte("TurnoGuid", turno));
+            
+
+
+           return await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "factuas", filters);
+        }
     }
 }

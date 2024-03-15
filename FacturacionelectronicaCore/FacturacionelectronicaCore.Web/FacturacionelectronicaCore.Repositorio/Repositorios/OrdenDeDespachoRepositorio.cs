@@ -247,5 +247,17 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 return facturas;
             //}
         }
+
+        public async Task<IEnumerable<OrdenDeDespacho>> ObtenerOrdenesPorTurno(Guid turno)
+        {
+            List<FilterDefinition<OrdenDeDespacho>> filters = new List<FilterDefinition<OrdenDeDespacho>>();
+
+
+            filters.Add(Builders<OrdenDeDespacho>.Filter.Gte("TurnoGuid", turno));
+
+
+
+            return await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "ordenes", filters);
+        }
     }
 }

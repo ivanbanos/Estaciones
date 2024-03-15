@@ -96,6 +96,14 @@ namespace FacturacionelectronicaCore.Web.Controllers
             return Ok(response.Guid);
         }
 
+
+        [HttpGet("ObtenerFacturasPorTurno/{turno}")]
+        public async Task<ActionResult<IEnumerable<Factura>>> ObtenerFacturasPorTurno(Guid turno)
+        {
+            var response = await _facturaNegocio.ObtenerFacturasPorTurno(turno);
+            return Ok(response.Guid);
+        }
+
         [HttpPost("AgregarTurnoAFactura/{idVentaLocal}/{fecha}/{isla}/{numero}/{estacion}")]
         public async Task<ActionResult<Guid>> AgregarTurnoAFactura(int idVentaLocal, DateTime fecha, string isla, int numero, Guid estacion)
         {

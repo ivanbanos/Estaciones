@@ -37,5 +37,6 @@ namespace FacturacionelectronicaCore.Negocio.Factura
         Task<string> CrearFacturaFacturas(IEnumerable<FacturasEntity> facturasGuids);
         Task<Modelo.Factura> ObtenerFacturaPorIdVentaLocal(int idVentaLocal, Guid estacion);
         Task AgregarTurnoAFactura(int idVentaLocal, DateTime fecha, string Isla, int numero, Guid estacion);
+        Task<IEnumerable<Modelo.Factura>> ObtenerFacturasPorTurno(Guid turno);
     }
 }

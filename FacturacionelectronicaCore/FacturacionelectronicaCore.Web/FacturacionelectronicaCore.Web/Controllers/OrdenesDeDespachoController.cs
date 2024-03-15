@@ -90,5 +90,13 @@ namespace FacturacionelectronicaCore.Web.Controllers
 
             return Ok(response.guid);
         }
+
+
+        [HttpGet("ObtenerOrdenesPorTurno/{turno}")]
+        public async Task<ActionResult<IEnumerable<OrdenDeDespacho>>> ObtenerOrdenesPorTurno(Guid turno)
+        {
+            var response = await _ordenDeDespachoNegocio.ObtenerOrdenesPorTurno(turno);
+            return Ok(response.Guid);
+        }
     }
 }

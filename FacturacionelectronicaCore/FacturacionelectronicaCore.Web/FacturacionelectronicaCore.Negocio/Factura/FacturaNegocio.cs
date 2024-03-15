@@ -399,5 +399,13 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             }
 
         }
+
+        public async Task<IEnumerable<Modelo.Factura>> ObtenerFacturasPorTurno(Guid turno)
+        {
+            var facturasEntity = await _facturasRepository.ObtenerFacturasPorTurnoId(turno);
+
+            return _mapper.Map<IEnumerable<Repositorio.Entities.Factura>, IEnumerable<Modelo.Factura>>(facturasEntity);
+
+        }
     }
 }

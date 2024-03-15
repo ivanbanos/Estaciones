@@ -230,5 +230,12 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             }
             return _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity);
         }
+
+        public async Task<IEnumerable<Modelo.OrdenDeDespacho>> ObtenerOrdenesPorTurno(Guid turno)
+        {
+            var facturasEntity = await _ordenDeDespachoRepositorio.ObtenerOrdenesPorTurno(turno);
+
+            return _mapper.Map<IEnumerable<Repositorio.Entities.OrdenDeDespacho>, IEnumerable<Modelo.OrdenDeDespacho>>(facturasEntity);
+        }
     }
 }
