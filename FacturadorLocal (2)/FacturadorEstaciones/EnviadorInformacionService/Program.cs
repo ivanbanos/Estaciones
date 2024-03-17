@@ -39,14 +39,14 @@ namespace EnviadorInformacionService
             // Apply config           
             NLog.LogManager.Configuration = config;
 
-            var enviadorDeInformacion = new EnviadorDeInformacion();
-            enviadorDeInformacion.EnviarInformacion();
-            //ServiceBase[] ServicesToRun;
-            //ServicesToRun = new ServiceBase[]
-            //{
-            //    new Service1()
-            //};
-            //ServiceBase.Run(ServicesToRun);
+            //var enviadorDeInformacion = new EnviadorDeInformacion();
+            //enviadorDeInformacion.EnviarInformacion();
+            ServiceBase[] ServicesToRun;
+            ServicesToRun = new ServiceBase[]
+            {
+                new Service1()
+            };
+            ServiceBase.Run(ServicesToRun);
             //var service = new Service1();
             //service.OnStart(null);
         }

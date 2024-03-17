@@ -166,12 +166,12 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
 
             var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "factuas", filters);
-            //if (facturasMongo.Any())
-            //{
-            //    return facturasMongo;
-            //}
-            //else
-            //{
+            if (facturasMongo.Any())
+            {
+                return facturasMongo;
+            }
+            else
+            {
                 var facturas = await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ListarFactura, paramList);
                 var tasks = new List<Task>();
                 foreach(var factura in facturas)
@@ -180,7 +180,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 }
                 await Task.WhenAll(tasks);
                 return facturas;
-            //}
+            }
         }
 
         public async Task setConsecutivoFacturaPendiente(string facturaGuid, int consecutivo)
