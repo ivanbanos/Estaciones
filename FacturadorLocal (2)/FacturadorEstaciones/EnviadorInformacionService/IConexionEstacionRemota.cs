@@ -26,7 +26,7 @@ namespace EnviadorInformacionService
         bool EnviarFacturasCanastilla(IEnumerable<FacturaCanastilla> facturas, Guid estacionFuente, string token);
         int ObtenerParaImprimir(Guid idEstacion, string token);
         ResolucionElectronica GetResolucionElectronica(string token);
-        bool SetTurnoFactura(object ventaId, DateTime fechaApertura, string isla, int numero, Guid estacionFuente, string token);
+        bool SetTurnoFactura(int ventaId, DateTime fechaApertura, string isla, int numero, Guid estacionFuente, string token);
         void SubirTurno(FacturacionelectronicaCore.Negocio.Modelo.Turno turno, Guid estacionFuente, string token);
     }
 }

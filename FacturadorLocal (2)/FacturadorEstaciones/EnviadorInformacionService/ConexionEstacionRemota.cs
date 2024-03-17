@@ -310,17 +310,27 @@ namespace EnviadorInformacionService
             }
         }
 
-        public bool SetTurnoFactura(object ventaId, DateTime fechaApertura, string isla, int numero, Guid estacionFuente, string token)
+        public bool SetTurnoFactura(int ventaId, DateTime fechaApertura, string isla, int numero, Guid estacionFuente, string token)
         {
             using (var client = new HttpClient())
             {
-                var path = $"/api/Factura/AgregarTurnoAFactura/{ventaId}/{fechaApertura}/{isla}/{numero}/{estacionFuente}";
+                var path = $"/api/Factura/AgregarTurnoAFactura";
 
                 Logger.Info(path);
                 client.Timeout = new TimeSpan(0, 0, 0, 5, 0);
+                var request = new RequestFacturaTurno()
+                {
+                    estacion = estacionFuente,
+                    fecha = fechaApertura,
+                    isla = isla,
+                    idVentaLocal = ventaId,
+                    numero = numero
+                };
+                var content = new StringContent(JsonConvert.SerializeObject(request));
+                content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
                 client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", token);
-                var response = client.GetAsync($"{url}{path}").Result;
+                var response = client.PostAsync($"{url}{path}", content).Result;
 
                 Logger.Info(JsonConvert.SerializeObject(response.Content.ReadAsStringAsync().Result));
                 
