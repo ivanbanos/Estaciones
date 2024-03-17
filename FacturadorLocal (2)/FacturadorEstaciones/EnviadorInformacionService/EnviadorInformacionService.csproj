@@ -123,6 +123,7 @@
     <Compile Include="Models\Externos\RequestEnviarFacturas.cs" />
     <Compile Include="Models\Externos\RequestEnvioResolucion.cs" />
     <Compile Include="Models\Externos\RequestfacturasCanastilla.cs" />
+    <Compile Include="Models\Externos\RequestFacturaTurno.cs" />
     <Compile Include="Models\Externos\Resolucion.cs" />
     <Compile Include="Models\Externos\ResolucionElectronica.cs" />
     <Compile Include="Models\Externos\Tercero.cs" />

@@ -327,6 +327,7 @@ namespace EnviadorInformacionService
                     numero = numero
                 };
                 var content = new StringContent(JsonConvert.SerializeObject(request));
+                Logger.Info(JsonConvert.SerializeObject(request));
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
                 client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", token);

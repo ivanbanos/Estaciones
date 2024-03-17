@@ -104,10 +104,10 @@ namespace FacturacionelectronicaCore.Web.Controllers
             return Ok(response);
         }
 
-        [HttpPost("AgregarTurnoAFactura/{idVentaLocal}/{fecha}/{numero}/{estacion}")]
-        public async Task<ActionResult<Guid>> AgregarTurnoAFactura(int idVentaLocal, DateTime fecha, string isla, int numero, Guid estacion)
+        [HttpPost("AgregarTurnoAFactura")]
+        public async Task<ActionResult<Guid>> AgregarTurnoAFactura(RequestFacturaTurno request)
         {
-            await _facturaNegocio.AgregarTurnoAFactura(idVentaLocal, fecha, isla, numero, estacion);
+            await _facturaNegocio.AgregarTurnoAFactura(request.idVentaLocal, request.fecha, request.isla, request.numero, request.estacion);
 
             return Ok();
         }
