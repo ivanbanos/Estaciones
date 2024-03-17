@@ -104,7 +104,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
             return Ok(response);
         }
 
-        [HttpPost("AgregarTurnoAFactura/{idVentaLocal}/{fecha}/{isla}/{numero}/{estacion}")]
+        [HttpPost("AgregarTurnoAFactura/{idVentaLocal}/{fecha}/{numero}/{estacion}")]
         public async Task<ActionResult<Guid>> AgregarTurnoAFactura(int idVentaLocal, DateTime fecha, string isla, int numero, Guid estacion)
         {
             await _facturaNegocio.AgregarTurnoAFactura(idVentaLocal, fecha, isla, numero, estacion);

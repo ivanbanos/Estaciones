@@ -42,14 +42,14 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         public async Task<IEnumerable<Turno>> Get(DateTime fecha, string estacion)
         {
-            var filter = Builders<Turno>.Filter.Eq("FechaApertura", fecha);
+            var filter = Builders<Turno>.Filter.Eq("FechaApertura", fecha.AddHours(7));
             var turnos = await _mongoHelper.GetFilteredDocuments<Turno>(_repositorioConfig.Cliente, "Turnos", filter);
             return turnos.Where(x => x.EstacionGuid == estacion);
         }
 
         public async Task<IEnumerable<Turno>> Get(DateTime fecha, int numero, string isla, string estacion)
         {
-            var filter = Builders<Turno>.Filter.Eq("FechaApertura", fecha)
+            var filter = Builders<Turno>.Filter.Eq("FechaApertura", fecha.AddHours(7))
                 & Builders<Turno>.Filter.Eq("Numero", numero)
                & Builders<Turno>.Filter.Eq("Isla", isla);
             var turnos = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "Turnos", filter);

@@ -316,11 +316,14 @@ namespace EnviadorInformacionService
             {
                 var path = $"/api/Factura/AgregarTurnoAFactura/{ventaId}/{fechaApertura}/{isla}/{numero}/{estacionFuente}";
 
+                Logger.Info(path);
                 client.Timeout = new TimeSpan(0, 0, 0, 5, 0);
                 client.DefaultRequestHeaders.Authorization =
                     new AuthenticationHeaderValue("Bearer", token);
                 var response = client.GetAsync($"{url}{path}").Result;
 
+                Logger.Info(JsonConvert.SerializeObject(response.Content.ReadAsStringAsync().Result));
+                
                 return response.IsSuccessStatusCode;
             }
         }

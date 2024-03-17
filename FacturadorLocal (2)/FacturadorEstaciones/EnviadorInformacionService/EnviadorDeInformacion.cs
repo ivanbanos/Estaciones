@@ -152,7 +152,6 @@ namespace EnviadorInformacion
                             Logger.Info("No subieron facturas");
                         }
                     }
-                    Thread.Sleep(10000);
                 }
             }
 
