@@ -334,7 +334,7 @@ namespace EnviadorInformacionService
                 client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
                 client.DefaultRequestHeaders.Authorization =
     new AuthenticationHeaderValue("bearer", token);
-                var path = $"/api/manejadorinformacionlocal/AddFacturaCanastilla";
+                var path = $"/api/Turnos";
 
                 Logger.Info(JsonConvert.SerializeObject(turno));
                 var content = new StringContent(JsonConvert.SerializeObject(turno));

@@ -123,7 +123,7 @@ namespace FacturadorEstacionesRepositorio
                     }
                 catch (Exception e)
                 {
-                   throw;
+                   throw e;
                 }
             }
 
@@ -155,7 +155,7 @@ namespace FacturadorEstacionesRepositorio
                      }
                 catch (Exception e)
                 {
-                     throw;
+                     throw e;
                 }
             }
 

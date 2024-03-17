@@ -153,7 +153,7 @@ namespace FacturadorEstacionesRepositorio
                 catch (Exception e)
                 {
                     _logger.LogError(e, $"LoadDataTableFromStoredProcAsync: Proc '{procName}' with exception. {e.Message} ");
-                    throw;
+                    throw e;
                 }
             }
 
@@ -186,7 +186,7 @@ namespace FacturadorEstacionesRepositorio
                 catch (Exception e)
                 {
                     _logger.LogError(e, $"LoadDataTableFromStoredProcAsync: Proc '{procName}' with exception. {e.Message} ");
-                    throw;
+                    throw e;
                 }
             }
 

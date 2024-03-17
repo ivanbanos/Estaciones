@@ -50,84 +50,85 @@ namespace EnviadorInformacion
         {
             string token = _conexionEstacionRemota.getToken();
 
-            var ResolucionesRemota = _conexionEstacionRemota.GetResolucionEstacion(estacionFuente, token);
-            var resolucion = _estacionesRepositorio.BuscarResolucionActiva(ResolucionesRemota);
-            
-
-            var terceros = _estacionesRepositorio.BuscarTercerosNoEnviados();
-            if(terceros.Any(t => t.identificacion != null))
-            {
-                terceros = terceros.Where(t => t.identificacion != null).ToList();
-
-                Logger.Info($"Subiendo {terceros.Count} terceros");
-                var okTercero = _conexionEstacionRemota.EnviarTerceros(terceros, token);
-                if (okTercero)
-                {
-                    _estacionesRepositorio.ActuralizarTercerosEnviados(terceros.Select(x => x.terceroId));
-                }
-                else
-                {
-
-                    Logger.Info("No subieron tereceros");
-                }
-            }
-            var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadas();
-            if (facturas.Any()) {
-                var formas = _estacionesRepositorio.BuscarFormasPagos();
-
-                var okFacturas = _conexionEstacionRemota.EnviarFacturas(facturas, formas, estacionFuente, token);
-                if (okFacturas)
-                {
-                    _estacionesRepositorio.ActuralizarFacturasEnviados(facturas.Select(x => x.ventaId));
-                }
-                else
-                {
-
-                    Logger.Info("No subieron facturas");
-                }
-            }
-            
+            //var ResolucionesRemota = _conexionEstacionRemota.GetResolucionEstacion(estacionFuente, token);
+            //var resolucion = _estacionesRepositorio.BuscarResolucionActiva(ResolucionesRemota);
 
 
-            var facturasFechas = _estacionesRepositorio.BuscarFechasReportesNoEnviadas();
-            if (facturasFechas.Any())
-            {
+            //var terceros = _estacionesRepositorio.BuscarTercerosNoEnviados();
+            //if (terceros.Any(t => t.identificacion != null))
+            //{
+            //    terceros = terceros.Where(t => t.identificacion != null).ToList();
 
-                var okFacturasFechas = _conexionEstacionRemota.AgregarFechaReporteFactura(facturasFechas, estacionFuente, token);
-                if (okFacturasFechas)
-                {
-                    _estacionesRepositorio.ActuralizarFechasReportesEnviadas(facturasFechas.Select(x => x.IdVentaLocal));
-                }
-                else
-                {
+            //    Logger.Info($"Subiendo {terceros.Count} terceros");
+            //    var okTercero = _conexionEstacionRemota.EnviarTerceros(terceros, token);
+            //    if (okTercero)
+            //    {
+            //        _estacionesRepositorio.ActuralizarTercerosEnviados(terceros.Select(x => x.terceroId));
+            //    }
+            //    else
+            //    {
 
-                    Logger.Warn("No subieron facturas");
-                }
-            }
+            //        Logger.Info("No subieron tereceros");
+            //    }
+            //}
+            //var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadas();
+            //if (facturas.Any())
+            //{
+            //    var formas = _estacionesRepositorio.BuscarFormasPagos();
 
-            var tercerosRecibidos = _conexionEstacionRemota.RecibirTercerosActualizados(estacionFuente,token);
-            foreach (var tercero in tercerosRecibidos)
-            {
+            //    var okFacturas = _conexionEstacionRemota.EnviarFacturas(facturas, formas, estacionFuente, token);
+            //    if (okFacturas)
+            //    {
+            //        _estacionesRepositorio.ActuralizarFacturasEnviados(facturas.Select(x => x.ventaId));
+            //    }
+            //    else
+            //    {
 
-                _estacionesRepositorio.ActuralizarTerceros(tercero);
+            //        Logger.Info("No subieron facturas");
+            //    }
+            //}
 
-                Logger.Info($"Tercero {tercero.identificacion} agregado");
-            }
-            var facturasIdImprimir = _conexionEstacionRemota.RecibirFacturasImprimir(estacionFuente, token);
-            var ordenesIdImprimir = _conexionEstacionRemota.RecibirOrdenesImprimir(estacionFuente, token);
-            
-            
-            foreach (var orden in ordenesIdImprimir)
-            {
-                _estacionesRepositorio.MandarImprimir(orden.IdVentaLocal);
-            }
-            foreach (var factura in facturasIdImprimir)
-            {
-                _estacionesRepositorio.MandarImprimir(factura.IdVentaLocal);
-            }
+
+
+            //var facturasFechas = _estacionesRepositorio.BuscarFechasReportesNoEnviadas();
+            //if (facturasFechas.Any())
+            //{
+
+            //    var okFacturasFechas = _conexionEstacionRemota.AgregarFechaReporteFactura(facturasFechas, estacionFuente, token);
+            //    if (okFacturasFechas)
+            //    {
+            //        _estacionesRepositorio.ActuralizarFechasReportesEnviadas(facturasFechas.Select(x => x.IdVentaLocal));
+            //    }
+            //    else
+            //    {
+
+            //        Logger.Warn("No subieron facturas");
+            //    }
+            //}
+
+            //var tercerosRecibidos = _conexionEstacionRemota.RecibirTercerosActualizados(estacionFuente,token);
+            //foreach (var tercero in tercerosRecibidos)
+            //{
+
+            //    _estacionesRepositorio.ActuralizarTerceros(tercero);
+
+            //    Logger.Info($"Tercero {tercero.identificacion} agregado");
+            //}
+            //var facturasIdImprimir = _conexionEstacionRemota.RecibirFacturasImprimir(estacionFuente, token);
+            //var ordenesIdImprimir = _conexionEstacionRemota.RecibirOrdenesImprimir(estacionFuente, token);
+
+
+            //foreach (var orden in ordenesIdImprimir)
+            //{
+            //    _estacionesRepositorio.MandarImprimir(orden.IdVentaLocal);
+            //}
+            //foreach (var factura in facturasIdImprimir)
+            //{
+            //    _estacionesRepositorio.MandarImprimir(factura.IdVentaLocal);
+            //}
 
             var facturasPorturno = _estacionesRepositorio.GetFacturaSinEnviarTurno();
-            if (facturas.Any())
+            if (facturasPorturno.Any())
             {
                 foreach(var factura in facturasPorturno)
                 {
@@ -147,10 +148,11 @@ namespace EnviadorInformacion
                         }
                         else
                         {
-
+                            _estacionesRepositorio.ActuralizarFacturasEnviadosTurno(factura.ventaId);
                             Logger.Info("No subieron facturas");
                         }
                     }
+                    Thread.Sleep(10000);
                 }
             }
 

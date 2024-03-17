@@ -63,7 +63,7 @@ namespace FacturadorEstacionesRepositorio
                     }
                 catch (Exception e)
                 {
-                   throw;
+                   throw e;
                 }
             }
 
@@ -95,7 +95,7 @@ namespace FacturadorEstacionesRepositorio
                 }
                 catch (SqlException e)
                 {
-                    throw;
+                    throw e;
                 }
             }
 
@@ -127,7 +127,7 @@ namespace FacturadorEstacionesRepositorio
                 }
                 catch (SqlException e)
                 {
-                    throw;
+                    throw e;
                 }
             }
 
@@ -245,7 +245,7 @@ namespace FacturadorEstacionesRepositorio
                       {
                       });
 
-            return _convertidor.ConvertirTercero(dt).ToList();
+            return _convertidor.ConvertirTercero(dt)?.ToList();
         }
 
 
@@ -276,7 +276,7 @@ namespace FacturadorEstacionesRepositorio
                            });
 
                 var ventas = _convertidor.ConvertirVenta(dt);
-                var manguera = _convertidor.ConvertirManguera(dt).Single();
+                var manguera = _convertidor.ConvertirManguera(dt).FirstOrDefault();
                 factura.Venta = ventas.FirstOrDefault();
                 factura.Manguera = manguera;
             }

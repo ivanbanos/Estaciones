@@ -1,6 +1,7 @@
 ﻿using EnviadorInformacionService.Models;
 using FactoradorEstacionesModelo.Objetos;
 using FacturacionelectronicaCore.Repositorio.Entities;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -10,6 +11,7 @@ namespace FactoradorEstacionesModelo.Convertidor
 {
     public class Convertidor
     {
+        private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         public IEnumerable<T> Convertir<T>(DataTable dt)
         {
             throw new NotImplementedException();
@@ -335,19 +337,20 @@ namespace FactoradorEstacionesModelo.Convertidor
                 FechaCierre = drTurno.Field<DateTime>("FechaCierre"),
                 IdEstado = drTurno.Field<int>("IdEstado"),
                 Isla = drTurno.Field<string>("Isla"),
-                Numero = drTurno.Field<int>("Numero"),
+                Numero = drTurno.Field<short>("Numero"),
                 turnoSurtidores = new List<FacturacionelectronicaCore.Negocio.Modelo.TurnoSurtidor>()
             };
             var dtTurnoLec = ds.Tables[1];
+
             turno.turnoSurtidores.AddRange(
                 dtTurnoLec.AsEnumerable().Select(dr => new FacturacionelectronicaCore.Negocio.Modelo.TurnoSurtidor()
                 {
-                    Apertura = dr.Field<double>("Apertura"),
-                    Cierre = dr.Field<double>("Cierre"),
+                    Apertura = Convert.ToDouble(dr.Field<decimal>("Apertura")),
+                    Cierre = Convert.ToDouble(dr.Field<decimal>("Cierre")),
                     Combustible = dr.Field<string>("Combustible"),
-                    Manguera = dr.Field<string>("Manguera"),
-                    precioCombustible = dr.Field<float>("precioCombustible"),
-                    Surtidor = dr.Field<string>("Surtidor"),
+                    Manguera = dr.Field<short>("Manguera").ToString(),
+                    precioCombustible = Convert.ToSingle(dr.Field<decimal>("precioCombustible")),
+                    Surtidor = dr.Field<short>("Surtidor").ToString(),
                 })
             );
             return turno;

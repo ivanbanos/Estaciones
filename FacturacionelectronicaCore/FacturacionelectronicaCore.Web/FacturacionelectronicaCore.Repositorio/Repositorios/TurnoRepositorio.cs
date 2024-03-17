@@ -1,5 +1,6 @@
 ﻿using FacturacionelectronicaCore.Repositorio.Entities;
 using FacturacionelectronicaCore.Repositorio.Mongodb;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -21,10 +22,10 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         private readonly IMongoHelper _mongoHelper;
         private readonly RepositorioConfig _repositorioConfig;
 
-        public TurnoRepositorio(IMongoHelper mongoHelper, RepositorioConfig repositorioConfig)
+        public TurnoRepositorio(IMongoHelper mongoHelper, IOptions<RepositorioConfig> repositorioConfig)
         {
             _mongoHelper = mongoHelper;
-            _repositorioConfig = repositorioConfig;
+            _repositorioConfig = repositorioConfig.Value;
         }
 
         public async Task Add(Turno turno)
