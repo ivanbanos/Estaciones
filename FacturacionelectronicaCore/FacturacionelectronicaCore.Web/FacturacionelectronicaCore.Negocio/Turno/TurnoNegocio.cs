@@ -10,7 +10,7 @@ namespace FacturacionelectronicaCore.Negocio.Turno
     public interface ITurnoNegocio {
 
         Task Add(Modelo.Turno turno);
-        Task<IEnumerable<Modelo.Turno>> Get(DateTime fecha, string surtidor);
+        Task<IEnumerable<Modelo.Turno>> Get(DateTime fechaInicial, DateTime fechaFinal, string surtidor);
     }
     public class TurnoNegocio : ITurnoNegocio
     {
@@ -28,9 +28,9 @@ namespace FacturacionelectronicaCore.Negocio.Turno
             _turnoRepositorio.Add(_mapper.Map<Repositorio.Entities.Turno>(turno));
         }
 
-        public async Task<IEnumerable<Modelo.Turno>> Get(DateTime fecha, string surtidor)
+        public async Task<IEnumerable<Modelo.Turno>> Get(DateTime fechaInicial, DateTime fechaFinal, string surtidor)
         {
-            return _mapper.Map<IEnumerable<Modelo.Turno>>(_turnoRepositorio.Get(fecha, surtidor));
+            return _mapper.Map<IEnumerable<Modelo.Turno>>(_turnoRepositorio.Get(fechaInicial, fechaFinal, surtidor));
         }
     }
 }

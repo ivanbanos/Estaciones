@@ -13,7 +13,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
     public interface ITurnoRepositorio
     {
         Task Add(Turno turno);
-        Task<IEnumerable<Turno>> Get(DateTime fecha, string estacion);
+        Task<IEnumerable<Turno>> Get(DateTime fechaInicial, DateTime fechaFinal, string estacion);
         Task<IEnumerable<Turno>> Get(DateTime fecha, int numero, string isla, string estacion);
     }
     public class TurnoRepositorio : ITurnoRepositorio
@@ -40,9 +40,10 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             }
         }
 
-        public async Task<IEnumerable<Turno>> Get(DateTime fecha, string estacion)
+        public async Task<IEnumerable<Turno>> Get(DateTime fechaInicial, DateTime fechaFinal, string estacion)
         {
-            var filter = Builders<Turno>.Filter.Eq("FechaApertura", fecha);
+            var filter = Builders<Turno>.Filter.Gte("FechaApertura", fechaInicial)
+                & Builders<Turno>.Filter.Lte("FechaApertura", fechaFinal);
             var turnos = await _mongoHelper.GetFilteredDocuments<Turno>(_repositorioConfig.Cliente, "Turnos", filter);
             return turnos.Where(x => x.EstacionGuid == estacion);
         }

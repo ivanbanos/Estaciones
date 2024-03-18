@@ -22,11 +22,11 @@ namespace FacturacionelectronicaCore.Web.Controllers
             _turnoNegocio = turnoNegocio;
         }
 
-        [HttpGet("{fecha}/{estacion}")]
-        public async Task<ActionResult<Tercero>> Get(DateTime fecha, string estacion)
+        [HttpGet("{fechaInicial}/{fechaFinal}/{estacion}")]
+        public async Task<ActionResult<Tercero>> Get(DateTime fechaInicial, DateTime fechaFinal, string estacion)
         {
 
-            var result = await _turnoNegocio.Get(fecha, estacion);
+            var result = await _turnoNegocio.Get(fechaInicial, fechaFinal, estacion);
 
             if (result == null) { return NotFound(); }
 

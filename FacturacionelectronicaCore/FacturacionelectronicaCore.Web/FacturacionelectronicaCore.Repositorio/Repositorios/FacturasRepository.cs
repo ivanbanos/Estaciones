@@ -350,7 +350,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             List<FilterDefinition<FacturaMongo>> filters = new List<FilterDefinition<FacturaMongo>>();
 
 
-                filters.Add(Builders<FacturaMongo>.Filter.Gte("TurnoGuid", turno));
+                filters.Add(Builders<FacturaMongo>.Filter.Eq("TurnoGuid", turno));
             
 
 

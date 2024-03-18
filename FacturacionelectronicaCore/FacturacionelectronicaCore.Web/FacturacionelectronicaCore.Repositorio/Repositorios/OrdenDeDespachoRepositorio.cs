@@ -253,7 +253,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             List<FilterDefinition<OrdenDeDespacho>> filters = new List<FilterDefinition<OrdenDeDespacho>>();
 
 
-            filters.Add(Builders<OrdenDeDespacho>.Filter.Gte("TurnoGuid", turno));
+            filters.Add(Builders<OrdenDeDespacho>.Filter.Eq("TurnoGuid", turno));
 
 
 
