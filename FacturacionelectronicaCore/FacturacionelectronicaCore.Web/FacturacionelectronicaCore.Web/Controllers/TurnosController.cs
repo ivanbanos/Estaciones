@@ -22,7 +22,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
             _turnoNegocio = turnoNegocio;
         }
 
-        [HttpGet()]
+        [HttpPost("GetTurnoReporte")]
         public async Task<ActionResult<IEnumerable<TurnoReporte>>> Get(FiltroBusqueda filtroFactura)
         {
 
