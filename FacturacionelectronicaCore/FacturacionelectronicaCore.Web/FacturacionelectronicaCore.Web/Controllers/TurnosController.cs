@@ -23,10 +23,10 @@ namespace FacturacionelectronicaCore.Web.Controllers
         }
 
         [HttpGet("{fechaInicial}/{fechaFinal}/{estacion}")]
-        public async Task<ActionResult<IEnumerable<TurnoReporte>>> Get(DateTime fechaInicial, DateTime fechaFinal, string estacion)
+        public async Task<ActionResult<IEnumerable<TurnoReporte>>> Get(FiltroBusqueda filtroFactura)
         {
 
-            var result = await _turnoNegocio.Get(fechaInicial, fechaFinal, estacion);
+            var result = await _turnoNegocio.Get(filtroFactura.FechaInicial.Value, filtroFactura.FechaFinal.Value, filtroFactura.Estacion.ToString());
 
             if (result == null) { return NotFound(); }
 
