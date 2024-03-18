@@ -31,7 +31,7 @@ namespace FacturacionelectronicaCore.Negocio.Turno
 
         public async Task<IEnumerable<Modelo.TurnoReporte>> Get(DateTime fechaInicial, DateTime fechaFinal, string surtidor)
         {
-            var turnos = _mapper.Map<IEnumerable<Modelo.Turno>>(_turnoRepositorio.Get(fechaInicial, fechaFinal, surtidor));
+            var turnos = _mapper.Map<IEnumerable<Modelo.Turno>>(await _turnoRepositorio.Get(fechaInicial, fechaFinal, surtidor));
             var turnosreporte = new List<Modelo.TurnoReporte>();
             var diferenciaGeneral = 0d;
             var totalGeneral = 0d;
