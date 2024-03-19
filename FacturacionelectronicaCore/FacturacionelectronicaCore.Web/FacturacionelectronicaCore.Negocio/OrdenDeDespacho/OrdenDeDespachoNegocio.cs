@@ -236,7 +236,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             {
                 return null;
             }
-            var factura _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity);
+            var factura = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity);
             if (factura.Precio > 50000)
             {
 

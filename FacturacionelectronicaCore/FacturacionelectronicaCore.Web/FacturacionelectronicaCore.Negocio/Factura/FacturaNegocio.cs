@@ -422,7 +422,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                 factura.Total /= 10;
                 factura.Descuento /= 10;
             }
-            return factura
+            return factura;
         }
 
         public async Task AgregarTurnoAFactura(int idVentaLocal, DateTime fecha, string isla, int numero, Guid estacion)
