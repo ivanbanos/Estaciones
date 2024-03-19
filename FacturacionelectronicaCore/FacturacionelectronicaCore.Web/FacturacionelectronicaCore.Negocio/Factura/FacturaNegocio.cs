@@ -88,7 +88,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                     }
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
                     factura.Fecha = factura.Fecha.ToLocalTime();
-                    if(factura.Precio > 50000)
+                    if(factura.Precio > 20000)
                     {
 
                         factura.Precio /= 10;
@@ -155,7 +155,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                 var ordenes = await GetOrdenesDeDespacho(filtroFactura).ConfigureAwait(true);
                 foreach(var factura in facturas)
                 {
-                    if (factura.Precio > 50000)
+                    if (factura.Precio > 20000)
                     {
 
                         factura.Precio /= 10;
@@ -166,7 +166,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                 }
                 foreach (var orden in ordenes)
                 {
-                    if (orden.Precio > 50000)
+                    if (orden.Precio > 20000)
                     {
 
                         orden.Precio /= 10;
@@ -414,7 +414,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                 return null;
             }
             var factura = _mapper.Map<Repositorio.Entities.Factura, Modelo.Factura>(facturaEntity);
-            if (factura.Precio > 50000)
+            if (factura.Precio > 20000)
             {
 
                 factura.Precio /= 10;
@@ -446,7 +446,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             var facturas = _mapper.Map<IEnumerable<Repositorio.Entities.Factura>, IEnumerable<Modelo.Factura>>(facturasEntity);
             foreach (var factura in facturas)
             {
-                if (factura.Precio > 50000)
+                if (factura.Precio > 20000)
                 {
 
                     factura.Precio /= 10;

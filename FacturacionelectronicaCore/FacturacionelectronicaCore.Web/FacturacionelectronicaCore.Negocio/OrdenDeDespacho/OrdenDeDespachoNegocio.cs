@@ -118,7 +118,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                             }
                         }
                     }
-                    if (factura.Precio > 50000)
+                    if (factura.Precio > 20000)
                     {
 
                         factura.Precio /= 10;
@@ -237,7 +237,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 return null;
             }
             var factura = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity);
-            if (factura.Precio > 50000)
+            if (factura.Precio > 20000)
             {
 
                 factura.Precio /= 10;
@@ -256,7 +256,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
 
             foreach (var orden in ordenes)
             {
-                if (orden.Precio > 50000)
+                if (orden.Precio > 20000)
                 {
 
                     orden.Precio /= 10;
