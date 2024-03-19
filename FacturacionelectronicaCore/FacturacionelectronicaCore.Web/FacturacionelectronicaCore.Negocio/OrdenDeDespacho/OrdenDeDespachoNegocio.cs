@@ -245,7 +245,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 factura.Total /= 10;
                 factura.Descuento /= 10;
             }
-            return facrura;
+            return factura;
         }
 
         public async Task<IEnumerable<Modelo.OrdenDeDespacho>> ObtenerOrdenesPorTurno(Guid turno)
