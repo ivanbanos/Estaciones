@@ -118,6 +118,14 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                             }
                         }
                     }
+                    if (factura.Precio > 50000)
+                    {
+
+                        factura.Precio /= 10;
+                        factura.SubTotal /= 10;
+                        factura.Total /= 10;
+                        factura.Descuento /= 10;
+                    }
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
                     factura.Fecha = factura.Fecha.ToLocalTime();
                 }
@@ -228,14 +236,36 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             {
                 return null;
             }
-            return _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity);
+            var factura _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity);
+            if (factura.Precio > 50000)
+            {
+
+                factura.Precio /= 10;
+                factura.SubTotal /= 10;
+                factura.Total /= 10;
+                factura.Descuento /= 10;
+            }
+            return facrura;
         }
 
         public async Task<IEnumerable<Modelo.OrdenDeDespacho>> ObtenerOrdenesPorTurno(Guid turno)
         {
             var facturasEntity = await _ordenDeDespachoRepositorio.ObtenerOrdenesPorTurno(turno);
 
-            return _mapper.Map<IEnumerable<Repositorio.Entities.OrdenDeDespacho>, IEnumerable<Modelo.OrdenDeDespacho>>(facturasEntity);
+            var ordenes = _mapper.Map<IEnumerable<Repositorio.Entities.OrdenDeDespacho>, IEnumerable<Modelo.OrdenDeDespacho>>(facturasEntity);
+
+            foreach (var orden in ordenes)
+            {
+                if (orden.Precio > 50000)
+                {
+
+                    orden.Precio /= 10;
+                    orden.SubTotal /= 10;
+                    orden.Total /= 10;
+                    orden.Descuento /= 10;
+                }
+            }
+            return ordenes;
         }
     }
 }

@@ -1,13 +1,16 @@
 ﻿using EnviadorInformacionService.Models;
 using FactoradorEstacionesModelo.Convertidor;
 using FactoradorEstacionesModelo.Objetos;
+using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Entities;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Runtime;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -144,7 +147,7 @@ namespace FacturadorEstacionesRepositorio
             return command;
         }
 
-        public Factura getFacturasImprimir()
+        public FactoradorEstacionesModelo.Objetos.Factura getFacturasImprimir()
         {
             var parameters = new Dictionary<string, object>
             {
@@ -157,7 +160,7 @@ namespace FacturadorEstacionesRepositorio
 
 
             Thread.Sleep(3000);
-            foreach (Factura factura in facturas)
+            foreach (var factura in facturas)
             {
                 DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "getVentaPorId",
                            new Dictionary<string, object>{
@@ -199,7 +202,7 @@ namespace FacturadorEstacionesRepositorio
 
         
 
-        public Resolucion BuscarResolucionActiva(IEnumerable<Resolucion> resolucionesRemota)
+        public FactoradorEstacionesModelo.Objetos.Resolucion BuscarResolucionActiva(IEnumerable<FactoradorEstacionesModelo.Objetos.Resolucion> resolucionesRemota)
         {
             var combustible = resolucionesRemota.FirstOrDefault(x => x.Tipo == 0);
             var canastilla = resolucionesRemota.FirstOrDefault(x => x.Tipo == 1);
@@ -238,7 +241,7 @@ namespace FacturadorEstacionesRepositorio
            return dt.AsEnumerable().Count() > 0;
         }
 
-        public List<Tercero> BuscarTercerosNoEnviados()
+        public List<FactoradorEstacionesModelo.Objetos.Tercero> BuscarTercerosNoEnviados()
         {
             DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "BuscarTercerosNoEnviados",
                       new Dictionary<string, object>
@@ -260,7 +263,7 @@ namespace FacturadorEstacionesRepositorio
                          parameters);
         }
 
-        public List<Factura> BuscarFacturasNoEnviadas()
+        public List<FactoradorEstacionesModelo.Objetos.Factura> BuscarFacturasNoEnviadas()
         {
             var parameters = new Dictionary<string, object>
             {
@@ -268,7 +271,7 @@ namespace FacturadorEstacionesRepositorio
             DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSinEnviar",
                          parameters);
             var facturas = _convertidor.ConvertirFactura(dt2);
-            foreach (Factura factura in facturas)
+            foreach (var factura in facturas)
             {
                 DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "getVentaPorId",
                            new Dictionary<string, object>{
@@ -439,7 +442,7 @@ namespace FacturadorEstacionesRepositorio
             return _convertidor.ConvertirTipoIdentificacion(dt).ToList();
         }
 
-        public void ActuralizarTerceros(Tercero tercero)
+        public void ActuralizarTerceros(FactoradorEstacionesModelo.Objetos.Tercero tercero)
         {
             List<TipoIdentificacion> tipos = getTiposIdentifiaciones();
             tercero.tipoIdentificacion = tipos.Where(x => x.Descripcion.ToLower() == tercero.tipoIdentificacionS.ToLower()).FirstOrDefault().TipoIdentificacionId;
@@ -475,7 +478,7 @@ namespace FacturadorEstacionesRepositorio
             return _convertidor.ConvertirCara(dt).ToList();
         }
 
-        public List<Factura> getUltimasFacturas(short cOD_CAR, int v)
+        public List<FactoradorEstacionesModelo.Objetos.Factura> getUltimasFacturas(short cOD_CAR, int v)
         {
             DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "ObtenerVentaPorCara",
                          new Dictionary<string, object>{
@@ -486,7 +489,7 @@ namespace FacturadorEstacionesRepositorio
             var venta = _convertidor.ConvertirVenta(dt).FirstOrDefault();
             if (venta == null)
             {
-                return new List<Factura>() { new Factura() { Venta = new Venta() { CONSECUTIVO = -1 } } };
+                return new List<FactoradorEstacionesModelo.Objetos.Factura>() { new FactoradorEstacionesModelo.Objetos.Factura() { Venta = new Venta() { CONSECUTIVO = -1 } } };
             }
             DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ObtenerFacturaPorVenta",
                          new Dictionary<string, object>{
@@ -518,11 +521,11 @@ namespace FacturadorEstacionesRepositorio
             }
             if (factura == null)
             {
-                return new List<Factura>();
+                return new List<FactoradorEstacionesModelo.Objetos.Factura>();
             }
             factura.Manguera = _convertidor.ConvertirManguera(dt).FirstOrDefault();
             factura.Venta = venta;
-            return new List<Factura>() { factura };
+            return new List<FactoradorEstacionesModelo.Objetos.Factura>() { factura };
         }
 
 
@@ -547,7 +550,7 @@ namespace FacturadorEstacionesRepositorio
 
 
 
-        public List<Factura> BuscarFacturasNoEnviadasFacturacion()
+        public List<FactoradorEstacionesModelo.Objetos.Factura> BuscarFacturasNoEnviadasFacturacion()
         {
             var parameters = new Dictionary<string, object>
             {
@@ -560,7 +563,7 @@ namespace FacturadorEstacionesRepositorio
 
 
 
-            foreach (Factura factura in facturas)
+            foreach (var factura in facturas)
             {
                 DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "getVentaPorId",
                            new Dictionary<string, object>{
@@ -640,7 +643,7 @@ namespace FacturadorEstacionesRepositorio
         }
 
 
-        public IEnumerable<Factura> getFacturasSiigo()
+        public IEnumerable<FactoradorEstacionesModelo.Objetos.Factura> getFacturasSiigo()
         {
             var parameters = new Dictionary<string, object>
             {
@@ -653,7 +656,7 @@ namespace FacturadorEstacionesRepositorio
 
 
             Thread.Sleep(3000);
-            foreach (Factura factura in facturas)
+            foreach (var factura in facturas)
             {
                 DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "getVentaPorId",
                            new Dictionary<string, object>{
@@ -665,7 +668,7 @@ namespace FacturadorEstacionesRepositorio
                 factura.Venta = ventas.FirstOrDefault();
                 factura.Manguera = manguera;
             }
-            return facturas;
+            return (IEnumerable<FactoradorEstacionesModelo.Objetos.Factura>)facturas;
         }
 
         internal void SetFacturaCanastillaImpresa(int facturasCanastillaId)
@@ -704,7 +707,7 @@ namespace FacturadorEstacionesRepositorio
             return factura;
         }
 
-        public List<Factura> GetFacturaSinEnviarTurno()
+        public List<FactoradorEstacionesModelo.Objetos.Factura> GetFacturaSinEnviarTurno()
         {
             var parameters = new Dictionary<string, object>
             {
@@ -712,7 +715,7 @@ namespace FacturadorEstacionesRepositorio
             DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSinEnviarTurno",
                          parameters);
             var facturas = _convertidor.ConvertirFactura(dt2);
-            foreach (Factura factura in facturas)
+            foreach (var factura in facturas)
             {
                 DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "getVentaPorId",
                            new Dictionary<string, object>{
@@ -754,5 +757,99 @@ namespace FacturadorEstacionesRepositorio
 
             return _convertidor.ConvertirTurno(ds);
         }
+
+        public IEnumerable<ObjetoImprimir> GetObjetoImprimir()
+        {
+            var ds = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetObjetoImprimir",
+                       new Dictionary<string, object>{
+                       });
+
+            return _convertidor.ConvertirObjetoImprimir(ds);
+        }
+
+        internal void ActualizarObjetoImpreso(int id)
+        {
+            var ds = LoadDataTableFromStoredProc(_connectionString.Facturacion, "SetObjetoImpreso",
+                       new Dictionary<string, object>
+                       {
+                {"@Id",id }
+                       });
+
+        }
+
+        public Bolsa ObtenerBolsa(DateTime fecha, int isla, int numero)
+        {
+            var dt = LoadDataTableFromStoredProc(_connectionString.estacion, "getBolsanumero",
+                         new Dictionary<string, object>{
+
+                    {"@IdIsla", isla },
+                    {"@fecha", fecha },
+                    {"@numero", numero }
+                         });
+
+            return _convertidor.ConvertirBolsa(dt);
+        }
+
+        public Turno ObtenerTurnoCerradoPorIslaFecha(DateTime fecha, int isla)
+        {
+            var ds = LoadDataSetFromStoredProc(_connectionString.estacion, "ObtenerTurnoIsla",
+                      new Dictionary<string, object>{
+                {"@IdIsla",isla }
+                      });
+
+            return _convertidor.ConvertirTurno(ds);
+        }
+
+        public Turno ObtenerTurnoPorIslaFecha(DateTime fecha, int isla)
+        {
+            var ds = LoadDataSetFromStoredProc(_connectionString.estacion, "ObtenerTurnoIsla",
+                       new Dictionary<string, object>{
+                {"@IdIsla",isla }
+                       });
+
+            return _convertidor.ConvertirTurno(ds);
+        }
+
+        public Turno ObtenerTurnoIslaYFecha(DateTime fecha, int isla, int numero)
+        {
+            var ds = LoadDataSetFromStoredProc(_connectionString.estacion, "ObtenerTurnoIslaPorVenta",
+                       new Dictionary<string, object>{
+                {"@IdIsla",isla },
+                {"@num_tur",numero },
+                {"@fecha",fecha }
+                       });
+
+            return _convertidor.ConvertirTurno(ds);
+        }
+
+
+        public IEnumerable<FactoradorEstacionesModelo.Objetos.Factura> getFacturaPorTurno(int isla, DateTime fecha, int num)
+        {
+
+            DataTable dt2 =  LoadDataTableFromStoredProc(_connectionString.estacion, "getFacturaPorTurno",
+                         new Dictionary<string, object>{
+
+                    {"@IdIsla", isla },
+                    {"@num_tur", num },
+                    {"@fecha", fecha }
+                         });
+            var facturas = _convertidor.ConvertirFactura(dt2);
+            foreach (var factura in facturas)
+            {
+
+                DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "getVentaPorId",
+                             new Dictionary<string, object>{
+
+                    {"@CONSECUTIVO", factura.ventaId }
+                             });
+
+                var venta = _convertidor.ConvertirVenta(dt).FirstOrDefault();
+                factura.Manguera = _convertidor.ConvertirManguera(dt).FirstOrDefault();
+                factura.Venta = venta;
+            }
+            return facturas;
+
+        }
+
     }
 }

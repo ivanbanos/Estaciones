@@ -1,4 +1,6 @@
-﻿using FactoradorEstacionesModelo.Objetos;
+﻿using EnviadorInformacionService.Models;
+using FactoradorEstacionesModelo.Objetos;
+using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturadorEstacionesRepositorio;
 using Newtonsoft.Json;
 using ReporteFacturas;
@@ -82,7 +84,84 @@ namespace EnviadorInformacionService
             {
                 try
                 {
+                    var objetoImprimir = _estacionesRepositorio.GetObjetoImprimir().FirstOrDefault();
+                    if (imprimiendo == 0 && objetoImprimir != null)
+                    {
+                        switch (objetoImprimir.Objeto)
+                        {
+                            case "Cierre":
+                                {
+                                    var turnoimprimir = _estacionesRepositorio.ObtenerTurnoCerradoPorIslaFecha(objetoImprimir.fecha, objetoImprimir.Isla);
+                                    if (imprimiendo == 0)
+                                    {
+                                        imprimiendo++;
+                                        Logger.Info($"imprimirnedo {JsonConvert.SerializeObject(turnoimprimir)} ");
+                                        ImprimirTurno(turnoimprimir, objetoImprimir.Isla);
 
+                                        _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                    }
+                                    else
+                                    {
+                                        Thread.Sleep(100);
+                                    }
+                                }
+                            break;
+                            case "ReimprimirCierre":
+                                {
+                                    var turnoimprimir = _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha, objetoImprimir.Isla, objetoImprimir.Numero);
+                                    if (imprimiendo == 0)
+                                    {
+                                        imprimiendo++;
+                                        Logger.Info($"imprimirnedo {JsonConvert.SerializeObject(turnoimprimir)} ");
+                                        ImprimirTurno(turnoimprimir, objetoImprimir.Isla);
+
+                                        _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                    }
+                                    else
+                                    {
+                                        Thread.Sleep(100);
+                                    }
+                                }
+                                break;
+                            case "Apertura":
+                                {
+                                    var turnoimprimir = _estacionesRepositorio.ObtenerTurnoPorIslaFecha(objetoImprimir.fecha, objetoImprimir.Isla);
+                                    if (imprimiendo == 0)
+                                    {
+                                        imprimiendo++;
+                                        Logger.Info($"imprimirnedo {JsonConvert.SerializeObject(turnoimprimir)} ");
+                                        ImprimirTurno(turnoimprimir, objetoImprimir.Isla);
+
+                                        _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                    }
+                                    else
+                                    {
+                                        Thread.Sleep(100);
+                                    }
+                                }
+                                break;
+                            case "Bolsa":
+                                {
+                                    var bolsaimprimir = _estacionesRepositorio.ObtenerBolsa(objetoImprimir.fecha, objetoImprimir.Isla, objetoImprimir.Numero);
+                                    if (imprimiendo == 0)
+                                    {
+                                        imprimiendo++;
+                                        Logger.Info($"imprimirnedo {JsonConvert.SerializeObject(bolsaimprimir)} ");
+                                        ImprimirBolsa(bolsaimprimir);
+
+                                        _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                    }
+                                    else
+                                    {
+                                        Thread.Sleep(100);
+                                    }
+                                }
+                                break;
+
+                        }
+                        
+                        Thread.Sleep(1000);
+                    }
                     _estacionesRepositorio.AgregarFacturaDesdeIdVenta();
                     if (imprimiendo == 0)
                     {
@@ -186,17 +265,224 @@ namespace EnviadorInformacionService
             }
         }
 
+        private List<LineasImprimir> lineasImprimirBolsa;
+        private void ImprimirBolsa(Models.Bolsa bolsaimprimir)
+        {
+            try
+            {
+
+                getLineasImprimirTurnoBolsa(bolsaimprimir);
+                try
+                {
+                    printFont = new Font("Console", 9);
+                    PrintDocument pd = new PrintDocument();
+                    pd.PrintPage += new PrintPageEventHandler(pd_PrintBolsa);
+                    pd.DefaultPageSettings.Margins.Bottom = 20;
+
+                    pd.Print();
+
+                }
+                catch (Exception ex)
+                {
+
+                    printFont = new Font("Console", 9);
+                    PrintDocument pd = new PrintDocument();
+                    pd.PrintPage += new PrintPageEventHandler(pd_PrintBolsa);
+                    pd.DefaultPageSettings.Margins.Bottom = 20;
+                    pd.Print();
+
+                }
+            }
+            catch (Exception ex)
+            {
+                imprimiendo = 0;
+                Logger.Info("Error " + ex.Message);
+                Logger.Info("Error " + ex.StackTrace);
+                Thread.Sleep(5000);
+            }
+        }
+
+        private void getLineasImprimirTurnoBolsa(Bolsa bolsaimprimir)
+        {
+            lineasImprimirBolsa = new List<LineasImprimir>();
+            var guiones = new StringBuilder();
+            guiones.Append('-', _infoEstacion.CaracteresPorPagina);
+            // Iterate over the file, printing each line.
+            lineasImprimirBolsa.Add(new LineasImprimir(".", true));
+            lineasImprimirBolsa.Add(new LineasImprimir(_infoEstacion.Razon, true));
+            lineasImprimirBolsa.Add(new LineasImprimir("NIT             " + _infoEstacion.NIT, false));
+            lineasImprimirBolsa.Add(new LineasImprimir(_infoEstacion.Nombre, false));
+            lineasImprimirBolsa.Add(new LineasImprimir(_infoEstacion.Direccion, false));
+            lineasImprimirBolsa.Add(new LineasImprimir(_infoEstacion.Telefono, false));
+            lineasImprimirBolsa.Add(new LineasImprimir(guiones.ToString(), false));
+
+            lineasImprimirBolsa.Add(new LineasImprimir("Isla: "+bolsaimprimir.Isla, false));
+            lineasImprimirBolsa.Add(new LineasImprimir("Turno: " + bolsaimprimir.NumeroTurno, false));
+            lineasImprimirBolsa.Add(new LineasImprimir("Fecha: " + bolsaimprimir.Fecha, false));
+            lineasImprimirBolsa.Add(new LineasImprimir("Consecutivo: " + bolsaimprimir.Consecutivo, false));
+            lineasImprimirBolsa.Add(new LineasImprimir("Bilete: " + bolsaimprimir.Billete, false));
+            lineasImprimirBolsa.Add(new LineasImprimir("Moneda: " + bolsaimprimir.Moneda, false));
+
+            lineasImprimirBolsa.Add(new LineasImprimir(guiones.ToString(), false));
+
+            lineasImprimirBolsa.Add(new LineasImprimir("Fabricado por:" + " SIGES SOLUCIONES SAS ", true));
+            lineasImprimirBolsa.Add(new LineasImprimir("Nit:" + " 901430393-2 ", true));
+            lineasImprimirBolsa.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
+            lineasImprimirBolsa.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress ?? ""), false));
+            lineasImprimirBolsa.Add(new LineasImprimir(".", true));
+        }
+
+        private List<LineasImprimir> lineasImprimirTurno;
+        private void ImprimirTurno(Turno turnoimprimir, int isla)
+        {
+
+            try
+            {
+
+                getLineasImprimirTurno(turnoimprimir, isla);
+                try
+                {
+                    printFont = new Font("Console", 9);
+                    PrintDocument pd = new PrintDocument();
+                    pd.PrintPage += new PrintPageEventHandler(pd_PrintTurno);
+                    pd.DefaultPageSettings.Margins.Bottom = 20;
+
+                    pd.Print();
+
+                }
+                catch (Exception ex)
+                {
+
+                    printFont = new Font("Console", 9);
+                    PrintDocument pd = new PrintDocument();
+                    pd.PrintPage += new PrintPageEventHandler(pd_PrintTurno);
+                    pd.DefaultPageSettings.Margins.Bottom = 20;
+                    pd.Print();
+
+                }
+            }
+            catch (Exception ex)
+            {
+                imprimiendo = 0;
+                Logger.Info("Error " + ex.Message);
+                Logger.Info("Error " + ex.StackTrace);
+                Thread.Sleep(5000);
+            }
+        }
+
+        private void getLineasImprimirTurno(Turno turnoimprimir, int isla)
+        {
+            lineasImprimirTurno = new List<LineasImprimir>();
+            var guiones = new StringBuilder();
+            guiones.Append('-', _infoEstacion.CaracteresPorPagina);
+            // Iterate over the file, printing each line.
+            lineasImprimirTurno.Add(new LineasImprimir(".", true));
+            lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Razon, true));
+            lineasImprimirTurno.Add(new LineasImprimir("NIT             " + _infoEstacion.NIT, false));
+            lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Nombre, false));
+            lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Direccion, false));
+            lineasImprimirTurno.Add(new LineasImprimir(_infoEstacion.Telefono, false));
+            lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+            lineasImprimirTurno.Add(new LineasImprimir("Empleado:       " + turnoimprimir.Empleado, false));
+            lineasImprimirTurno.Add(new LineasImprimir("Isla:           " + turnoimprimir.Isla, false));
+            lineasImprimirTurno.Add(new LineasImprimir("Fecha apertura: " + turnoimprimir.FechaApertura.ToString(), false));
+            var reporteCierrePorTotal = new List<FactoradorEstacionesModelo.Objetos.Factura>();
+            if (turnoimprimir.FechaCierre.HasValue)
+            {
+                lineasImprimirTurno.Add(new LineasImprimir("Fecha cierre:   " + turnoimprimir.FechaCierre.Value.ToString(), false));
+                reporteCierrePorTotal = _estacionesRepositorio.getFacturaPorTurno(isla, turnoimprimir.FechaApertura,turnoimprimir.Numero).ToList();
+            }
+
+
+            var totalCantidad = 0m;
+            var totalVenta = 0m;
+
+            lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+            foreach (var turnosurtidor in turnoimprimir.turnoSurtidores)
+            {
+                lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Manguera :", turnosurtidor.Manguera), false));
+                lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Combustible :", turnosurtidor.Combustible), false));
+                lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Precio :", $"${string.Format("{0:N2}", turnosurtidor.precioCombustible)}"), false));
+                lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Apertura :", turnosurtidor.Apertura.ToString()), false));
+                if (turnoimprimir.FechaCierre.HasValue)
+                {
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Cierre :", turnosurtidor.Cierre.ToString()), false));
+
+                    Logger.Info("reporte " + JsonConvert.SerializeObject(reporteCierrePorTotal));
+                    Logger.Info("turno surtidor " + JsonConvert.SerializeObject(turnosurtidor));
+                    totalCantidad += Convert.ToDecimal( turnosurtidor.Cierre.Value - turnosurtidor.Apertura);
+                    totalVenta += Convert.ToDecimal((turnosurtidor.Cierre.Value - turnosurtidor.Apertura) * turnosurtidor.precioCombustible);
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Cantidad :", string.Format("{0:N2}", turnosurtidor.Cierre - turnosurtidor.Apertura)), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", (turnosurtidor.Cierre - turnosurtidor.Apertura) * turnosurtidor.precioCombustible)}"), false));
+
+                }
+
+                lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+            }
+            if (turnoimprimir.FechaCierre.HasValue)
+            {
+                if (reporteCierrePorTotal != null && reporteCierrePorTotal.Any())
+                {
+
+                    //Por forma
+                    lineasImprimirTurno.Add(new LineasImprimir($"Resumen por forma de pago", true));
+                    lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+                    var groupForma = reporteCierrePorTotal.GroupBy(x => x.codigoFormaPago);
+                    Logger.Info("facturas turno " + JsonConvert.SerializeObject(groupForma));
+
+                    var cantidadTotalmenosEfectivo = 0m;
+                    var ventaTotalmenosEfectivo = 0m;
+                    foreach (var forma in groupForma)
+                    {
+                        if (formas.Any(x => x.Id == forma.Key) && forma.Key != 1)
+                        {
+                            cantidadTotalmenosEfectivo += forma.Sum(x => x.Venta.CANTIDAD);
+                            ventaTotalmenosEfectivo += forma.Sum(x => x.Venta.TOTAL);
+                            lineasImprimirTurno.Add(new LineasImprimir(formatoTotales($"{formas.First(x => x.Id == forma.Key).Descripcion.Trim()} :", $"${string.Format("{0:N2}", forma.Sum(x => x.Venta.TOTAL))}"), false));
+
+                        }
+                    }
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales($"{formas.First(x => x.Id == 1).Descripcion.Trim()} :", $"${string.Format("{0:N2}", totalVenta - ventaTotalmenosEfectivo)}"), false));
+
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", totalVenta)}"), false));
+
+
+                    lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+
+                    lineasImprimirTurno.Add(new LineasImprimir($"Resumen por Combustibles", true));
+                    //Totalizador
+                    lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Combustible :", reporteCierrePorTotal.First().Venta.Combustible), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Precio :", $"${string.Format("{0:N2}", reporteCierrePorTotal.First().Venta.PRECIO_UNI)}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Subtotal :", $"${string.Format("{0:N2}", totalVenta)}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Calibracion :", "$0,00"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Descuento :", $"${string.Format("{0:N2}", totalVenta)}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", totalVenta)}"), false));
+
+
+                }
+
+            }
+            lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+
+            lineasImprimirTurno.Add(new LineasImprimir("Fabricado por:" + " SIGES SOLUCIONES SAS ", true));
+            lineasImprimirTurno.Add(new LineasImprimir("Nit:" + " 901430393-2 ", true));
+            lineasImprimirTurno.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
+            lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress ?? ""), false));
+            lineasImprimirTurno.Add(new LineasImprimir(".", true));
+        }
+
         private Font printFont;
-        private Factura _factura;
+        private FactoradorEstacionesModelo.Objetos.Factura _factura;
         private Venta _venta;
-        private Tercero _tercero;
+        private FactoradorEstacionesModelo.Objetos.Tercero _tercero;
         private Manguera _mangueras;
         private InfoEstacion _infoEstacion;
         private int _charactersPerPage;
         private EstacionesRepositorioSqlServer _estacionesRepositorio;
         private List<FormasPagos> formas;
         private List<LineasImprimir> lineasImprimir;
-        private void Imprimir(Factura factura)
+        private void Imprimir(FactoradorEstacionesModelo.Objetos.Factura factura)
         {
             _factura = factura;
             _venta = factura.Venta;
@@ -514,6 +800,99 @@ namespace EnviadorInformacionService
             }
 
         }
+
+        
+        private void pd_PrintBolsa(object sender, PrintPageEventArgs ev)
+        {
+            try
+            {
+
+                float yPos = 0;
+                int count = 0;
+                float leftMargin = 5;
+                float topMargin = 10;
+                String line = null;
+                int sizePaper = ev.PageSettings.PaperSize.Width;
+                int fonSizeInches = 72 / 9;
+                if (_infoEstacion.CaracteresPorPagina == 0)
+                {
+                    _infoEstacion.CaracteresPorPagina = fonSizeInches * sizePaper / 100;
+                }
+                foreach (var linea in lineasImprimirBolsa)
+                {
+
+                    count = printLine(linea.linea, ev, count, leftMargin, topMargin, linea.centrada);
+                }
+                count = printLine(" ", ev, count, leftMargin, topMargin, false);
+                count = printLine(" ", ev, count, leftMargin, topMargin, false);
+                if (line != null)
+                    ev.HasMorePages = true;
+                else
+                    ev.HasMorePages = false;
+
+
+                imprimiendo--;
+                if (line != null)
+                    ev.HasMorePages = true;
+                else
+                    ev.HasMorePages = false;
+            }
+            catch (Exception ex)
+            {
+                imprimiendo = 0;
+                Logger.Info("Error " + ex.Message);
+                Logger.Info("Error " + ex.StackTrace);
+                Thread.Sleep(5000);
+            }
+
+        }
+
+        private void pd_PrintTurno(object sender, PrintPageEventArgs ev)
+        {
+            try
+            {
+
+                float yPos = 0;
+                int count = 0;
+                float leftMargin = 5;
+                float topMargin = 10;
+                String line = null;
+                int sizePaper = ev.PageSettings.PaperSize.Width;
+                int fonSizeInches = 72 / 9;
+                if (_infoEstacion.CaracteresPorPagina == 0)
+                {
+                    _infoEstacion.CaracteresPorPagina = fonSizeInches * sizePaper / 100;
+                }
+                foreach (var linea in lineasImprimirTurno)
+                {
+
+                    count = printLine(linea.linea, ev, count, leftMargin, topMargin, linea.centrada);
+                }
+                count = printLine(" ", ev, count, leftMargin, topMargin, false);
+                count = printLine(" ", ev, count, leftMargin, topMargin, false);
+                if (line != null)
+                    ev.HasMorePages = true;
+                else
+                    ev.HasMorePages = false;
+
+
+                imprimiendo--;
+                if (line != null)
+                    ev.HasMorePages = true;
+                else
+                    ev.HasMorePages = false;
+            }
+            catch (Exception ex)
+            {
+                imprimiendo = 0;
+                Logger.Info("Error " + ex.Message);
+                Logger.Info("Error " + ex.StackTrace);
+                Thread.Sleep(5000);
+            }
+
+        }
+
+
 
         private string formatoTotales(string v1, string v2)
         {

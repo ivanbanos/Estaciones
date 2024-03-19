@@ -159,16 +159,12 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 paramList.Add("NombreTercero", nombreTercero);
                 filters.Add(Builders<FacturaMongo>.Filter.Eq("NombreTercero", nombreTercero));
             }
-            if (Guid.Empty != estacion) { 
-                paramList.Add("Estacion", estacion);
-                filters.Add(Builders<FacturaMongo>.Filter.Eq("EstacionGuid", estacion.ToString()));
-            }
 
 
             var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "factuas", filters);
-            if (facturasMongo.Any())
+            if (facturasMongo.Any(x=>x.EstacionGuid.ToLower() == estacion.ToString().ToLower()))
             {
-                return facturasMongo;
+                return facturasMongo.Where(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower());
             }
             else
             {

@@ -88,6 +88,14 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                     }
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
                     factura.Fecha = factura.Fecha.ToLocalTime();
+                    if(factura.Precio > 50000)
+                    {
+
+                        factura.Precio /= 10;
+                        factura.SubTotal /= 10;
+                        factura.Total /= 10;
+                        factura.Descuento /= 10;
+                    }
                 }
                 return facturas.OrderBy(x=>x.Consecutivo);
             }
@@ -145,6 +153,28 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             {
                 var facturas = await GetFacturas(filtroFactura).ConfigureAwait(true);
                 var ordenes = await GetOrdenesDeDespacho(filtroFactura).ConfigureAwait(true);
+                foreach(var factura in facturas)
+                {
+                    if (factura.Precio > 50000)
+                    {
+
+                        factura.Precio /= 10;
+                        factura.SubTotal /= 10;
+                        factura.Total /= 10;
+                        factura.Descuento /= 10;
+                    }
+                }
+                foreach (var orden in ordenes)
+                {
+                    if (orden.Precio > 50000)
+                    {
+
+                        orden.Precio /= 10;
+                        orden.SubTotal /= 10;
+                        orden.Total /= 10;
+                        orden.Descuento /= 10;
+                    }
+                }
                 if (!facturas.Any() && !ordenes.Any())
                 {
                     return null;
@@ -383,7 +413,16 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             {
                 return null;
             }
-            return _mapper.Map<Repositorio.Entities.Factura, Modelo.Factura>(facturaEntity);
+            var factura = _mapper.Map<Repositorio.Entities.Factura, Modelo.Factura>(facturaEntity);
+            if (factura.Precio > 50000)
+            {
+
+                factura.Precio /= 10;
+                factura.SubTotal /= 10;
+                factura.Total /= 10;
+                factura.Descuento /= 10;
+            }
+            return factura
         }
 
         public async Task AgregarTurnoAFactura(int idVentaLocal, DateTime fecha, string isla, int numero, Guid estacion)
@@ -404,8 +443,19 @@ namespace FacturacionelectronicaCore.Negocio.Factura
         {
             var facturasEntity = await _facturasRepository.ObtenerFacturasPorTurnoId(turno);
 
-            return _mapper.Map<IEnumerable<Repositorio.Entities.Factura>, IEnumerable<Modelo.Factura>>(facturasEntity);
+            var facturas = _mapper.Map<IEnumerable<Repositorio.Entities.Factura>, IEnumerable<Modelo.Factura>>(facturasEntity);
+            foreach (var factura in facturas)
+            {
+                if (factura.Precio > 50000)
+                {
 
+                    factura.Precio /= 10;
+                    factura.SubTotal /= 10;
+                    factura.Total /= 10;
+                    factura.Descuento /= 10;
+                }
+            }
+            return facturas;
         }
     }
 }

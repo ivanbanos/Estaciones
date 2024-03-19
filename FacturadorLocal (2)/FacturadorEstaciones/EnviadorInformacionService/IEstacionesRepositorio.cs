@@ -1,4 +1,5 @@
-﻿using FactoradorEstacionesModelo.Objetos;
+﻿using EnviadorInformacionService.Models;
+using FactoradorEstacionesModelo.Objetos;
 using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Entities;
 using System.Collections.Generic;
@@ -24,5 +25,6 @@ namespace FacturadorEstacionesRepositorio
         List<FacturaFechaReporte> BuscarFechasReportesNoEnviadas();
         void ActuralizarFechasReportesEnviadas(IEnumerable<int> facturas);
         Turno ObtenerTurnoIslaPorVenta(int ventaId);
+        IEnumerable<ObjetoImprimir> GetObjetoImprimir();
     }
 }

@@ -355,5 +355,32 @@ namespace FactoradorEstacionesModelo.Convertidor
             );
             return turno;
         }
+
+        public IEnumerable<ObjetoImprimir> ConvertirObjetoImprimir(DataTable ds)
+        {
+            return ds.AsEnumerable().Select(dr => new ObjetoImprimir()
+            {
+                Id = dr.Field<int>("Id"),
+                fecha = dr.Field<DateTime>("fecha"),
+                Isla = dr.Field<int>("Isla"),
+                impreso = dr.Field<int>("impreso"),
+                Numero = dr.Field<int>("Numero"),
+                Objeto = dr.Field<string>("Numero")
+            });
+        }
+
+        public Bolsa ConvertirBolsa(DataTable dt)
+        {
+            var response = new Bolsa();
+            var drBolsa = dt.Rows[0];
+            response.Fecha = drBolsa.Field<DateTime>("Fecha");
+            response.Consecutivo = drBolsa.Field<int>("Consecutivo");
+            response.NumeroTurno = drBolsa.Field<int>("NumeroTurno");
+            response.Isla = drBolsa.Field<string>("Isla");
+            response.Empleado = drBolsa.Field<string>("Empleado");
+            response.Moneda = Convert.ToDouble(drBolsa.Field<decimal>("Moneda"));
+            response.Billete = Convert.ToDouble(drBolsa.Field<decimal>("Billete"));
+            return response;
+        }
     }
 }

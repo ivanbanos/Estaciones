@@ -109,6 +109,7 @@
     <Compile Include="IEnviadorSilog.cs" />
     <Compile Include="IEstacionesRepositorio.cs" />
     <Compile Include="ImpresionService.cs" />
+    <Compile Include="Models\Bolsa.cs" />
     <Compile Include="Models\Canastilla.cs" />
     <Compile Include="Models\CanastillaFactura.cs" />
     <Compile Include="Models\Cara.cs" />
@@ -134,6 +135,7 @@
     <Compile Include="Models\FormasPagos.cs" />
     <Compile Include="Models\InfoEstacion.cs" />
     <Compile Include="Models\Manguera.cs" />
+    <Compile Include="Models\ObjetoImprimir.cs" />
     <Compile Include="Models\Resolucion.cs" />
     <Compile Include="Models\Tercero.cs" />
     <Compile Include="Models\TipoIdentificacion.cs" />

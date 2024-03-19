@@ -2387,7 +2387,7 @@ GO
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaPorConsecutivo')
 	DROP PROCEDURE [dbo].getFacturaPorConsecutivo
 GO
-CREATE procedure [dbo].[getFacturaPorConsecutivo]
+CREATE procedure [dbo].[getFacturaPorConsecutivoORVentaId]
 (
 	@consecutivo int
 )
@@ -2443,6 +2443,244 @@ begin try
 	left join dbo.terceros on OrdenesDeDespacho.terceroId = terceros.terceroId
     left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
 	where OrdenesDeDespacho.ventaId = @consecutivo
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Fidelizado' and xtype='U')
+BEGIN
+    create table dbo.Fidelizado(
+    Id INT PRIMARY KEY IDENTITY (1, 1),
+    documento VARCHAR (50) NOT NULL,
+    puntos float NOT NULL
+);
+END
+
+GO
+drop procedure [dbo].GetFidelizado
+GO
+CREATE procedure [dbo].GetFidelizado
+(@ventaId int)
+as
+begin try
+    set nocount on;
+	select *
+	from dbo.Fidelizado 
+    inner join VentaFidelizada on Fidelizado.documento = VentaFidelizada.identificacion
+	where VentaFidelizada.ventaId = @ventaId
+    
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+drop procedure [dbo].AddFidelizado
+GO
+CREATE procedure [dbo].AddFidelizado
+(@documento varchar(50),@puntos float)
+as
+begin try
+    set nocount on;
+	declare @Id int;
+	select @Id=Id from fidelizado where @documento = documento
+	if @Id is null
+	begin
+	insert into dbo.Fidelizado (documento, puntos) values(@documento, @puntos)
+
+    end
+	
+	select @Id=Id from fidelizado where @documento = documento
+
+	update Fidelizado set puntos=@puntos from Fidelizado where  @documento = documento
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+GO
+
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'GetTerceroByQuery')
+	DROP PROCEDURE [dbo].[GetTerceroByQuery]
+GO
+CREATE procedure [dbo].[GetTerceroByQuery]
+( 
+    @identificacion CHAR (15) 
+)
+as
+begin try
+    set nocount on;
+	select terceroId, TipoIdentificaciones.descripcion, tipoIdentificacion, identificacion, nombre, telefono, correo, direccion, terceros.estado, COD_CLI 
+	from dbo.terceros 
+    inner join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
+    where REPLACE(@identificacion, ' ', '') = identificacion
+    
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+GO
+
+	IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='VentaFidelizada' and xtype='U')
+BEGIN
+    create table dbo.[VentaFidelizada](
+    Id INT PRIMARY KEY IDENTITY (1, 1),
+    identificacion VARCHAR (50) NOT NULL,
+    ventaId int NOT NULL
+);
+END
+    GO
+    GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ActualizarFacturaFidelizada')
+	DROP PROCEDURE [dbo].[ActualizarFacturaFidelizada]
+GO
+CREATE procedure [dbo].[ActualizarFacturaFidelizada]
+( 
+    @identificacion varchar (50) ,
+    @ventaId int
+)
+as
+begin try
+    set nocount on;
+	insert into VentaFidelizada(identificacion, ventaId)
+    values(@identificacion, @ventaId)
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='ObjetoImprimir' and xtype='U')
+BEGIN
+    create table dbo.[ObjetoImprimir](
+    Id INT PRIMARY KEY IDENTITY (1, 1),
+    fecha DateTime NOT NULL,
+    Isla int NOT NULL,
+    Numero int NOT NULL, 
+	Objeto varchar(10),
+	impreso bit Not null
+);
+END
+    GO
+	IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'GetObjetoImprimir')
+	DROP PROCEDURE [dbo].GetObjetoImprimir
+GO
+CREATE procedure [dbo].GetObjetoImprimir
+as
+begin try
+    set nocount on;
+	select * from ObjetoImprimir where impreso =0
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'SetObjetoImpreso')
+	DROP PROCEDURE [dbo].SetObjetoImpreso
+GO
+CREATE procedure [dbo].SetObjetoImpreso
+( 
+    @Id int
+)
+as
+begin try
+    set nocount on;
+	Update ObjetoImprimir set impreso = 1
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'AgregarObjetoImprimir')
+	DROP PROCEDURE [dbo].AgregarObjetoImprimir
+GO
+CREATE procedure [dbo].AgregarObjetoImprimir
+( 
+   @fecha DateTime ,
+    @Isla int,
+    @Numero int, 
+	@Objeto varchar(10)
+)
+as
+begin try
+    set nocount on;
+	insert into  ObjetoImprimir (fecha, Isla,Numero,Objeto,impreso)
+	values(@fecha, @Isla, @Numero, @Objeto,0)
 end try
 begin catch
     declare 
