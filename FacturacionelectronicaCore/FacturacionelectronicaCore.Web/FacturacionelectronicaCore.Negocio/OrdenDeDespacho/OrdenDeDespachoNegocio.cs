@@ -52,6 +52,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
                 return "Factura electrónica existente";
             }
+            ordenDeDespachoEntity.Fecha = ordenDeDespachoEntity.Fecha.ToLocalTime().AddHours(-7);
             var ordenDeDespacho = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity);
             var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(ordenDeDespacho.Identificacion)).FirstOrDefault();
             var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
@@ -93,6 +94,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 foreach (var factura in ordenes)
                 {
                     factura.Estado = factura.idFacturaElectronica == null ? factura.Estado : "Anulada";
+                    factura.Identificacion = factura.Identificacion == null ? "222222222222" : factura.Identificacion;
                     if (!nombresPorIdentificacion.ContainsKey(factura.Identificacion) || string.IsNullOrEmpty(nombresPorIdentificacion[factura.Identificacion]))
                     {
                         var tercero = await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.Identificacion);
@@ -127,7 +129,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                         factura.Descuento /= 10;
                     }
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
-                    factura.Fecha = factura.Fecha.ToLocalTime();
+                    factura.Fecha = factura.Fecha.ToLocalTime().AddHours(-7);
                 }
                 return ordenes.OrderBy(x=>x.IdVentaLocal);
             }
@@ -173,6 +175,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             foreach(var guid in ordenesDeDespacho)
             {
                 var ordenDeDespachoEntity = (await _ordenDeDespachoRepositorio.ObtenerOrdenDespachoPorGuid(guid.Guid)).FirstOrDefault();
+
                 if (ordenDeDespachoEntity == null)
                 {
                     _validadorGuidAFacturaElectronica.SacarFacturas(guids);
@@ -183,6 +186,8 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                     _validadorGuidAFacturaElectronica.SacarFacturas(guids);
                     return "Una orden ya tiene factura electrónica existente";
                 }
+
+                ordenDeDespachoEntity.Fecha = ordenDeDespachoEntity.Fecha.ToLocalTime().AddHours(-7);
                 ordenes.Add( _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity));
             }
             if(ordenes.GroupBy(x=>x.Identificacion).Count() > 1)

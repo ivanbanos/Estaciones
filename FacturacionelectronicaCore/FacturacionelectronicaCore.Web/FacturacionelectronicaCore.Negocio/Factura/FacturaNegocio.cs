@@ -55,12 +55,14 @@ namespace FacturacionelectronicaCore.Negocio.Factura
         {
             try
             {
-                var facturasEntity = await _facturasRepository.GetFacturas(filtroFactura.FechaInicial, filtroFactura.FechaFinal, filtroFactura.Identificacion, filtroFactura.NombreTercero, filtroFactura.Estacion);
+                var facturasEntity = await _facturasRepository.GetFacturas(filtroFactura.FechaInicial
+                    , filtroFactura.FechaFinal, filtroFactura.Identificacion, filtroFactura.NombreTercero, filtroFactura.Estacion);
                 var facturas = _mapper.Map<IEnumerable<Repositorio.Entities.Factura>, IEnumerable<Modelo.Factura>>(facturasEntity);
                 var nombresPorIdentificacion = new Dictionary<string, string>();
                 foreach (var factura in facturas)
                 {
                     factura.Estado = factura.idFacturaElectronica == null ? factura.Estado : "Anulada";
+                    factura.Identificacion = factura.Identificacion == null ? "222222222222" : factura.Identificacion;
                     if (!nombresPorIdentificacion.ContainsKey(factura.Identificacion) || string.IsNullOrEmpty(nombresPorIdentificacion[factura.Identificacion]))
                     {
                         var tercero = await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.Identificacion);
@@ -87,7 +89,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                         }
                     }
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
-                    factura.Fecha = factura.Fecha.ToLocalTime();
+                    factura.Fecha = factura.Fecha.ToLocalTime().AddHours(-7);
                     if(factura.Precio > 20000)
                     {
 
@@ -310,8 +312,9 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             {
                 _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
                 return "Factura electrónica existente";
-            }
-            var factura = _mapper.Map<Repositorio.Entities.Factura, Modelo.Factura>(facturaEntity);
+                }
+                facturaEntity.Fecha = facturaEntity.Fecha.ToLocalTime().AddHours(-7);
+                var factura = _mapper.Map<Repositorio.Entities.Factura, Modelo.Factura>(facturaEntity);
             var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.Identificacion)).FirstOrDefault();
             var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
             if (_alegra.ValidaTercero && tercero.idFacturacion == null)
@@ -363,6 +366,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                     _validadorGuidAFacturaElectronica.SacarFacturas(guids);
                     return "Una factura ya tiene factura electrónica existente";
                 }
+                facturaEntity.Fecha = facturaEntity.Fecha.ToLocalTime().AddHours(-7);
                 facturas.Add(_mapper.Map<Repositorio.Entities.Factura, Modelo.Factura>(facturaEntity));
             }
             if (facturas.GroupBy(x => x.Identificacion).Count() > 1)

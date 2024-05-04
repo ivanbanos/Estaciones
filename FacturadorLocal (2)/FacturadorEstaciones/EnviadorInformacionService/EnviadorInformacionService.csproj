@@ -113,6 +113,7 @@
     <Compile Include="Models\Canastilla.cs" />
     <Compile Include="Models\CanastillaFactura.cs" />
     <Compile Include="Models\Cara.cs" />
+    <Compile Include="Models\CuposRequest.cs" />
     <Compile Include="Models\Externos\BusinessException.cs" />
     <Compile Include="Models\Externos\Estacion.cs" />
     <Compile Include="Models\Externos\Factura.cs" />

@@ -21,12 +21,14 @@ namespace EnviadorInformacionService
     public class ImpresionService
     {
         private Dictionary<int, string> carasImpresoras;
+        private Dictionary<string, string> islasImpresoras;
         private int imprimiendo = 0;
         private bool ImpresionAutomatica = false;
         private bool impresionFormaDePagoOrdenDespacho = false;
         private string firstMacAddress;
         private readonly IConexionEstacionRemota _conexionEstacionRemota;
         private readonly Guid estacionFuente;
+        private readonly bool MultiplicarPor10;
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly bool generaFacturaElectronica;
@@ -34,6 +36,7 @@ namespace EnviadorInformacionService
         public ImpresionService()
         {
             estacionFuente = new Guid(ConfigurationManager.AppSettings["estacionFuente"]);
+            MultiplicarPor10 = bool.Parse(ConfigurationManager.AppSettings["MultiplicarPor10"]);
             _conexionEstacionRemota = new ConexionEstacionRemota();
             firstMacAddress = NetworkInterface
         .GetAllNetworkInterfaces()
@@ -62,6 +65,7 @@ namespace EnviadorInformacionService
 
 
             carasImpresoras = new Dictionary<int, string>();
+            islasImpresoras = new Dictionary<string, string>();
             Console.WriteLine("Caras");
             foreach (string nameValueItem in ConfigurationManager.AppSettings)
             {
@@ -71,6 +75,16 @@ namespace EnviadorInformacionService
                     string impresora = ConfigurationManager.AppSettings[nameValueItem];
                     int isla = Int32.Parse(nameValueItem.Split(' ')[1]);
                     carasImpresoras.Add(isla, impresora);
+                }
+            }
+            foreach (string nameValueItem in ConfigurationManager.AppSettings)
+            {
+                if (nameValueItem.Contains("ISLA"))
+                {
+                    Console.WriteLine(nameValueItem);
+                    string impresora = ConfigurationManager.AppSettings[nameValueItem];
+                    string isla = nameValueItem;
+                    islasImpresoras.Add(isla, impresora);
                 }
             }
             _estacionesRepositorio = new EstacionesRepositorioSqlServer();
@@ -84,6 +98,7 @@ namespace EnviadorInformacionService
             {
                 try
                 {
+                    try { 
                     var objetoImprimir = _estacionesRepositorio.GetObjetoImprimir().FirstOrDefault();
                     if (imprimiendo == 0 && objetoImprimir != null)
                     {
@@ -92,6 +107,12 @@ namespace EnviadorInformacionService
                             case "Cierre":
                                 {
                                     var turnoimprimir = _estacionesRepositorio.ObtenerTurnoCerradoPorIslaFecha(objetoImprimir.fecha, objetoImprimir.Isla);
+                                    if (turnoimprimir == null)
+                                    {
+                                        _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+
+                                    }
+                                    else 
                                     if (imprimiendo == 0)
                                     {
                                         imprimiendo++;
@@ -106,9 +127,20 @@ namespace EnviadorInformacionService
                                     }
                                 }
                             break;
-                            case "ReimprimirCierre":
+                            case "Reimprimir":
                                 {
                                     var turnoimprimir = _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha, objetoImprimir.Isla, objetoImprimir.Numero);
+                                    if (turnoimprimir == null)
+                                    {
+                                        turnoimprimir = _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha.AddDays(-1), objetoImprimir.Isla, objetoImprimir.Numero);
+
+                                    }
+                                    if (turnoimprimir == null)
+                                    {
+                                        _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+
+                                    }
+                                    else
                                     if (imprimiendo == 0)
                                     {
                                         imprimiendo++;
@@ -126,7 +158,12 @@ namespace EnviadorInformacionService
                             case "Apertura":
                                 {
                                     var turnoimprimir = _estacionesRepositorio.ObtenerTurnoPorIslaFecha(objetoImprimir.fecha, objetoImprimir.Isla);
-                                    if (imprimiendo == 0)
+                                    if (turnoimprimir == null)
+                                    {
+                                        _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+
+                                    }
+                                    else if(imprimiendo == 0)
                                     {
                                         imprimiendo++;
                                         Logger.Info($"imprimirnedo {JsonConvert.SerializeObject(turnoimprimir)} ");
@@ -143,7 +180,17 @@ namespace EnviadorInformacionService
                             case "Bolsa":
                                 {
                                     var bolsaimprimir = _estacionesRepositorio.ObtenerBolsa(objetoImprimir.fecha, objetoImprimir.Isla, objetoImprimir.Numero);
-                                    if (imprimiendo == 0)
+                                    if(bolsaimprimir.Consecutivo == 0)
+                                    {
+                                        bolsaimprimir = _estacionesRepositorio.ObtenerBolsa(objetoImprimir.fecha.AddDays(-1), objetoImprimir.Isla, objetoImprimir.Numero);
+
+                                    }
+                                    if (bolsaimprimir.Consecutivo == 0)
+                                    {
+
+                                        _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                    }
+                                    else if (imprimiendo == 0)
                                     {
                                         imprimiendo++;
                                         Logger.Info($"imprimirnedo {JsonConvert.SerializeObject(bolsaimprimir)} ");
@@ -160,7 +207,16 @@ namespace EnviadorInformacionService
 
                         }
                         
-                        Thread.Sleep(1000);
+                    }
+
+                    }
+                    catch (Exception ex)
+                    {
+
+                        imprimiendo = 0;
+                        Logger.Error("Error " + ex.Message);
+                        Logger.Error("Error " + ex.StackTrace);
+                        Thread.Sleep(100);
                     }
                     _estacionesRepositorio.AgregarFacturaDesdeIdVenta();
                     if (imprimiendo == 0)
@@ -210,7 +266,7 @@ namespace EnviadorInformacionService
                                     imprimiendo++;
                                     Imprimir(facturai);
                                     Console.WriteLine("Fin impresion");
-                                    Thread.Sleep(1000);
+                                    Thread.Sleep(100);
                                     break;
                                 }
 
@@ -242,16 +298,16 @@ namespace EnviadorInformacionService
                                     break;
                                 }
                             }
-                            Thread.Sleep(1000);
+                            Thread.Sleep(100);
                         }
 
 
-                        Thread.Sleep(500);
+                        Thread.Sleep(100);
 
                     }
                     else
                     {
-                        Thread.Sleep(500);
+                        Thread.Sleep(100);
                     }
                 }
                 catch (Exception ex)
@@ -260,7 +316,7 @@ namespace EnviadorInformacionService
                     imprimiendo = 0;
                     Logger.Error("Error " + ex.Message);
                     Logger.Error("Error " + ex.StackTrace);
-                    Thread.Sleep(500);
+                    Thread.Sleep(100);
                 }
             }
         }
@@ -277,8 +333,13 @@ namespace EnviadorInformacionService
                     printFont = new Font("Console", 9);
                     PrintDocument pd = new PrintDocument();
                     pd.PrintPage += new PrintPageEventHandler(pd_PrintBolsa);
-                    pd.DefaultPageSettings.Margins.Bottom = 20;
+                    pd.DefaultPageSettings.Margins.Bottom = 20; 
+                    if (bolsaimprimir != null && bolsaimprimir.Isla != null && islasImpresoras.ContainsKey(bolsaimprimir.Isla))
+                    {
 
+                        Console.WriteLine("Selecionando impresora " + islasImpresoras[bolsaimprimir.Isla].Trim());
+                        pd.PrinterSettings.PrinterName = islasImpresoras[bolsaimprimir.Isla].Trim();
+                    }
                     pd.Print();
 
                 }
@@ -319,6 +380,7 @@ namespace EnviadorInformacionService
             lineasImprimirBolsa.Add(new LineasImprimir("Isla: "+bolsaimprimir.Isla, false));
             lineasImprimirBolsa.Add(new LineasImprimir("Turno: " + bolsaimprimir.NumeroTurno, false));
             lineasImprimirBolsa.Add(new LineasImprimir("Fecha: " + bolsaimprimir.Fecha, false));
+            lineasImprimirBolsa.Add(new LineasImprimir("Empleado: " + bolsaimprimir.Empleado, false));
             lineasImprimirBolsa.Add(new LineasImprimir("Consecutivo: " + bolsaimprimir.Consecutivo, false));
             lineasImprimirBolsa.Add(new LineasImprimir("Bilete: " + bolsaimprimir.Billete, false));
             lineasImprimirBolsa.Add(new LineasImprimir("Moneda: " + bolsaimprimir.Moneda, false));
@@ -346,7 +408,12 @@ namespace EnviadorInformacionService
                     PrintDocument pd = new PrintDocument();
                     pd.PrintPage += new PrintPageEventHandler(pd_PrintTurno);
                     pd.DefaultPageSettings.Margins.Bottom = 20;
+                    if (turnoimprimir != null && turnoimprimir.Isla != null && islasImpresoras.ContainsKey(turnoimprimir.Isla))
+                    {
 
+                        Console.WriteLine("Selecionando impresora " + islasImpresoras[turnoimprimir.Isla].Trim());
+                        pd.PrinterSettings.PrinterName = islasImpresoras[turnoimprimir.Isla].Trim();
+                    }
                     pd.Print();
 
                 }
@@ -385,6 +452,7 @@ namespace EnviadorInformacionService
             lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
             lineasImprimirTurno.Add(new LineasImprimir("Empleado:       " + turnoimprimir.Empleado, false));
             lineasImprimirTurno.Add(new LineasImprimir("Isla:           " + turnoimprimir.Isla, false));
+            lineasImprimirTurno.Add(new LineasImprimir("Numero:           " + turnoimprimir.Numero, false));
             lineasImprimirTurno.Add(new LineasImprimir("Fecha apertura: " + turnoimprimir.FechaApertura.ToString(), false));
             var reporteCierrePorTotal = new List<FactoradorEstacionesModelo.Objetos.Factura>();
             if (turnoimprimir.FechaCierre.HasValue)
@@ -400,6 +468,10 @@ namespace EnviadorInformacionService
             lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
             foreach (var turnosurtidor in turnoimprimir.turnoSurtidores)
             {
+                if (MultiplicarPor10)
+                {
+                    turnosurtidor.precioCombustible *= 10;
+                }
                 lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Manguera :", turnosurtidor.Manguera), false));
                 lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Combustible :", turnosurtidor.Combustible), false));
                 lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Precio :", $"${string.Format("{0:N2}", turnosurtidor.precioCombustible)}"), false));
@@ -442,7 +514,6 @@ namespace EnviadorInformacionService
 
                         }
                     }
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales($"{formas.First(x => x.Id == 1).Descripcion.Trim()} :", $"${string.Format("{0:N2}", totalVenta - ventaTotalmenosEfectivo)}"), false));
 
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", totalVenta)}"), false));
 
@@ -452,18 +523,32 @@ namespace EnviadorInformacionService
                     lineasImprimirTurno.Add(new LineasImprimir($"Resumen por Combustibles", true));
                     //Totalizador
                     lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Combustible :", reporteCierrePorTotal.First().Venta.Combustible), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Precio :", $"${string.Format("{0:N2}", reporteCierrePorTotal.First().Venta.PRECIO_UNI)}"), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Subtotal :", $"${string.Format("{0:N2}", totalVenta)}"), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Calibracion :", "$0,00"), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Descuento :", $"${string.Format("{0:N2}", totalVenta)}"), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", totalVenta)}"), false));
+                    var porCombustible = reporteCierrePorTotal.GroupBy(x => x.Venta.Combustible);
+                    foreach(var combustible in porCombustible)
+                    {
+                        var total = combustible.Sum(x => x.Venta.SUBTOTAL);
+                        lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Combustible :", combustible.Key), false));
+                        lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Precio :", $"${string.Format("{0:N2}", combustible.First().Venta.PRECIO_UNI)}"), false));
+                        lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Subtotal :", $"${string.Format("{0:N2}", total)}"), false));
+                        lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Calibracion :", "$0,00"), false));
+                        lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Descuento :", $"${string.Format("{0:N2}", total)}"), false));
+                        lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", total)}"), false));
 
 
+                        lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+                    }
+
+                    lineasImprimirTurno.Add(new LineasImprimir($"Resumen de bolsas", true));
+                    //Totalizador
+                    lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Numero de bolsas :", turnoimprimir.Bolsas.Count().ToString()), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total billetes :", turnoimprimir.Bolsas.Sum(x=>x.Billete).ToString()), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total monedas :", turnoimprimir.Bolsas.Sum(x => x.Moneda).ToString()), false));
+
+                    lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
                 }
 
             }
-            lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
 
             lineasImprimirTurno.Add(new LineasImprimir("Fabricado por:" + " SIGES SOLUCIONES SAS ", true));
             lineasImprimirTurno.Add(new LineasImprimir("Nit:" + " 901430393-2 ", true));
@@ -692,6 +777,11 @@ namespace EnviadorInformacionService
                     lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago :", " Efectivo"), false));
 
                 }
+                if (!string.IsNullOrEmpty( _factura.numeroTransaccion)&&_factura.numeroTransaccion != "NA")
+                {
+                    lineasImprimir.Add(new LineasImprimir(formatoTotales("N Tran :", _factura.numeroTransaccion), false));
+                }
+
             }
 
             if (!string.IsNullOrEmpty(infoTemp))

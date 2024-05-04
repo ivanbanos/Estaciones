@@ -28,5 +28,6 @@ namespace EnviadorInformacionService
         ResolucionElectronica GetResolucionElectronica(string token);
         bool SetTurnoFactura(int ventaId, DateTime fechaApertura, string isla, int numero, Guid estacionFuente, string token);
         void SubirTurno(FacturacionelectronicaCore.Negocio.Modelo.Turno turno, Guid estacionFuente, string token);
+        void SubirInfoCupos(CuposRequest cuposInfo, Guid estacionFuente, string token);
     }
 }

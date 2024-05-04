@@ -13,7 +13,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
             
             Guid = Guid.NewGuid();
             Consecutivo = x.Consecutivo==0?x.ventaId: x.Consecutivo;
-            Combustible = x.Manguera.DESCRIPCION;
+            Combustible = x.Venta.Combustible;
             Cantidad = x.Venta.CANTIDAD;
             Precio = x.Venta.PRECIO_UNI;
             Total = x.Venta.TOTAL;

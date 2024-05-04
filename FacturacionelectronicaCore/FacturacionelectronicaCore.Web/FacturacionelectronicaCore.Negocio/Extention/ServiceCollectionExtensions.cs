@@ -32,6 +32,7 @@ namespace EstacionesServicio.Negocio.Extention
             services.AddScoped<IResolucionNegocio, ResolucionNegocio>();
             services.AddScoped<ICanastillaNegocio, CanastillaNegocio>();
             services.AddScoped<IFacturaCanastillaNegocio, FacturaCanastillaNegocio>();
+            services.AddScoped<ICupoNegocio, CupoNegocio>();
             services.AddScoped<ITurnoNegocio, TurnoNegocio>();
             services.AddRespositoryDependencies(configuration);
             services.AddSingleton<IValidadorGuidAFacturaElectronica, ValidadorGuidAFacturaElectronica>();

@@ -40,7 +40,7 @@ namespace EnviadorInformacionService
             request.Estacion = estacion;
             using (var client = new HttpClient())
             {
-                client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
+                client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
                 client.DefaultRequestHeaders.Authorization =
     new AuthenticationHeaderValue("Bearer", token);
                 var path = $"/api/ManejadorInformacionLocal/EnviarFacturas";
@@ -352,6 +352,25 @@ namespace EnviadorInformacionService
 
                 Logger.Info(JsonConvert.SerializeObject(turno));
                 var content = new StringContent(JsonConvert.SerializeObject(turno));
+                content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+                var response = client.PostAsync($"{url}{path}", content).Result;
+                response.EnsureSuccessStatusCode();
+                string responsebody = response.Content.ReadAsStringAsync().Result;
+            }
+        }
+
+        public void SubirInfoCupos(CuposRequest cuposInfo, Guid estacionFuente, string token)
+        {
+            cuposInfo.EstacionGuid = estacionFuente.ToString();
+            using (var client = new HttpClient())
+            {
+                client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
+                client.DefaultRequestHeaders.Authorization =
+    new AuthenticationHeaderValue("bearer", token);
+                var path = $"/api/CuposInfo";
+
+                Logger.Info(JsonConvert.SerializeObject(cuposInfo));
+                var content = new StringContent(JsonConvert.SerializeObject(cuposInfo));
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
                 var response = client.PostAsync($"{url}{path}", content).Result;
                 response.EnsureSuccessStatusCode();

@@ -176,7 +176,7 @@ begin try
 	@cantidadCanastillas INT, @verificarConsecutivo int, @mismaResolucion VARCHAR (50), @subtotal float = 0, @iva float, @total float;
 	declare @ivaCanastila INT = 0;
 
-	select @ivaCanastila+= c.iva * c.cantidad
+	select @ivaCanastila+= (c.precio*c.iva/100) * c.cantidad
 	from @canastillaIds c
 
     
@@ -190,7 +190,7 @@ begin try
 	begin
 		select @mismaResolucion=valor from configuracionEstacion where descripcion = 'mismaResolucion'
 	end
-	select @subtotal+=cids.cantidad* (Canastilla.precio-cids.iva) from @canastillaIds cids
+	select @subtotal+=cids.cantidad* (Canastilla.precio*((100-cids.iva)/1000)) from @canastillaIds cids
 	inner join Canastilla on  cids.canastillaId = Canastilla.canastillaId
 
 	if @subtotal != 0
@@ -215,15 +215,14 @@ begin try
 					select @facturaCanastillaId = SCOPE_IDENTITY()
 
 					insert into FacturasCanastillaDetalle (FacturasCanastillaId,canastillaId,cantidad,precio,subtotal,iva,total)
-					select @facturaCanastillaId, cids.canastillaId, cids.cantidad, cids.precio, (cids.precio-cids.iva)*cids.cantidad,cids.iva,cids.precio*cids.cantidad from @canastillaIds cids
+					select @facturaCanastillaId, cids.canastillaId, cids.cantidad, cids.precio, (cids.precio*((100-cids.iva)/100))*cids.cantidad,(cids.precio*cids.iva/100)*cids.cantidad,cids.precio*cids.cantidad from @canastillaIds cids
 	inner join Canastilla on  cids.canastillaId = Canastilla.canastillaId 
-			if @imprimir = 1
-			begin
+			
 				exec MandarImprimirCanastilla @facturaCanastillaId
 				end
 				select consecutivo as facturaCanastillaId from FacturasCanastilla where @facturaCanastillaId = facturasCanastillaId
 			
-		end
+		
 		end
 		else 
 		begin 

@@ -1,6 +1,7 @@
 ﻿
 using EnviadorInformacionService;
 using FacturacionelectronicaCore.Negocio.Contabilidad;
+using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturadorEstacionesRepositorio;
 using System;
 using System.Configuration;
@@ -15,6 +16,7 @@ namespace EnviadorInformacion
         private readonly IConexionEstacionRemota _conexionEstacionRemota;
         private readonly IApiContabilidad _apiContabilidad;
         private readonly Guid estacionFuente;
+        private DateTime? stanByTime;
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         public EnviadorDeInformacion()
@@ -72,11 +74,11 @@ namespace EnviadorInformacion
                 }
             }
             var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadas();
-            if (facturas.Any())
+            if (facturas.Any(x=>x.Manguera!=null))
             {
                 var formas = _estacionesRepositorio.BuscarFormasPagos();
 
-                var okFacturas = _conexionEstacionRemota.EnviarFacturas(facturas, formas, estacionFuente, token);
+                var okFacturas = _conexionEstacionRemota.EnviarFacturas(facturas.Where(x=>x.Manguera!=null), formas, estacionFuente, token);
                 if (okFacturas)
                 {
                     _estacionesRepositorio.ActuralizarFacturasEnviados(facturas.Select(x => x.ventaId));
@@ -133,31 +135,60 @@ namespace EnviadorInformacion
             {
                 Logger.Warn($"No subieron facturas {ex.Message}");
             }
-            var facturasPorturno = _estacionesRepositorio.GetFacturaSinEnviarTurno();
-            if (facturasPorturno.Any())
+
+            if(!stanByTime.HasValue || stanByTime.Value < DateTime.Now.AddHours(2))
             {
-                foreach(var factura in facturasPorturno)
+                try
                 {
-                    var turno = _estacionesRepositorio.ObtenerTurnoIslaPorVenta(factura.ventaId);
-                    var okFacturas = _conexionEstacionRemota.SetTurnoFactura(factura.ventaId, turno.FechaApertura, turno.Isla, turno.Numero, estacionFuente, token);
-                    if (okFacturas)
+                    var cuposInfo = _estacionesRepositorio.GetInfoCupos();
+
+                _conexionEstacionRemota.SubirInfoCupos(cuposInfo, estacionFuente, token);
+                stanByTime = DateTime.Now;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"No subieron cupos {ex.Message}");
+                }
+            }
+            var facturasPorturno = _estacionesRepositorio.GetFacturaSinEnviarTurno();
+            if (facturasPorturno.Any(x => x.Manguera != null))
+            {
+                foreach (var factura in facturasPorturno.Where(x => x.Manguera != null))
+                {
+                    try {
+                        var turno = _estacionesRepositorio.ObtenerTurnoIslaPorVenta(factura.ventaId);
+                        if (turno != null)
+                        {
+                            var okFacturas = _conexionEstacionRemota.SetTurnoFactura(factura.ventaId, turno.FechaApertura, turno.Isla, turno.Numero, estacionFuente, token);
+                            if (okFacturas)
+                            {
+                                _estacionesRepositorio.ActuralizarFacturasEnviadosTurno(factura.ventaId);
+                            }
+                            else
+                            {
+                                _conexionEstacionRemota.SubirTurno(turno, estacionFuente, token);
+                                okFacturas = _conexionEstacionRemota.SetTurnoFactura(factura.ventaId, turno.FechaApertura, turno.Isla, turno.Numero, estacionFuente, token);
+                                if (okFacturas)
+                                {
+                                    _estacionesRepositorio.ActuralizarFacturasEnviadosTurno(factura.ventaId);
+                                }
+                                else
+                                {
+                                    _estacionesRepositorio.ActuralizarFacturasEnviadosTurno(factura.ventaId);
+                                    Logger.Info("No subieron facturas");
+                                }
+                            }
+                        }else
+                        {
+                            _estacionesRepositorio.ActuralizarFacturasEnviadosTurno(factura.ventaId);
+                        }
+                    }
+                    catch (Exception ex)
                     {
                         _estacionesRepositorio.ActuralizarFacturasEnviadosTurno(factura.ventaId);
+                        Logger.Warn($"No subieron turnos {ex.Message}");
                     }
-                    else
-                    {
-                         _conexionEstacionRemota.SubirTurno(turno, estacionFuente, token);
-                        okFacturas = _conexionEstacionRemota.SetTurnoFactura(factura.ventaId, turno.FechaApertura, turno.Isla, turno.Numero, estacionFuente, token);
-                        if (okFacturas)
-                        {
-                            _estacionesRepositorio.ActuralizarFacturasEnviadosTurno(factura.ventaId);
-                        }
-                        else
-                        {
-                            _estacionesRepositorio.ActuralizarFacturasEnviadosTurno(factura.ventaId);
-                            Logger.Info("No subieron facturas");
-                        }
-                    }
+
                 }
             }
 

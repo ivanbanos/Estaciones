@@ -39,7 +39,7 @@ namespace FacturacionelectronicaCore.Web
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSilog(Configuration);
+            services.AddFacturaElectronica(Configuration);
             services.AddServicesDependencies(Configuration);
             services.AddSingleton<IAuthentication, JWTAuthentication>();
             services.AddSingleton<ResolucionNumber>();

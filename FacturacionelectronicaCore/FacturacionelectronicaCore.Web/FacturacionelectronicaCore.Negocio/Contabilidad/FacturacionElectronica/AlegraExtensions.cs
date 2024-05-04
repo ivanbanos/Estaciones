@@ -11,6 +11,33 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
     public static class AlegraExtensions
     {
+
+
+        public static IServiceCollection AddFacturaElectronica(
+        this IServiceCollection services,
+        IConfiguration configuration)
+        {
+            switch (configuration["Alegra:Proveedor"])
+            {
+                case "ALEGRA":
+                    services.AddScoped<IFacturacionElectronicaFacade, AlegraFacade>();
+                    break;
+                case "SILOG":
+                    services.AddScoped<IFacturacionElectronicaFacade, FacturacionSilog>();
+                    break;
+                case "DATATICO":
+                    services.AddScoped<IFacturacionElectronicaFacade, FacturacionDataico>();
+                    break;
+                case "TITAN":
+                    services.AddScoped<IFacturacionElectronicaFacade, FacturacionTitan>();
+                    break;
+
+            }
+
+            services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
+            return services;
+        }
+
         public static IServiceCollection AddAlegra(
             this IServiceCollection services,
             IConfiguration configuration)

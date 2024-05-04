@@ -75,12 +75,12 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             {
                 paramList.Add("FechaInicial", fechaInicial);
 
-                filters.Add(Builders<OrdenesMongo>.Filter.Gte("FechaReporte", fechaInicial));
+                filters.Add(Builders<OrdenesMongo>.Filter.Gte("FechaReporte", fechaInicial.Value.AddHours(-12)));
             }
             if (fechaFinal != null)
             {
                 paramList.Add("FechaFinal", fechaFinal);
-                filters.Add(Builders<OrdenesMongo>.Filter.Lte("FechaReporte", fechaFinal.Value.AddDays(1)));
+                filters.Add(Builders<OrdenesMongo>.Filter.Lte("FechaReporte", fechaFinal.Value.AddDays(1).AddHours(-12)));
             }
             if (!string.IsNullOrEmpty(identificacionTercero))
             {
@@ -95,21 +95,21 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
 
             var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "ordenes", filters);
-            if (facturasMongo.Any(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower()))
-            {
+            //if (facturasMongo.Any(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower()))
+            //{
                 return facturasMongo.Where(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower());
-            }
-            else
-            {
-                var facturas = await _sqlHelper.GetsAsync<OrdenDeDespacho>(StoredProcedures.GetOrdenesDeDespacho, paramList);
-                var tasks = new List<Task>();
-                foreach (var factura in facturas)
-                {
-                    tasks.Add(AgregarAMongo(estacion, factura));
-                }
-                await Task.WhenAll(tasks);
-                return facturas;
-            }
+            //}
+            //else
+            //{
+            //    var facturas = await _sqlHelper.GetsAsync<OrdenDeDespacho>(StoredProcedures.GetOrdenesDeDespacho, paramList);
+            //    var tasks = new List<Task>();
+            //    foreach (var factura in facturas)
+            //    {
+            //        tasks.Add(AgregarAMongo(estacion, factura));
+            //    }
+            //    await Task.WhenAll(tasks);
+            //    return facturas;
+            //}
         }
 
         public Task<int> AddOrdenesImprimir(IEnumerable<FacturasEntity> lists)
@@ -131,20 +131,20 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             {
                 var filter = Builders<OrdenesMongo>.Filter.Eq("_id", facturaEntity.Guid.ToString());
                 var facturasMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filter);
-                if (!facturasMongo.Any())
-                {
-                    var paramListfac = new DynamicParameters();
-                    paramListfac.Add("guid", facturaEntity.Guid);
-                    var factura = (await _sqlHelper.GetsAsync<OrdenDeDespacho>(StoredProcedures.ObtenerOrdenDespachoPorGuid, paramListfac)).First();
+                //if (!facturasMongo.Any())
+                //{
+                //    var paramListfac = new DynamicParameters();
+                //    paramListfac.Add("guid", facturaEntity.Guid);
+                //    var factura = (await _sqlHelper.GetsAsync<OrdenDeDespacho>(StoredProcedures.ObtenerOrdenDespachoPorGuid, paramListfac)).First();
 
-                    tasks.Add(AgregarAMongo(estacion, factura));
-                    listFacturas.Add(factura);
-                }
-                else
-                {
+                //    tasks.Add(AgregarAMongo(estacion, factura));
+                //    listFacturas.Add(factura);
+                //}
+                //else
+                //{
 
                     listFacturas.AddRange(facturasMongo);
-                }
+                //}
             }
 
             await Task.WhenAll(tasks);
@@ -156,14 +156,14 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         {
             var filter = Builders<OrdenesMongo>.Filter.Eq("_id", guid.ToString());
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filter);
-            if (!facturasMongo.Any())
-            {
-                var paramList = new DynamicParameters();
-                paramList.Add("guid", guid);
+            //if (!facturasMongo.Any())
+            //{
+            //    var paramList = new DynamicParameters();
+            //    paramList.Add("guid", guid);
 
-                var facturas = await _sqlHelper.GetsAsync<OrdenDeDespacho>(StoredProcedures.ObtenerOrdenDespachoPorGuid, paramList);
-                return facturas;
-            }
+            //    var facturas = await _sqlHelper.GetsAsync<OrdenDeDespacho>(StoredProcedures.ObtenerOrdenDespachoPorGuid, paramList);
+            //    return facturas;
+            //}
             return facturasMongo;
         }
 
@@ -184,9 +184,9 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 }
 
             }
-
-            return await  _sqlHelper.InsertOrUpdateOrDeleteAsync(StoredProcedures.AnularOrdenesDeDespacho,
-                new { Ordenes = ordenes.ToDataTable().AsTableValuedParameter(UserDefinedTypes.Entity) });
+            return 1;
+            //return await  _sqlHelper.InsertOrUpdateOrDeleteAsync(StoredProcedures.AnularOrdenesDeDespacho,
+            //    new { Ordenes = ordenes.ToDataTable().AsTableValuedParameter(UserDefinedTypes.Entity) });
         }
 
 
@@ -226,21 +226,21 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             filters.Add(Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", idVentaLocal));
 
             var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "ordenes", filters);
-            if (facturasMongo.Any())
-            {
+            //if (facturasMongo.Any())
+            //{
                 return facturasMongo.Where(x => x.EstacionGuid == estacion.ToString());
-            }
-            else
-            {
-                var facturas = await _sqlHelper.GetsAsync<OrdenDeDespacho>(StoredProcedures.GetOrdenesDeDespacho, paramList);
-                var tasks = new List<Task>();
-                foreach (var factura in facturas)
-                {
-                    tasks.Add(AgregarAMongo(estacion, factura));
-                }
-                await Task.WhenAll(tasks);
-                return facturas;
-            }
+            //}
+            //else
+            //{
+            //    var facturas = await _sqlHelper.GetsAsync<OrdenDeDespacho>(StoredProcedures.GetOrdenesDeDespacho, paramList);
+            //    var tasks = new List<Task>();
+            //    foreach (var factura in facturas)
+            //    {
+            //        tasks.Add(AgregarAMongo(estacion, factura));
+            //    }
+            //    await Task.WhenAll(tasks);
+            //    return facturas;
+            //}
         }
 
         public async Task<IEnumerable<OrdenDeDespacho>> ObtenerOrdenesPorTurno(Guid turno)

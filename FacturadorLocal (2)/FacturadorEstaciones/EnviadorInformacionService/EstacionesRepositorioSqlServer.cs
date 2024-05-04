@@ -723,7 +723,7 @@ namespace FacturadorEstacionesRepositorio
                            });
 
                 var ventas = _convertidor.ConvertirVenta(dt);
-                var manguera = _convertidor.ConvertirManguera(dt).Single();
+                var manguera = _convertidor.ConvertirManguera(dt).FirstOrDefault();
                 factura.Venta = ventas.FirstOrDefault();
                 factura.Manguera = manguera;
             }
@@ -812,7 +812,7 @@ namespace FacturadorEstacionesRepositorio
 
         public Turno ObtenerTurnoIslaYFecha(DateTime fecha, int isla, int numero)
         {
-            var ds = LoadDataSetFromStoredProc(_connectionString.estacion, "ObtenerTurnoIslaPorVenta",
+            var ds = LoadDataSetFromStoredProc(_connectionString.estacion, "ObtenerTurnoIslaYFecha",
                        new Dictionary<string, object>{
                 {"@IdIsla",isla },
                 {"@num_tur",numero },
@@ -822,7 +822,14 @@ namespace FacturadorEstacionesRepositorio
             return _convertidor.ConvertirTurno(ds);
         }
 
+        public CuposRequest GetInfoCupos ()
+        {
+            var ds = LoadDataSetFromStoredProc(_connectionString.estacion, "GetInfoCupos",
+                       new Dictionary<string, object>{
+                       });
 
+            return _convertidor.ConvertirInfoCupos(ds);
+        }
         public IEnumerable<FactoradorEstacionesModelo.Objetos.Factura> getFacturaPorTurno(int isla, DateTime fecha, int num)
         {
 

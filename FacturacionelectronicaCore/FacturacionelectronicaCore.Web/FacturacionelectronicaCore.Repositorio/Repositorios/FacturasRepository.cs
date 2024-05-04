@@ -91,20 +91,20 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             {
                 var filter = Builders<FacturaMongo>.Filter.Eq("_id", facturaEntity.Guid.ToString());
                 var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
-                if (!facturasMongo.Any())
-                {
-                    var paramListfac = new DynamicParameters();
-                    paramListfac.Add("guid", facturaEntity.Guid);
-                    var factura = (await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ObtenerFacturaPorGuid, paramListfac)).First();
+                //if (!facturasMongo.Any())
+                //{
+                //    var paramListfac = new DynamicParameters();
+                //    paramListfac.Add("guid", facturaEntity.Guid);
+                //    var factura = (await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ObtenerFacturaPorGuid, paramListfac)).First();
 
-                    tasks.Add(AgregarAMongo(estacion, factura));
-                    listFacturas.Add(factura);
-                }
-                else
-                {
+                //    tasks.Add(AgregarAMongo(estacion, factura));
+                //    listFacturas.Add(factura);
+                //}
+                //else
+                //{
 
                     listFacturas.AddRange(facturasMongo);
-                }
+                //}
             }
 
             await Task.WhenAll(tasks);
@@ -116,14 +116,14 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
             var filter = Builders<FacturaMongo>.Filter.Eq("_id", facturaGuid.ToString());
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
-            if (!facturasMongo.Any())
-            {
-                var paramList = new DynamicParameters();
-                paramList.Add("guid", facturaGuid.ToString());
+            //if (!facturasMongo.Any())
+            //{
+            //    var paramList = new DynamicParameters();
+            //    paramList.Add("guid", facturaGuid.ToString());
 
-                var facturas = await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ObtenerFacturaPorGuid, paramList);
-                return facturas;
-            }
+            //    var facturas = await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ObtenerFacturaPorGuid, paramList);
+            //    return facturas;
+            //}
             return facturasMongo;
         }
 
@@ -145,11 +145,11 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             if (fechaInicial != null) { 
                 paramList.Add("FechaInicial", fechaInicial);
 
-                filters.Add(Builders<FacturaMongo>.Filter.Gte("FechaReporte", fechaInicial));
+                filters.Add(Builders<FacturaMongo>.Filter.Gte("FechaReporte", fechaInicial.Value.AddHours(-12)));
             }
             if (fechaFinal != null) { 
                 paramList.Add("FechaFinal", fechaFinal);
-                filters.Add(Builders<FacturaMongo>.Filter.Lte("FechaReporte", fechaFinal.Value.AddDays(1)));
+                filters.Add(Builders<FacturaMongo>.Filter.Lte("FechaReporte", fechaFinal.Value.AddDays(1).AddHours(-12)));
             }
             if (!string.IsNullOrEmpty(identificacionTercero)) { 
                 paramList.Add("IdentificacionTercero", identificacionTercero);
@@ -162,21 +162,21 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
 
             var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "factuas", filters);
-            if (facturasMongo.Any(x=>x.EstacionGuid.ToLower() == estacion.ToString().ToLower()))
-            {
+            //if (facturasMongo.Any(x=>x.EstacionGuid.ToLower() == estacion.ToString().ToLower()))
+            //{
                 return facturasMongo.Where(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower());
-            }
-            else
-            {
-                var facturas = await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ListarFactura, paramList);
-                var tasks = new List<Task>();
-                foreach(var factura in facturas)
-                {
-                    tasks.Add(AgregarAMongo(estacion, factura));
-                }
-                await Task.WhenAll(tasks);
-                return facturas;
-            }
+            //}
+            //else
+            //{
+            //    var facturas = await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ListarFactura, paramList);
+            //    var tasks = new List<Task>();
+            //    foreach(var factura in facturas)
+            //    {
+            //        tasks.Add(AgregarAMongo(estacion, factura));
+            //    }
+            //    await Task.WhenAll(tasks);
+            //    return facturas;
+            //}
         }
 
         public async Task setConsecutivoFacturaPendiente(string facturaGuid, int consecutivo)
@@ -213,9 +213,9 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 }
                 
             }
-
-            return await _sqlHelper.InsertOrUpdateOrDeleteAsync(_anularFacturas,
-                new { Facturas = facturas.ToDataTable().AsTableValuedParameter(UserDefinedTypes.Entity) });
+            return 1;
+            //return await _sqlHelper.InsertOrUpdateOrDeleteAsync(_anularFacturas,
+            //    new { Facturas = facturas.ToDataTable().AsTableValuedParameter(UserDefinedTypes.Entity) });
         }
 
         public async Task AgregarFechaReporteFactura(IEnumerable<FacturaFechaReporte> facturas, Guid estacion)
@@ -318,7 +318,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             var paramList = new DynamicParameters();
             paramList.Add("idFacturaElectronica", idFacturaElectronica);
             paramList.Add("guid", guid);
-            await _sqlHelper.GetsAsync<int>(StoredProcedures.SetIdFacturaElectronicaOrdenesdeDespacho, paramList);
+            //await _sqlHelper.GetsAsync<int>(StoredProcedures.SetIdFacturaElectronicaOrdenesdeDespacho, paramList);
         }
 
         public async Task<IEnumerable<Factura>> ObtenerFacturaPorIdVentaLocal(int idVentaLocal, Guid estacion)
@@ -333,11 +333,12 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 return facturasMongo.Where(x=>x.EstacionGuid == estacion.ToString());
 
             }
-            var paramList = new DynamicParameters();
-            paramList.Add("idVentaLocal", idVentaLocal);
-            paramList.Add("estacion", estacion);
+            return null;
+            //var paramList = new DynamicParameters();
+            //paramList.Add("idVentaLocal", idVentaLocal);
+            //paramList.Add("estacion", estacion);
 
-            return await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ObtenerFacturaPorIdVentaLocal, paramList);
+            //return await _sqlHelper.GetsAsync<Factura>(StoredProcedures.ObtenerFacturaPorIdVentaLocal, paramList);
         }
 
         public async Task<IEnumerable<Factura>> ObtenerFacturasPorTurnoId(Guid turno)

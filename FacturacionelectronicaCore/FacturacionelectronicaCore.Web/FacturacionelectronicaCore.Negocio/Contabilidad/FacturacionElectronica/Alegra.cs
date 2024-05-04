@@ -7,6 +7,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
     public class Alegra
     {
+        public string Proveedor { get; set; }
         public bool UsaAlegra { get; set; }
         public string Token { get; set; }
         public string Correo { get; set; }

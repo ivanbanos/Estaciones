@@ -39,8 +39,13 @@ namespace EnviadorInformacionService
             // Apply config           
             NLog.LogManager.Configuration = config;
 
+            //var canastillaService = new CanastillaService();
+            //canastillaService.ProcesoCanastilla();
             //var enviadorDeInformacion = new EnviadorDeInformacion();
             //enviadorDeInformacion.EnviarInformacion();
+
+            //var impresionService = new ImpresionService();
+            //impresionService.Execute();
             ServiceBase[] ServicesToRun;
             ServicesToRun = new ServiceBase[]
             {
@@ -53,8 +58,8 @@ namespace EnviadorInformacionService
 
 
         //var impresionService = new ImpresionService();
-        //var enviadorDeInformacion = new EnviadorDeInformacion();
         ////impresionService.Execute();
+        //var enviadorDeInformacion = new EnviadorDeInformacion();
         //enviadorDeInformacion.EnviarInformacion();
         //var enviadorDeInformacionThread = new Thread(new ThreadStart(impresionService.Execute));
         //var impresionThread = new Thread(new ThreadStart(enviadorDeInformacion.EnviarInformacion));
@@ -73,5 +78,5 @@ namespace EnviadorInformacionService
         //canastillaService.ProcesoCanastilla();
 
     }
-    }
+}
 

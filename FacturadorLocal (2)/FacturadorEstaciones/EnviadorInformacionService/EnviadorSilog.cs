@@ -64,7 +64,7 @@ namespace EnviadorInformacionService
                                 continue;
                             }
                         }
-                        var facturasEnviar = facturas.Select(x => new Factura(x, formas.Where(y => y.Id == x.Venta.COD_FOR_PAG).Select(y => y.Descripcion).Single()));
+                        var facturasEnviar = facturas.Select(x => new Factura(x, formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).Single()));
 
 
                         Logger.Info($"{facturasEnviar.Count()} facturas encontradas");

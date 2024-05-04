@@ -23,6 +23,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         private readonly IApiContabilidad _apiContabilidad;
         private readonly IFacturacionElectronicaFacade _alegraFacade;
         private readonly bool MultiplicarPorDies;
+        private readonly string _proveedor;
         private readonly IFacturaCanastillaRepository _facturaCanastillaRepository;
 
         public ManejadorInformacionLocalNegocio(IFacturasRepository facturasRepository,
@@ -38,6 +39,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             _apiContabilidad = apiContabilidad;
             _mapper = mapper;
             MultiplicarPorDies = alegra.Value.MultiplicarPorDies;
+            _proveedor = alegra.Value.Proveedor;
             _alegraFacade = alegraFacade;
             _tipoIdentificacionRepositorio = tipoIdentificacionRepositorio;
             _facturaCanastillaRepository = facturaCanastillaRepository;
@@ -213,8 +215,12 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             {
                 if(facturaEntity.idFacturaElectronica != null)
                 {
-                    //var factura = await _alegraFacade.GetFacturaElectronica(facturaEntity.idFacturaElectronica.Split(':')[1]);
-                    //return $"Factura electrónica\n\r{factura.numberTemplate.fullNumber}\n\rCUFE:\n\r{factura.stamp.cufe}";
+                    if(_proveedor == "ALEGRA")
+                    {
+
+                        var factura = await _alegraFacade.GetFacturaElectronica(facturaEntity.idFacturaElectronica.Split(':')[1]);
+                        return $"Factura electrónica\n\r{factura.numberTemplate.fullNumber}\n\rCUFE:\n\r{factura.stamp.cufe}";
+                    }
                     //var factura = await _alegraFacade.GetFacturaElectronica(facturaEntity.idFacturaElectronica.Split(':')[1]);
                     var info = facturaEntity.idFacturaElectronica.Split(':');
 
@@ -227,8 +233,11 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             {
                 if (ordenDeDespachoEntity.idFacturaElectronica != null)
                 {
-                    //var factura = await _alegraFacade.GetFacturaElectronica(ordenDeDespachoEntity.idFacturaElectronica.Split(':')[1]);
-                    //return $"Factura electrónica {factura.numberTemplate.fullNumber}\n\rCUFE: {factura.stamp.cufe}";
+                    if (_proveedor == "ALEGRA")
+                    {
+                        var factura = await _alegraFacade.GetFacturaElectronica(ordenDeDespachoEntity.idFacturaElectronica.Split(':')[1]);
+                        return $"Factura electrónica {factura.numberTemplate.fullNumber}\n\rCUFE: {factura.stamp.cufe}";
+                    }
                     ////var factura = await _alegraFacade.GetFacturaElectronica(facturaEntity.idFacturaElectronica.Split(':')[1]);
                     var info = ordenDeDespachoEntity.idFacturaElectronica.Split(':');
 

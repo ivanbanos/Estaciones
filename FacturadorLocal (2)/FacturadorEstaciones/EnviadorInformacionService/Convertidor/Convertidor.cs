@@ -1,11 +1,15 @@
 ﻿using EnviadorInformacionService.Models;
 using FactoradorEstacionesModelo.Objetos;
+using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Entities;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using Factura = FactoradorEstacionesModelo.Objetos.Factura;
+using Resolucion = FactoradorEstacionesModelo.Objetos.Resolucion;
+using Tercero = FactoradorEstacionesModelo.Objetos.Tercero;
 
 namespace FactoradorEstacionesModelo.Convertidor
 {
@@ -152,8 +156,9 @@ namespace FactoradorEstacionesModelo.Convertidor
                     impresa = dr.Field<int>("impresa"),
                     Estado = dr.Field<string>("estado"),
                     codigoFormaPago = dr.Field<int>("codigoFormaPago"),
+                    numeroTransaccion = dr.Field<string>("numeroTransaccion"),
 
-                    Tercero = new Tercero() {
+                    Tercero = new Objetos.Tercero() {
                         COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI"),
                         Direccion = dr.Field<string>("direccion"),
                         Nombre = dr.Field<string>("Nombre"),
@@ -170,7 +175,7 @@ namespace FactoradorEstacionesModelo.Convertidor
             return response;
         }
 
-        public IEnumerable<Tercero> ConvertirTercero(DataTable dt)
+        public IEnumerable<Objetos.Tercero> ConvertirTercero(DataTable dt)
         {
             List<Tercero> response = new List<Tercero>();
 
@@ -285,7 +290,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                     fc.iva = Convert.ToSingle(dr.Field<double>("iva"));
                     fc.resolucion = ConvertirResolucion(dt).FirstOrDefault();
                     fc.enviada = dr.Field<bool>("enviada");
-                    fc.terceroId = new Tercero();
+                    fc.terceroId = new Objetos.Tercero();
 
                     fc.terceroId.COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI");
                     fc.terceroId.Direccion = dr.Field<string>("direccion");
@@ -330,6 +335,7 @@ namespace FactoradorEstacionesModelo.Convertidor
 
         internal FacturacionelectronicaCore.Negocio.Modelo.Turno ConvertirTurno(DataSet ds)
         {
+            if (ds.Tables[0].AsEnumerable().Any()) { 
             var drTurno = ds.Tables[0].Rows[0];
             var turno = new FacturacionelectronicaCore.Negocio.Modelo.Turno {
                 Empleado = drTurno.Field<string>("empleado"),
@@ -341,46 +347,104 @@ namespace FactoradorEstacionesModelo.Convertidor
                 turnoSurtidores = new List<FacturacionelectronicaCore.Negocio.Modelo.TurnoSurtidor>()
             };
             var dtTurnoLec = ds.Tables[1];
-
-            turno.turnoSurtidores.AddRange(
-                dtTurnoLec.AsEnumerable().Select(dr => new FacturacionelectronicaCore.Negocio.Modelo.TurnoSurtidor()
+                if (dtTurnoLec.AsEnumerable().Any())
                 {
-                    Apertura = Convert.ToDouble(dr.Field<decimal>("Apertura")),
-                    Cierre = Convert.ToDouble(dr.Field<decimal>("Cierre")),
-                    Combustible = dr.Field<string>("Combustible"),
-                    Manguera = dr.Field<short>("Manguera").ToString(),
-                    precioCombustible = Convert.ToSingle(dr.Field<decimal>("precioCombustible")),
-                    Surtidor = dr.Field<short>("Surtidor").ToString(),
-                })
-            );
-            return turno;
+                    turno.turnoSurtidores.AddRange(
+                    dtTurnoLec.AsEnumerable().Select(dr => new FacturacionelectronicaCore.Negocio.Modelo.TurnoSurtidor()
+                    {
+                        Apertura = Convert.ToDouble(dr.Field<decimal>("Apertura")),
+                        Cierre = Convert.ToDouble(dr.Field<decimal>("Cierre")),
+                        Combustible = dr.Field<string>("Combustible"),
+                        Manguera = dr.Field<short>("Manguera").ToString(),
+                        precioCombustible = Convert.ToSingle(dr.Field<decimal>("precioCombustible")),
+                        Surtidor = dr.Field<short>("Surtidor").ToString(),
+                    })
+                );
+                }
+                var dtBolsa = ds.Tables[2];
+                if (dtBolsa.AsEnumerable().Any())
+                {
+                    turno.Bolsas.AddRange(
+                    dtBolsa.AsEnumerable().Select(drBolsa => new Bolsa()
+                    {
+
+                        Fecha = drBolsa.Field<DateTime>("Fecha"),
+                        Consecutivo = Convert.ToInt32(drBolsa["Consecutivo"]),
+                        NumeroTurno = Convert.ToInt32(drBolsa["NumeroTurno"]),
+                        Isla = Convert.ToString(drBolsa["Isla"]),
+                        Empleado = drBolsa.Field<string>("Empleado"),
+                        Moneda = Convert.ToDouble(drBolsa.Field<decimal>("Moneda")),
+                        Billete = Convert.ToDouble(drBolsa.Field<decimal>("Billete")),
+                    })
+                );
+                }
+
+                return turno;
+            }
+            return null;
         }
 
         public IEnumerable<ObjetoImprimir> ConvertirObjetoImprimir(DataTable ds)
         {
             return ds.AsEnumerable().Select(dr => new ObjetoImprimir()
             {
-                Id = dr.Field<int>("Id"),
+                Id = Convert.ToInt32(dr["Id"]),
                 fecha = dr.Field<DateTime>("fecha"),
-                Isla = dr.Field<int>("Isla"),
-                impreso = dr.Field<int>("impreso"),
-                Numero = dr.Field<int>("Numero"),
-                Objeto = dr.Field<string>("Numero")
+                Isla = Convert.ToInt32(dr["Isla"]),
+                impreso = Convert.ToInt32(dr["impreso"]),
+                Numero = Convert.ToInt32(dr["Numero"]),
+                Objeto = dr.Field<string>("Objeto")
             });
         }
 
         public Bolsa ConvertirBolsa(DataTable dt)
         {
             var response = new Bolsa();
-            var drBolsa = dt.Rows[0];
-            response.Fecha = drBolsa.Field<DateTime>("Fecha");
-            response.Consecutivo = drBolsa.Field<int>("Consecutivo");
-            response.NumeroTurno = drBolsa.Field<int>("NumeroTurno");
-            response.Isla = drBolsa.Field<string>("Isla");
-            response.Empleado = drBolsa.Field<string>("Empleado");
-            response.Moneda = Convert.ToDouble(drBolsa.Field<decimal>("Moneda"));
-            response.Billete = Convert.ToDouble(drBolsa.Field<decimal>("Billete"));
+            if(dt.Rows.Count > 0)
+            {
+                var drBolsa = dt.Rows[0];
+                response.Fecha = drBolsa.Field<DateTime>("Fecha");
+                response.Consecutivo = Convert.ToInt32(drBolsa["Consecutivo"]);
+                response.NumeroTurno = Convert.ToInt32(drBolsa["NumeroTurno"]);
+                response.Isla = Convert.ToString(drBolsa["Isla"]);
+                response.Empleado = drBolsa.Field<string>("Empleado");
+                response.Moneda = Convert.ToDouble(drBolsa.Field<decimal>("Moneda"));
+                response.Billete = Convert.ToDouble(drBolsa.Field<decimal>("Billete"));
+            }
             return response;
+        }
+
+        public CuposRequest ConvertirInfoCupos(DataSet ds)
+        {
+            var request = new CuposRequest();
+            var autos = ds.Tables[0];
+            if (autos.AsEnumerable().Any())
+            {
+                request.cuposAutomotores = autos.AsEnumerable().Select(dr => new CupoAutomotor()
+                {
+                    Placa = dr.Field<string>("PLACA"),
+                    Cliente = dr.Field<string>("NOMBRE"),
+                    COD_CLI = dr.Field<string>("COD_CLI"),
+                    Nit = dr.Field<string>("NIT"),
+                    CupoAsignado = Convert.ToDouble(dr.Field<decimal>("CUPO_ASIGNADO")),
+                    CupoDisponible = Convert.ToDouble(dr.Field<decimal>("CUPO_DISPONIBLE")),
+                });
+            }
+
+            var clientes = ds.Tables[1];
+            if (clientes.AsEnumerable().Any())
+            {
+                request.cuposClientes = clientes.AsEnumerable().Select(dr => new CupoCliente()
+                {
+                    Cliente = dr.Field<string>("NOMBRE"),
+                    COD_CLI = dr.Field<string>("COD_CLI"),
+                    Nit = dr.Field<string>("NIT"),
+                    CupoAsignado = Convert.ToDouble(dr.Field<decimal>("CUPO_ASIGNADO")),
+                    CupoDisponible = Convert.ToDouble(dr.Field<decimal>("CUPO_DISPONIBLE")),
+                });
+            }
+
+            return request;
         }
     }
 }

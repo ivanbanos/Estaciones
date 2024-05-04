@@ -26,5 +26,7 @@ namespace FacturadorEstacionesRepositorio
         void ActuralizarFechasReportesEnviadas(IEnumerable<int> facturas);
         Turno ObtenerTurnoIslaPorVenta(int ventaId);
         IEnumerable<ObjetoImprimir> GetObjetoImprimir();
+        CuposRequest GetInfoCupos();
+
     }
 }
