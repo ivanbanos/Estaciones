@@ -49,7 +49,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         private async Task AgregarAMongo(Guid estacion, Factura factura)
         {
-            var filter = Builders<FacturaMongo>.Filter.Eq("IdLocal", factura.IdLocal);
+            var filter = Builders<FacturaMongo>.Filter.Eq("IdVentaLocal", factura.IdVentaLocal);
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaMongo>(_repositorioConfig.Cliente, "factuas", filter);
             if (!facturasMongo.Any(x => x.EstacionGuid == estacion.ToString()))
             {
@@ -333,7 +333,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 return facturasMongo.Where(x=>x.EstacionGuid == estacion.ToString());
 
             }
-            return null;
+            return new List<Factura>();
             //var paramList = new DynamicParameters();
             //paramList.Add("idVentaLocal", idVentaLocal);
             //paramList.Add("estacion", estacion);

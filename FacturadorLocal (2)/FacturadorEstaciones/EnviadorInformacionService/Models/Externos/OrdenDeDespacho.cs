@@ -10,6 +10,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         }
         public Guid Guid { get; set; }
         public string Identificacion { get; set; }
+        public DateTime FechaReporte { get; set; }
         public string NombreTercero { get; set; }
         public string Combustible { get; set; }
         public double Cantidad { get; set; }
@@ -59,6 +60,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
             SubTotal = x.Venta.VALORNETO;
             Vendedor = x.Venta.EMPLEADO;
             Identificacion = x.Tercero.identificacion;
+            FechaReporte = x.Venta.FECHA_REAL.Value;
         }
     }
 }

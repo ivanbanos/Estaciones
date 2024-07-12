@@ -37,48 +37,50 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
 
         public async Task<string> EnviarAFacturacion(string ordenGuid)
         {
-            if (_validadorGuidAFacturaElectronica.FacturaSiendoProceada(ordenGuid))
-            {
-                return "Factura electrónica siendo procesada";
-            }
-            var ordenDeDespachoEntity = (await _ordenDeDespachoRepositorio.ObtenerOrdenDespachoPorGuid(ordenGuid)).FirstOrDefault();
-            if(ordenDeDespachoEntity == null)
-            {
-                _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
-                return "Factura no existe";
-            }
-            if (ordenDeDespachoEntity.idFacturaElectronica != null)
-            {
-                _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
-                return "Factura electrónica existente";
-            }
-            ordenDeDespachoEntity.Fecha = ordenDeDespachoEntity.Fecha.ToLocalTime().AddHours(-7);
-            var ordenDeDespacho = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity);
-            var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(ordenDeDespacho.Identificacion)).FirstOrDefault();
-            var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
-            if (_alegra.ValidaTercero && tercero.idFacturacion == null)
-            {
 
-                _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
-                return "Tercero no está apto para facturación electrónica";
-            }
-            ordenDeDespacho.Tercero = tercero;
+            //if (_validadorGuidAFacturaElectronica.FacturaSiendoProceada(ordenGuid))
+            //{
+            //    return "Factura electrónica siendo procesada";
+            //}
+            //var ordenDeDespachoEntity = (await _ordenDeDespachoRepositorio.ObtenerOrdenDespachoPorGuid(ordenGuid)).FirstOrDefault();
+            //if(ordenDeDespachoEntity == null)
+            //{
+            //    _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+            //    return "Factura no existe";
+            //}
+            //if (ordenDeDespachoEntity.idFacturaElectronica != null)
+            //{
+            //    _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+            //    return "Factura electrónica existente";
+            //}
+            //ordenDeDespachoEntity.Fecha = ordenDeDespachoEntity.Fecha.ToLocalTime().AddHours(3);
+            //var ordenDeDespacho = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity);
+            //var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(ordenDeDespacho.Identificacion)).FirstOrDefault();
+            //var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
+            //if (_alegra.ValidaTercero && tercero.idFacturacion == null)
+            //{
+
+            //    _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+            //    return "Tercero no está apto para facturación electrónica";
+            //}
+            //ordenDeDespacho.Tercero = tercero;
             
-            try
-            {
-                var response = await _alegraFacade.GenerarFacturaElectronica(ordenDeDespacho, ordenDeDespacho.Tercero, Guid.Parse(((OrdenesMongo)ordenDeDespachoEntity).EstacionGuid));
-                if (response != "Combustible no creado")
-                {
+            //try
+            //{
+            //    var response = await _alegraFacade.GenerarFacturaElectronica(ordenDeDespacho, ordenDeDespacho.Tercero, Guid.Parse(((OrdenesMongo)ordenDeDespachoEntity).EstacionGuid));
+            //    if (response != "Combustible no creado")
+            //    {
 
-                    await _ordenDeDespachoRepositorio.SetIdFacturaElectronicaOrdenesdeDespacho(response, ordenDeDespacho.guid);
-                }
-                _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid); 
-                return "Ok";
-            }catch(Exception e)
-            {
-                _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
-                return $"Fallo al crear factura electrónica Razón: {e.Message}";
-            }
+            //        await _ordenDeDespachoRepositorio.SetIdFacturaElectronicaOrdenesdeDespacho(response, ordenDeDespacho.guid);
+            //    }
+            //    _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid); 
+            //    return "Ok";
+            //}catch(Exception e)
+            //{
+            //    _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+            //    return $"Fallo al crear factura electrónica Razón: {e.Message}";
+            //}
+            return "Ok";
         }
 
         /// <inheritdoc />
@@ -129,7 +131,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                         factura.Descuento /= 10;
                     }
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
-                    factura.Fecha = factura.Fecha.ToLocalTime().AddHours(-7);
+                    factura.Fecha = factura.Fecha.ToLocalTime().AddHours(3);
                 }
                 return ordenes.OrderBy(x=>x.IdVentaLocal);
             }
@@ -187,7 +189,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                     return "Una orden ya tiene factura electrónica existente";
                 }
 
-                ordenDeDespachoEntity.Fecha = ordenDeDespachoEntity.Fecha.ToLocalTime().AddHours(-7);
+                ordenDeDespachoEntity.Fecha = ordenDeDespachoEntity.Fecha.ToLocalTime().AddHours(3);
                 ordenes.Add( _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity));
             }
             if(ordenes.GroupBy(x=>x.Identificacion).Count() > 1)
@@ -217,7 +219,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
 
             try
             {
-                var idFacturaElectronica = await _alegraFacade.GenerarFacturaElectronica(ordenes, tercero, items);
+                var idFacturaElectronica = "error";// await _alegraFacade.GenerarFacturaElectronica(ordenes, tercero, items);
                 foreach (var orden in ordenes)
                 {
                     await _ordenDeDespachoRepositorio.SetIdFacturaElectronicaOrdenesdeDespacho(idFacturaElectronica, orden.guid);
@@ -271,6 +273,64 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 }
             }
             return ordenes;
+        }
+
+        public async Task<string> EnviarAFacturacion(int idVentaLocal, Guid estacion)
+        {
+            //var ordenDeDespachoEntity = (await _ordenDeDespachoRepositorio.ObtenerOrdenDespachoPorIdVentaLocal(idVentaLocal, estacion)).FirstOrDefault();
+            //if (ordenDeDespachoEntity == null)
+            //{
+            //    return null;
+            //}
+            //var ordenGuid = ordenDeDespachoEntity.guid;
+            //if (_validadorGuidAFacturaElectronica.FacturaSiendoProceada(ordenGuid))
+            //{
+            //    return "Factura electrónica siendo procesada";
+            //}
+            //if (ordenDeDespachoEntity == null)
+            //{
+            //    _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+            //    return "Factura no existe";
+            //}
+            //if (ordenDeDespachoEntity.idFacturaElectronica != null)
+            //{
+            //    _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+            //    return "Factura electrónica existente";
+            //}
+            //ordenDeDespachoEntity.Fecha = ordenDeDespachoEntity.Fecha.ToLocalTime().AddHours(-7); 
+            //var ordenDeDespacho = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity);
+
+            //if ((ordenDeDespacho.Fecha > DateTime.Now.AddDays(-1) || (_alegra.EnviaMes && DateTime.Now.Month == ordenDeDespacho.Fecha.Month)) && (_alegra.EnviaCreditos || !ordenDeDespacho.FormaDePago.ToLower().Contains("dito")))
+            //{
+                
+            //    var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(ordenDeDespacho.Identificacion)).FirstOrDefault();
+            //    var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
+            //    if (_alegra.ValidaTercero && tercero.idFacturacion == null)
+            //    {
+
+            //        _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+            //        return "Tercero no está apto para facturación electrónica";
+            //    }
+            //    ordenDeDespacho.Tercero = tercero;
+
+            //    try
+            //    {
+            //        var response = await _alegraFacade.GenerarFacturaElectronica(ordenDeDespacho, ordenDeDespacho.Tercero, Guid.Parse(((OrdenesMongo)ordenDeDespachoEntity).EstacionGuid));
+            //        if (response != "Combustible no creado")
+            //        {
+
+            //            await _ordenDeDespachoRepositorio.SetIdFacturaElectronicaOrdenesdeDespacho(response, ordenDeDespacho.guid);
+            //        }
+            //        _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+            //        return "Ok";
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        _validadorGuidAFacturaElectronica.SacarFactura(ordenGuid);
+            //        return $"Fallo al crear factura electrónica Razón: {e.Message}";
+            //    }
+            //}
+            return "Ok";
         }
     }
 }

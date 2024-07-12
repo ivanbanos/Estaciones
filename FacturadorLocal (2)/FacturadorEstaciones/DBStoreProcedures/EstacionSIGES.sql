@@ -3289,8 +3289,9 @@ as
 begin try
     set nocount on;
 	select TOP (1) Venta.total as ValorVenta, Fidelizado.documento as DocumentoFidelizado, Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo) as Factura  from Venta
-	inner join FacturasPOS on FacturasPOS.ventaId = Venta.Id
-	inner join Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
+	left join FacturasPOS on FacturasPOS.ventaId = Venta.Id
+    left join OrdenesDeDespacho on OrdenesDeDespacho.ventaId = Venta.Id
+	inner join Resoluciones on  (FacturasPOS.resolucionId is not null and FacturasPOS.resolucionId = Resoluciones.ResolucionId) or (OrdenesDeDespacho.resolucionId is not null and OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId) 
 	inner join Vehiculos on Vehiculos.idrom = Venta.Ibutton
 	inner join terceros on Vehiculos.terceroId = terceros.terceroId
 	left join Fidelizado on Fidelizado.documento = terceros.identificacion
@@ -3693,8 +3694,10 @@ as
 begin try
     set nocount on;
 	select TOP (1) Venta.total as ValorVenta, '' as DocumentoFidelizado, Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo) as Factura  from Venta
-	inner join FacturasPOS on FacturasPOS.ventaId = Venta.Id
-	inner join Resoluciones on FacturasPOS.resolucionId = Resoluciones.ResolucionId
+	left join FacturasPOS on FacturasPOS.ventaId = Venta.Id
+    left join OrdenesDeDespacho on OrdenesDeDespacho.ventaId = Venta.Id
+	inner join Resoluciones on  (FacturasPOS.resolucionId is not null and FacturasPOS.resolucionId = Resoluciones.ResolucionId) or (OrdenesDeDespacho.resolucionId is not null and OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId) 
+	
 	where venta.Id = @idVenta
 	order by venta.id desc
 

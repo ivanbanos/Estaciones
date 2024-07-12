@@ -28,7 +28,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         private async Task AgregarAMongo(Guid estacion, OrdenDeDespacho factura)
         {
-            var filter = Builders<OrdenesMongo>.Filter.Eq("IdLocal", factura.IdLocal);
+            var filter = Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", factura.IdVentaLocal);
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filter);
             if (!facturasMongo.Any(x => x.EstacionGuid == estacion.ToString()))
             {
@@ -46,6 +46,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                     .Set(x => x.Identificacion, factura.Identificacion)
                     .Set(x => x.NombreTercero, factura.NombreTercero)
                     .Set(x => x.Placa, factura.Placa)
+                    .Set(x => x.idFacturaElectronica, factura.idFacturaElectronica)
                     .Set(x => x.Kilometraje, factura.Kilometraje);
                 await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "ordenes", filterGuid, update);
 
@@ -221,15 +222,14 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
             var paramList = new DynamicParameters();
 
-            paramList.Add("Estacion", estacion);
             paramList.Add("idVentaLocal", idVentaLocal);
             filters.Add(Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", idVentaLocal));
 
             var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "ordenes", filters);
-            //if (facturasMongo.Any())
-            //{
+            if (facturasMongo.Any(x => x.EstacionGuid == estacion.ToString()))
+            {
                 return facturasMongo.Where(x => x.EstacionGuid == estacion.ToString());
-            //}
+            }return new List<OrdenesMongo>();
             //else
             //{
             //    var facturas = await _sqlHelper.GetsAsync<OrdenDeDespacho>(StoredProcedures.GetOrdenesDeDespacho, paramList);

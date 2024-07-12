@@ -37,7 +37,7 @@ namespace FacturacionelectronicaCore.Negocio.Turno
             var totalGeneral = 0d;
             foreach (var turno in turnos)
             {
-                var turnoDesc = $"{turno.FechaApertura.ToString("dd-MM-yyyy")}-{turno.Isla}-{turno.Numero}";
+                var turnoDesc = $"{turno.FechaApertura.ToString("dd-MM-yyyy")}-{turno.Isla.Trim()}-{turno.Numero}";
                 var diferenciaTotal = 0d;
                 var totalTotal = 0d;
                 foreach(var turnosur in turno.turnoSurtidores)
@@ -51,7 +51,7 @@ namespace FacturacionelectronicaCore.Negocio.Turno
                         Precio = turnosur.precioCombustible,
                         Surtidor = turnosur.Surtidor,
                         Total = (turnosur.Cierre.Value - turnosur.Apertura) * turnosur.precioCombustible,
-                        turno = turnoDesc
+                        turno = turnoDesc 
                     };
                     diferenciaTotal += totalReporte.Diferencia;
                     totalTotal += totalReporte.Total;

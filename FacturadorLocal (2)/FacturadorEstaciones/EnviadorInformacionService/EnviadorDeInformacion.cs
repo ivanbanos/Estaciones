@@ -34,14 +34,14 @@ namespace EnviadorInformacion
                 try
                 {
                     EnviarFacturas();
-                    Thread.Sleep(300000);
+                    Thread.Sleep(60000);
                 }
                 catch (Exception ex)
                 {
 
                     Logger.Error("Ex" + ex.Message);
                     Logger.Error("Ex" + ex.StackTrace);
-                    Thread.Sleep(300000);
+                    Thread.Sleep(60000);
                 }
             }
         }
@@ -52,27 +52,8 @@ namespace EnviadorInformacion
         {
             string token = _conexionEstacionRemota.getToken();
 
-            var ResolucionesRemota = _conexionEstacionRemota.GetResolucionEstacion(estacionFuente, token);
-            var resolucion = _estacionesRepositorio.BuscarResolucionActiva(ResolucionesRemota);
-
-
-            var terceros = _estacionesRepositorio.BuscarTercerosNoEnviados();
-            if (terceros.Any(t => t.identificacion != null))
-            {
-                terceros = terceros.Where(t => t.identificacion != null).ToList();
-
-                Logger.Info($"Subiendo {terceros.Count} terceros");
-                var okTercero = _conexionEstacionRemota.EnviarTerceros(terceros, token);
-                if (okTercero)
-                {
-                    _estacionesRepositorio.ActuralizarTercerosEnviados(terceros.Select(x => x.terceroId));
-                }
-                else
-                {
-
-                    Logger.Info("No subieron tereceros");
-                }
-            }
+            //var ResolucionesRemota = _conexionEstacionRemota.GetResolucionEstacion(estacionFuente, token);
+            //var resolucion = _estacionesRepositorio.BuscarResolucionActiva(ResolucionesRemota);
             var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadas();
             if (facturas.Any(x=>x.Manguera!=null))
             {
@@ -136,7 +117,7 @@ namespace EnviadorInformacion
                 Logger.Warn($"No subieron facturas {ex.Message}");
             }
 
-            if(!stanByTime.HasValue || stanByTime.Value < DateTime.Now.AddHours(2))
+            if(!stanByTime.HasValue || stanByTime.Value < DateTime.Now.AddHours(-2))
             {
                 try
                 {
@@ -155,7 +136,8 @@ namespace EnviadorInformacion
             {
                 foreach (var factura in facturasPorturno.Where(x => x.Manguera != null))
                 {
-                    try {
+                    try
+                    {
                         var turno = _estacionesRepositorio.ObtenerTurnoIslaPorVenta(factura.ventaId);
                         if (turno != null)
                         {
@@ -180,7 +162,7 @@ namespace EnviadorInformacion
                             }
                         }else
                         {
-                            _estacionesRepositorio.ActuralizarFacturasEnviadosTurno(factura.ventaId);
+                            //_estacionesRepositorio.ActuralizarFacturasEnviadosTurno(factura.ventaId);
                         }
                     }
                     catch (Exception ex)

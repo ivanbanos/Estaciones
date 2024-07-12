@@ -104,6 +104,7 @@ namespace FactoradorEstacionesModelo.Convertidor
             venta.Descuento = dr.IsNull("DESCUENTO") ? 0 : dr.Field<decimal>("DESCUENTO");
             venta.EMPLEADO = dr.IsNull("VENDEDOR") ? "" : dr.Field<string>("VENDEDOR");
             venta.CEDULA = dr.IsNull("CEDULA") ? "" : dr.Field<string>("CEDULA");
+            venta.FECHA_REAL = dr.IsNull("FechaReporte") ? null : dr.Field<DateTime?>("FechaReporte");
 
             var suma = Convert.ToInt32(venta.PRECIO_UNI * venta.CANTIDAD);
             var sumaTotal = Convert.ToInt32((venta.PRECIO_UNI * venta.CANTIDAD) - venta.Descuento);
@@ -430,6 +431,10 @@ namespace FactoradorEstacionesModelo.Convertidor
                     CupoDisponible = Convert.ToDouble(dr.Field<decimal>("CUPO_DISPONIBLE")),
                 });
             }
+            else
+            {
+                request.cuposAutomotores = new List<CupoAutomotor>();
+            }
 
             var clientes = ds.Tables[1];
             if (clientes.AsEnumerable().Any())
@@ -442,6 +447,10 @@ namespace FactoradorEstacionesModelo.Convertidor
                     CupoAsignado = Convert.ToDouble(dr.Field<decimal>("CUPO_ASIGNADO")),
                     CupoDisponible = Convert.ToDouble(dr.Field<decimal>("CUPO_DISPONIBLE")),
                 });
+            }
+            else
+            {
+                request.cuposClientes = new List<CupoCliente>();
             }
 
             return request;

@@ -638,16 +638,26 @@ namespace EnviadorInformacionService
             lineasImprimir.Add(new LineasImprimir(_infoEstacion.Telefono, true));
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             var infoTemp = "";
-            if (generaFacturaElectronica)
+            if (generaFacturaElectronica && _factura.codigoFormaPago != 6)
             {
                 try
                 {
-                    infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, estacionFuente, _conexionEstacionRemota.getToken());
+                    var intentos = 0;
+                    do
+                    {
+                        infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, estacionFuente, _conexionEstacionRemota.getToken());
+                        Thread.Sleep(100);
+                    } while (infoTemp == null || intentos++<3);
 
+                    Console.WriteLine("info fac elec " + infoTemp);
+                    Logger.Info("info fac elec " + infoTemp);
                 }
-                catch (Exception)
+                catch (Exception ex )
                 {
-                    infoTemp = null;
+                    Logger.Info("info fac elec " + ex.Message);
+                    Logger.Info("info fac elec " + ex.StackTrace);
+                    Console.WriteLine("info fac elec " + ex.Message);
+                    Console.WriteLine("info fac elec " + ex.StackTrace);
                 }
             }
             if (!string.IsNullOrEmpty(infoTemp))
@@ -656,10 +666,12 @@ namespace EnviadorInformacionService
 
                 var facturaElectronica = infoTemp.Split(' ');
 
-                lineasImprimir.Add(new LineasImprimir("Factura Electrónica " + facturaElectronica[2], true));
+                lineasImprimir.Add(new LineasImprimir("Factura Electrónica de Venta " + facturaElectronica[2], true));
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[3], true));
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[4].Substring(0,facturaElectronica[4].Length / 2), true));
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[4].Substring(facturaElectronica[4].Length / 2), true));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                lineasImprimir.Add(new LineasImprimir("Venta: " + _venta.CONSECUTIVO, false));
             }
             else if (_factura.Consecutivo == 0)
             {
@@ -668,7 +680,7 @@ namespace EnviadorInformacionService
             }
             else
             {
-                lineasImprimir.Add(new LineasImprimir("SISTEMA POS No: " + _factura.DescripcionResolucion + "-" + _factura.Consecutivo, true));
+                lineasImprimir.Add(new LineasImprimir("Orden de Servicio Temporal: " + _venta.CONSECUTIVO, true));
             }
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
@@ -801,22 +813,6 @@ namespace EnviadorInformacionService
 
             }
 
-            else if (_factura.Consecutivo != 0)
-            {
-
-
-                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-                lineasImprimir.Add(new LineasImprimir("Resolucion de Facturacion No. ", false));
-                lineasImprimir.Add(new LineasImprimir(_factura.Autorizacion + " de " + _factura.FechaInicioResolucion.ToString("dd/MM/yyyy") + " ", false));
-                var numeracion = "Numeracion Autorizada por la DIAN";
-                if (_factura.habilitada)
-                {
-                    numeracion = "Numeracion Habilitada por la DIAN";
-                }
-                lineasImprimir.Add(new LineasImprimir(numeracion + " ", false));
-                lineasImprimir.Add(new LineasImprimir("Del " + _factura.DescripcionResolucion + "-" + _factura.Inicio + " al " + _factura.DescripcionResolucion + "-" + _factura.Final + "", false));
-
-            }
             if (!String.IsNullOrEmpty(_infoEstacion.Linea1))
             {
                 lineasImprimir.Add(new LineasImprimir(_infoEstacion.Linea1, false));

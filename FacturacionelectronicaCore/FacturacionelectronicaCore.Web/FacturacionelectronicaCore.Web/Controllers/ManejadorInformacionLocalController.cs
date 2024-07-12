@@ -10,9 +10,6 @@ namespace FacturacionelectronicaCore.Web.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-#if !DEBUG
-    [Authorize]
-#endif
     public class ManejadorInformacionLocalController : ControllerBase
     {
         private readonly IManejadorInformacionLocalNegocio _manejadorInformacionLocalNegocio;
@@ -90,6 +87,10 @@ namespace FacturacionelectronicaCore.Web.Controllers
         [HttpGet("GetInfoFacturaElectronica/{idVentaLocal}/estacion/{estacion}")]
         public async Task<ActionResult<string>> GetInfoFacturaElectronica(int idVentaLocal, Guid estacion)
         => Ok(await _manejadorInformacionLocalNegocio.GetInfoFacturaElectronica(idVentaLocal, estacion));
+
+        [HttpGet("JsonFacturaElectronica/{idVentaLocal}/estacion/{estacion}")]
+        public async Task<ActionResult<string>> JsonFacturaElectronica(int idVentaLocal, Guid estacion)
+        => Ok(await _manejadorInformacionLocalNegocio.JsonFacturaElectronica(idVentaLocal, estacion));
 
 
         [HttpPost("AddFacturaCanastilla")]

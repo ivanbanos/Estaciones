@@ -1,4 +1,5 @@
-﻿using System;
+﻿using FacturacionelectronicaCore.Negocio.Modelo;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;

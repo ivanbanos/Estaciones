@@ -1,1 +1,1 @@
-var SERVER_URL = "https://cootranshuila.api.sigessoluciones.com";
+var SERVER_URL = "https://cootranshuila.api.sigesmas.com";

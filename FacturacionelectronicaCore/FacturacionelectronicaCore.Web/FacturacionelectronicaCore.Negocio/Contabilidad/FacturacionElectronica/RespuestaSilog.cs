@@ -18,6 +18,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
     public class ArrFactura
     {
+        public string prefijo_dian;
+        public string nro_dian;
+
         public string id { get; set; }
         public string nro { get; set; }
         public string identificacion_cliente { get; set; }

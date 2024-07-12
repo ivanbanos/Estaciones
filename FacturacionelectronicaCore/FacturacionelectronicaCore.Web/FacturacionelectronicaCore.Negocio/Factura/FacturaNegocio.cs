@@ -324,9 +324,9 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                 return "Tercero no está apto para facturación electrónica";
             }
             factura.Tercero = tercero;
-            
-            
-                var response = await _alegraFacade.GenerarFacturaElectronica(factura, factura.Tercero, Guid.Parse(((FacturaMongo)facturaEntity).EstacionGuid));
+
+
+                var response = "error";// await _alegraFacade.GenerarFacturaElectronica(factura, factura.Tercero, Guid.Parse(((FacturaMongo)facturaEntity).EstacionGuid));
                 if (response != "Combustible no creado")
                 {
 
@@ -394,7 +394,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
 
             try
             {
-                var idFacturaElectronica = await _alegraFacade.GenerarFacturaElectronica(facturas, tercero, items);
+                var idFacturaElectronica = "error";// await _alegraFacade.GenerarFacturaElectronica(facturas, tercero, items);
                 foreach (var orden in facturas)
                 {
                     await _ordenDeDespachoRepositorio.SetIdFacturaElectronicaOrdenesdeDespacho(idFacturaElectronica, orden.Guid);
@@ -460,6 +460,59 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                 }
             }
             return facturas;
+        }
+
+        public async Task<string> EnviarAFacturacion(int idVentaLocal, Guid estacion)
+        {
+            var facturaEntity = (await _facturasRepository.ObtenerFacturaPorIdVentaLocal(idVentaLocal, estacion)).FirstOrDefault();
+            if (facturaEntity == null)
+            {
+                return null;
+            }
+            if (_validadorGuidAFacturaElectronica.FacturaSiendoProceada(facturaEntity.Guid))
+            {
+                return "Factura electrónica siendo procesada";
+            }
+            try
+            {
+                if (facturaEntity == null)
+                {
+                    _validadorGuidAFacturaElectronica.SacarFactura(facturaEntity.Guid);
+                    return "Factura no existe";
+                }
+                if (facturaEntity.idFacturaElectronica != null)
+                {
+                    _validadorGuidAFacturaElectronica.SacarFactura(facturaEntity.Guid);
+                    return "Factura electrónica existente";
+                }
+                facturaEntity.Fecha = facturaEntity.Fecha.ToLocalTime().AddHours(-7);
+                var factura = _mapper.Map<Repositorio.Entities.Factura, Modelo.Factura>(facturaEntity);
+                var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.Identificacion)).FirstOrDefault();
+                var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
+                if (_alegra.ValidaTercero && tercero.idFacturacion == null)
+                {
+
+                    _validadorGuidAFacturaElectronica.SacarFactura(facturaEntity.Guid);
+                    return "Tercero no está apto para facturación electrónica";
+                }
+                factura.Tercero = tercero;
+
+
+                var response = "error";// await _alegraFacade.GenerarFacturaElectronica(factura, factura.Tercero, Guid.Parse(((FacturaMongo)facturaEntity).EstacionGuid));
+                if (response != "Combustible no creado")
+                {
+
+                    await _facturasRepository.SetIdFacturaElectronicaFactura(response, factura.Guid);
+                }
+                else { return "Combustible no creado"; }
+                _validadorGuidAFacturaElectronica.SacarFactura(facturaEntity.Guid);
+                return "Ok";
+            }
+            catch (Exception e)
+            {
+                _validadorGuidAFacturaElectronica.SacarFactura(facturaEntity.Guid);
+                return $"Fallo al crear factura electrónica Razón: {e.Message}";
+            }
         }
     }
 }

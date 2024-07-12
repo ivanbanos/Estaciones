@@ -1,13 +1,14 @@
 ﻿using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
 using Google.Protobuf.WellKnownTypes;
 using System;
+using System.Globalization;
 
 namespace FacturacionelectronicaCore.Negocio.Contabilidad
 {
     public class DatosFactura
     {
 
-        public DatosFactura(FacturaSilog factura, string usuario)
+        public DatosFactura(FacturaSilog factura, string usuario, Alegra options, string estacion)
         {
             Consecutivo = factura.Consecutivo + "";
             Detalles = $"Placa: {factura.Placa}, Kilometraje : {factura.Kilometraje}";
@@ -28,29 +29,58 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
             Tercero = factura.Tercero.Identificacion;
             Usuario = usuario;
 
-            Cantidad = factura.Cantidad + "";
-            Precio = factura.Precio + "";
-            Descuento = "0";
+            Cantidad = factura.Cantidad.ToString("F3",
+                  CultureInfo.InvariantCulture);
+            Precio = factura.Precio.ToString("F3",
+                  CultureInfo.InvariantCulture);
+            Descuento = factura.Descuento.ToString("F3",
+                  CultureInfo.InvariantCulture);
             Iva = "0";
-            Total = String.Format("{0:0.##}", factura.SubTotal);
-            Subtotal = String.Format("{0:0.##}", factura.SubTotal);
+            Total = factura.SubTotal.ToString("F3",
+                  CultureInfo.InvariantCulture);
+            Subtotal = factura.SubTotal.ToString("F3",
+                  CultureInfo.InvariantCulture);
             FechaProximoMantenimiento = factura.FechaProximoMantenimiento;
             Guid = factura.Guid;
-            Prefijo = factura.Prefijo.Substring(0, factura.Prefijo.Length - Consecutivo.Length);
+            Prefijo = factura.Prefijo;
             Console.WriteLine();
-            if (factura.FormaDePago.ToLower().Contains("efectivo"))
+            if(options.Cliente.ToLower() == "cotaxi")
             {
-                FormaPago = "1";
-            }
-            else if (factura.FormaDePago.ToLower().Contains("dito"))
-            {
-                FormaPago = "3";
+                if (factura.FormaDePago.ToLower().Contains("efectivo"))
+                {
+                    FormaPago = "1";
+                }
+                else if (factura.FormaDePago.ToLower().Contains("dito"))
+                {
+                    FormaPago = "3";
+                }
+                else
+                {
+                    FormaPago = "2";
+                    TipoTarjeta = GetByFormaPago(factura.FormaDePago.Trim());
+                    NroTransaccion = factura.Kilometraje;
+                }
+
             }
             else
             {
-                FormaPago = "2";
-                TipoTarjeta = GetByFormaPago(factura.FormaDePago.Trim());
-                NroTransaccion = factura.Kilometraje;
+                if (factura.FormaDePago.ToLower().Contains("efe"))
+                {
+                    FormaPago = "1";
+                }
+                else
+                if (factura.FormaDePago.ToLower().Contains("dat"))
+                {
+                    FormaPago = "2";
+                    TipoTarjeta = GetByFormaPagoCootranshuila(factura.FormaDePago.Trim(), estacion);
+                    NroTransaccion = factura.Kilometraje;
+                }
+                else
+                {
+                    FormaPago = "3";
+                    TipoTarjeta = GetByFormaPagoCootranshuila(factura.FormaDePago.Trim(), estacion);
+                    NroTransaccion = factura.Kilometraje;
+                }
             }
 
 
@@ -58,20 +88,53 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 
             if (factura.Combustible.ToLower().Contains("corriente"))
             {
-                Combustible = "11GASOLINA";
+                Combustible = options.Corriente;
             }
-            else if (factura.Combustible.ToLower().Contains("diesel") || factura.Combustible.ToLower().Contains("acpm"))
+            else if (factura.Combustible.ToLower().Contains("diesel") || factura.Combustible.ToLower().Contains("bioacem") || factura.Combustible.ToLower().Contains("acpm"))
             {
-                Combustible = "12ACPM";
+                Combustible = options.Acpm;
             }
             else if (factura.Combustible.ToLower().Contains("extra"))
             {
-                Combustible = "300";
+                Combustible = options.Extra;
             }
             else if (factura.Combustible.ToLower().Contains("gas") || factura.Combustible.ToLower().Contains("gnvc"))
             {
-                Combustible = "400";
+                Combustible = options.Gas;
             }
+        }
+
+        private string GetByFormaPagoCootranshuila(string formaPago, string estacion)
+        {
+            if (formaPago.ToLower().Contains("asum")|| formaPago.ToLower().Contains("cali"))
+            {
+                return "21";
+
+            }
+            else
+            {
+                if (estacion.ToLower() == "BF5D6034-82FC-484D-A362-65EFB0E4C1C6".ToLower())
+                {
+                    //libague
+                    return "22";
+                }
+                if (estacion.ToLower() == "F6A3C48F-ACC9-4E9A-9B3C-206A0E52C302".ToLower())
+                {
+                    //terminal
+                    return "23";
+                }
+                if (estacion.ToLower() == "4E8E1941-D8E4-4732-A3C8-27A2DFEE9048".ToLower())
+                {
+                    //toma
+                    return "9";
+                }
+                if (estacion.ToLower() == "9DC61E74-AEB4-4E3A-8121-3F20F391C4A3".ToLower())
+                {
+                    //principal
+                    return "9";
+                }
+            }
+            return "21";
         }
 
         private string GetByFormaPago(string formaPago)

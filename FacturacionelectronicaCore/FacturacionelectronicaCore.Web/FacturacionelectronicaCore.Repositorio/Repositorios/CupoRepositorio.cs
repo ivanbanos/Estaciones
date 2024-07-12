@@ -39,14 +39,16 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             {
                 cupoAutomotor.Id = Guid.NewGuid().ToString();
                 await _mongoHelper.CreateDocument(_repositorioConfig.Cliente, "CupoAutomotor", cupoAutomotor);
-            } else {
+            }
+            else
+            {
                 var cupo = cupos.First(x => x.EstacionGuid == estacionGuid);
                 var filterGuid = Builders<CupoAutomotor>.Filter.Eq("_id", cupo.Id);
                 var update = Builders<CupoAutomotor>.Update
-                    .Set(x => x.COD_CLI, cupo.COD_CLI)
-                    .Set(x => x.Nit, cupo.Nit)
-                    .Set(x => x.CupoAsignado, cupo.CupoAsignado)
-                    .Set(x => x.CupoDisponible, cupo.CupoDisponible);
+                    .Set(x => x.COD_CLI, cupoAutomotor.COD_CLI)
+                    .Set(x => x.Nit, cupoAutomotor.Nit)
+                    .Set(x => x.CupoAsignado, cupoAutomotor.CupoAsignado)
+                    .Set(x => x.CupoDisponible, cupoAutomotor.CupoDisponible);
                 await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "CupoAutomotor", filterGuid, update);
             }
         }
@@ -66,10 +68,10 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 var cupo = cupos.First(x => x.EstacionGuid == estacionGuid);
                 var filterGuid = Builders<CupoCliente>.Filter.Eq("_id", cupo.Id);
                 var update = Builders<CupoCliente>.Update
-                    .Set(x => x.COD_CLI, cupo.COD_CLI)
-                    .Set(x => x.Nit, cupo.Nit)
-                    .Set(x => x.CupoAsignado, cupo.CupoAsignado)
-                    .Set(x => x.CupoDisponible, cupo.CupoDisponible);
+                    .Set(x => x.COD_CLI, cupoCliente.COD_CLI)
+                    .Set(x => x.Nit, cupoCliente.Nit)
+                    .Set(x => x.CupoAsignado, cupoCliente.CupoAsignado)
+                    .Set(x => x.CupoDisponible, cupoCliente.CupoDisponible);
                 await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "CupoCliente", filterGuid, update);
             }
         }
@@ -77,12 +79,27 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         public async Task<IEnumerable<CupoAutomotor>> GetCupoAutomotor(string estacion)
         {
             var CupoAutomotor = await _mongoHelper.GetAllDocuments<CupoAutomotor>(_repositorioConfig.Cliente, "CupoAutomotor");
-            return CupoAutomotor.Where(x => x.EstacionGuid == estacion);
+            if (CupoAutomotor.Any(x => x.EstacionGuid == estacion))
+            {
+                return CupoAutomotor.Where(x => x.EstacionGuid == estacion);
+
+            }
+            else
+            {
+                return new List<CupoAutomotor>();
+            }
         }
         public async Task<IEnumerable<CupoCliente>> GetCupoCliente(string estacion)
         {
             var CupoAutomotor = await _mongoHelper.GetAllDocuments<CupoCliente>(_repositorioConfig.Cliente, "CupoCliente");
-            return CupoAutomotor.Where(x => x.EstacionGuid == estacion);
+            if (CupoAutomotor.Any(x => x.EstacionGuid == estacion))
+            {
+                return CupoAutomotor.Where(x => x.EstacionGuid == estacion);
+            }
+            else
+            {
+                return new List<CupoCliente>();
+            }
         }
 
     }

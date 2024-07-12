@@ -31,6 +31,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 case "TITAN":
                     services.AddScoped<IFacturacionElectronicaFacade, FacturacionTitan>();
                     break;
+                case "SIIGO":
+                    services.AddScoped<IFacturacionElectronicaFacade, FacturacionSiigo>();
+                    break;
 
             }
 

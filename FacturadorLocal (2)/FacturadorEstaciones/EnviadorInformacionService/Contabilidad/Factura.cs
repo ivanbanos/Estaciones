@@ -11,7 +11,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
         public Factura(FactoradorEstacionesModelo.Objetos.Factura x, string forma)
         {
             Guid = Guid.Parse(ConfigurationManager.AppSettings["estacionFuente"]);
-            Consecutivo = x.Consecutivo == 0 ? x.ventaId : x.Consecutivo;
+            Consecutivo = x.Consecutivo == 0 || x.Consecutivo == -1? x.ventaId : x.Consecutivo;
             Combustible = x.Manguera.DESCRIPCION;
             Cantidad = x.Venta.CANTIDAD;
             Precio = x.Venta.PRECIO_UNI;

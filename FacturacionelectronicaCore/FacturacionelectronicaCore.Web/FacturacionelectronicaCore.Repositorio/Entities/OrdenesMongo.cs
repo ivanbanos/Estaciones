@@ -27,6 +27,7 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
             Cara = orden.Cara;
             Manguera = orden.Manguera;
             Fecha = orden.Fecha;
+            FechaReporte = orden.FechaReporte;
             Estado = orden.Estado;
             IdentificacionTercero = orden.IdentificacionTercero;
             FormaDePago = orden.FormaDePago;
@@ -40,7 +41,6 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
             idFacturaElectronica = orden.idFacturaElectronica;
         }
 
-        public DateTime FechaReporte { get; set; }
         public string EstacionGuid { get; set; }
         public string TurnoGuid { get; set; }
     }

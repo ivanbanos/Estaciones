@@ -24,5 +24,6 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
         Task<string> CrearFacturaOrdenesDeDespacho(IEnumerable<OrdenesDeDespachoGuids> ordenesDeDespacho);
         Task<Modelo.OrdenDeDespacho> ObtenerOrdenDespachoPorIdVentaLocal(int idVentaLocal, Guid estacion);
         Task<IEnumerable<Modelo.OrdenDeDespacho>> ObtenerOrdenesPorTurno(Guid turno);
+        Task<string> EnviarAFacturacion(int idVentaLocal, Guid estacion);
     }
 }

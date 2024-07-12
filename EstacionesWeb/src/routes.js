@@ -52,15 +52,19 @@ const PorAutomotores = React.lazy(() => import('./views/Reportes/PorAutomotores'
 const PorCliente = React.lazy(() => import('./views/Reportes/PorCliente'))
 const Turnos = React.lazy(() => import('./views/Reportes/Turnos'))
 const VentasClientes = React.lazy(() => import('./views/Reportes/VentasClientes'))
+const ReporteFiscal = React.lazy(() => import('./views/Reportes/ReporteFiscal'))
+const CanastillaNormal = React.lazy(() => import('./views/Canastilla/Canastilla'))
 
 const routes = [
   { path: '/', exact: true, name: 'Home' },
   { path: '/dashboard', name: 'Estaciones', element: Dashboard },
+  { path: '/CanastillaNormal', name: 'Canastilla', element: CanastillaNormal },
   { path: '/VentasClientes', name: 'VentasClientes', element: VentasClientes },
-  { path: '/PorAutomotores', name: 'PorAutomotores', element: PorAutomotores },
-  { path: '/PorCliente', name: 'PorCliente', element: PorCliente },
+  { path: '/PorAutomotores', name: 'Reporte Supos Por Automotores', element: PorAutomotores },
+  { path: '/PorCliente', name: 'Reporte Cupos Por Cliente', element: PorCliente },
   { path: '/Canastilla', name: 'Canastilla', element: Canastilla },
   { path: '/Turnos', name: 'Turnos', element: Turnos },
+  { path: '/ReporteFiscal', name: 'Reporte Fiscal', element: ReporteFiscal },
   { path: '/theme', name: 'Theme', element: Colors, exact: true },
   { path: '/theme/colors', name: 'Colors', element: Colors },
   { path: '/theme/typography', name: 'Typography', element: Typography },

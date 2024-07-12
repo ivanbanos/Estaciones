@@ -41,7 +41,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 
                     Logger.Info($"Factura enviada, respuesta de silog: {responseBody}");
                         if (responseBody.ToLower().Contains("error")) {
-
+                            facturasEnviadas.Add(factura.IdVentaLocal);
                             Logger.Warn(responseBody);
                         }
                         else
@@ -52,6 +52,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
                     {
 
                         Logger.Error("Factura no recibida en silog por " + ex.Message);
+                        Logger.Error("Factura no recibida en silog por " + ex.InnerException?.Message);
                         Logger.Error ("Ex" + ex.StackTrace);
                     }
                 }

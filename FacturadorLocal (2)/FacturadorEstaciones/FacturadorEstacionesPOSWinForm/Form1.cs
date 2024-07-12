@@ -3,6 +3,7 @@ using FactoradorEstacionesModelo.Objetos;
 using FactoradorEstacionesModelo.Siges;
 using FacturadorEstacionesPOSWinForm.Repo;
 using FacturadorEstacionesRepositorio;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
@@ -396,14 +397,23 @@ namespace FacturadorEstacionesPOSWinForm
                 var opcionGenerar = MessageBox.Show("¿Deséa generar factura electrónica?", "Generar factura electrónica", MessageBoxButtons.YesNo);
                 if (opcionGenerar == DialogResult.Yes)
                 {
-                    var result = _conexionEstacionRemota.EnviarFactura(_factura);
-                    if (result == "\"Ok\"")
+                    try
                     {
-                        MessageBox.Show("Factura generada!");
+
+                        var result = _conexionEstacionRemota.EnviarFactura(_factura);
+                        if (result == "\"Ok\"")
+                        {
+                            MessageBox.Show("Factura generada!");
+                        }
+                        else
+                        {
+                            MessageBox.Show("Factura no generada. Razon " + result);
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        MessageBox.Show("Factura no generada. Razon " + result);
+
+                        MessageBox.Show("Factura no generada. Razon " + ex.InnerException?.Message);
                     }
 
                 }
@@ -420,14 +430,22 @@ namespace FacturadorEstacionesPOSWinForm
                 var opcionGenerar = MessageBox.Show("¿Deséa generar factura electrónica?", "Generar factura electrónica", MessageBoxButtons.YesNo);
                 if (opcionGenerar == DialogResult.Yes)
                 {
-                    var result = _conexionEstacionRemota.EnviarFactura(_factura);
-                    if (result == "\"Ok\"")
+                    try
                     {
-                        MessageBox.Show("Factura generada!");
+
+                        var result = _conexionEstacionRemota.EnviarFactura(_factura);
+                        if (result == "\"Ok\"")
+                        {
+                            MessageBox.Show("Factura generada!");
+                        }
+                        else
+                        {
+                            MessageBox.Show("Factura no generada. Razon " + result);
+                        }
                     }
-                    else
-                    {
-                        MessageBox.Show("Factura no generada. Razon " + result);
+                    catch(Exception ex){
+
+                        MessageBox.Show("Factura no generada. Razon " + ex.InnerException?.Message);
                     }
 
                 }

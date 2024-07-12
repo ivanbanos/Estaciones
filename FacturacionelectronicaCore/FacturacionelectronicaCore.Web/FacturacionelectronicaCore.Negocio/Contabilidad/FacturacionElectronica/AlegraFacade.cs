@@ -1,4 +1,6 @@
 ﻿using FacturacionelectronicaCore.Negocio.Modelo;
+using FacturacionelectronicaCore.Repositorio.Entities;
+using FacturacionelectronicaCore.Repositorio.Repositorios;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
@@ -18,13 +20,16 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         private readonly InvoiceHandler invoiceHandler;
         private readonly ItemHandler itemHandler;
         private readonly ResolucionesHandler resolucionesHandler;
+        private readonly IResolucionRepositorio _resolucionRepositorio;
 
-        public AlegraFacade(IOptions<Alegra> alegra) {
+        public AlegraFacade(IOptions<Alegra> alegra, IResolucionRepositorio resolucionRepositorio)
+        {
             alegraOptions = alegra.Value;
             contactsHandler = new ContactsHandler();
             invoiceHandler = new InvoiceHandler();
             itemHandler = new ItemHandler();
             resolucionesHandler = new ResolucionesHandler();
+            _resolucionRepositorio = resolucionRepositorio;
         }
 
         public async Task ActualizarTercero(Modelo.Tercero tercero, string idFacturacion)
@@ -39,7 +44,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             {
                 return "Combustible no creado";
             }
-            var invoice = await invoiceHandler.CrearFatura(factura.ConvertirAInvoice(item), alegraOptions);
+
+            var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
+            var option = new Alegra() { Url = alegraOptions.Url, Token = resolucion?.token ?? alegraOptions.Token, Correo = resolucion?.correo ?? alegraOptions.Correo };
+            var invoice = await invoiceHandler.CrearFatura(factura.ConvertirAInvoice(item), option);
             return invoice.numberTemplate.prefix + invoice.numberTemplate.number + ":" + invoice.id;// + ":"+JsonConvert.SerializeObject(invoice);
         }
 
@@ -50,12 +58,18 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             {
                 return "Combustible no creado";
             }
-            var invoice = await invoiceHandler.CrearFatura(orden.ConvertirAInvoice(item), alegraOptions);
+
+            var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
+            var option = new Alegra() { Url = alegraOptions.Url, Token = resolucion?.token ?? alegraOptions.Token, Correo = resolucion?.correo ?? alegraOptions.Correo };
+            var invoice = await invoiceHandler.CrearFatura(orden.ConvertirAInvoice(item), option);
             return invoice.numberTemplate.prefix + invoice.numberTemplate.number + ":" + invoice.id;
         }
 
         public async Task<string> GenerarFacturaElectronica(List<Modelo.OrdenDeDespacho> ordenes, Modelo.Tercero tercero, IEnumerable<Item> items)
         {
+
+            //var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacion);
+            //var option = new Alegra() { Url = alegraOptions.Url, Token = resolucion?.token ?? alegraOptions.Token, Correo= resolucion?.correo ?? alegraOptions.Correo };
             var invoice = await invoiceHandler.CrearFatura(ordenes.ConvertirAInvoice(tercero, items), alegraOptions);
             return invoice.numberTemplate.prefix + invoice.numberTemplate.number + ":" + invoice.id;
         }
@@ -80,9 +94,15 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             return await itemHandler.GetItem(name, alegraOptions);
         }
 
-        public async Task<ResolucionElectronica> GetResolucionElectronica()
+        public Task<string> getJson(Modelo.OrdenDeDespacho ordenDeDespachoEntity, Guid estacio)
         {
-            var resoluciones = await resolucionesHandler.GetResolucionesElectronica(alegraOptions);
+            throw new NotImplementedException();
+        }
+
+        public async Task<ResolucionElectronica> GetResolucionElectronica(string estacion)
+        {
+            var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacion);
+            var resoluciones = await resolucionesHandler.GetResolucionesElectronica(alegraOptions, resolucion);
             return resoluciones.FirstOrDefault(x=>x.isDefault);
         }
 

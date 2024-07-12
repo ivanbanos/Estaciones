@@ -12,7 +12,7 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
             decimal Total, string IdInterno, string Placa, string Kilometraje,
             string Surtidor, string Cara, string Manguera, DateTime Fecha, string IdentificacionTercero,
             string FormaDePago, int IdLocal, int IdVentaLocal
-            )
+, DateTime fechaReporte)
         {
             this.Consecutivo = Consecutivo;
             this.Combustible = Combustible;
@@ -30,6 +30,7 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
             this.FormaDePago = FormaDePago;
             this.IdLocal = IdLocal;
             this.IdVentaLocal = IdVentaLocal;
+            FechaReporte = fechaReporte;
         }
 
         public int Id { get; set; }
@@ -66,5 +67,6 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
         public string DescripcionResolucion { get; set; }
         public string AutorizacionResolucion { get; set; }
         public string idFacturaElectronica { get; set; }
+        public DateTime FechaReporte { get; set; }
     }
 }

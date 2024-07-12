@@ -36,7 +36,9 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
             Identificacion = x.Tercero.identificacion;
             Prefijo = x.DescripcionResolucion;
             Cedula = x.Venta.CEDULA;
-            
+            FechaReporte = x.Venta.FECHA_REAL.Value;
+
+
         }
         public Guid Guid { get; set; }
 
@@ -72,5 +74,6 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public IEnumerable<OrdenDeDespacho> Ordenes { get; set; }
         public string Prefijo { get; set; }
         public string Cedula { get; set; }
+        public DateTime FechaReporte { get; set; }
     }
 }

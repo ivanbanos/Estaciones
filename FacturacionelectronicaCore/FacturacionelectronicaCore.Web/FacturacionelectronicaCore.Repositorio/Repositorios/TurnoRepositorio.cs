@@ -43,7 +43,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         public async Task<IEnumerable<Turno>> Get(DateTime fechaInicial, DateTime fechaFinal, string estacion)
         {
             var filter = Builders<Turno>.Filter.Gte("FechaApertura", fechaInicial)
-                & Builders<Turno>.Filter.Lte("FechaApertura", fechaFinal);
+                & Builders<Turno>.Filter.Lte("FechaApertura", fechaFinal.AddDays(1).AddHours(1));
             var turnos = await _mongoHelper.GetFilteredDocuments<Turno>(_repositorioConfig.Cliente, "Turnos", filter);
             return turnos.Where(x => x.EstacionGuid == estacion);
         }

@@ -87,7 +87,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                             var respuesta = JsonConvert.DeserializeObject<ResponseTitan>(responseBody);
                             Console.WriteLine(JsonConvert.SerializeObject(respuesta));
                             Console.WriteLine(JsonConvert.SerializeObject(responseBody));
-                            await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(alegraOptions.Prefix, Int32.Parse(invoice.Comprobante.Numero) + 1);
+                            await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), Int32.Parse(invoice.Comprobante.Numero) + 1);
                             return "Enviada" + ":" + invoice.Comprobante.Numero + ":" + invoice.Comprobante.Numero;
                         
                     }
@@ -103,7 +103,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<FacturaTitan> GetFacturaTitan(Modelo.Factura factura, Modelo.Tercero tercero)
         {
-            var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(alegraOptions.Prefix);
+            var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(factura.IdEstacion.ToString());
 
             var nombre = "";
             var apellido = "";
@@ -264,7 +264,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         }
         public async Task<FacturaTitan> GetFacturaTitan(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero)
         {
-            var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(alegraOptions.Prefix);
+            var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(orden.IdEstacion.ToString());
             var nombre = "";
             var apellido = "";
             var nombreCompleto = tercero.Nombre.Trim();
@@ -401,7 +401,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         var respuesta = JsonConvert.DeserializeObject<ResponseTitan>(responseBody);
                         Console.WriteLine(JsonConvert.SerializeObject(respuesta));
                         Console.WriteLine(JsonConvert.SerializeObject(responseBody));
-                        await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(alegraOptions.Prefix, Int32.Parse(invoice.Comprobante.Numero) + 1);
+                        await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), Int32.Parse(invoice.Comprobante.Numero) + 1);
                         return "Enviada" + ":" + invoice.Comprobante.Numero + ":" + invoice.Comprobante.Numero;
 
                     }
@@ -439,7 +439,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             return await itemHandler.GetItem(name, alegraOptions);
         }
 
-        public async Task<ResolucionElectronica> GetResolucionElectronica()
+        public async Task<ResolucionElectronica> GetResolucionElectronica(string estacion)
         {
             using (var client = new HttpClient())
             {
@@ -464,6 +464,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
         }
 
+        public async Task<string> getJson(Modelo.OrdenDeDespacho ordenDeDespachoEntity, Guid estacion)
+        {
+            throw new NotImplementedException();
+        }
         public async Task<IEnumerable<TerceroResponse>> GetTerceros(int start)
         {
 

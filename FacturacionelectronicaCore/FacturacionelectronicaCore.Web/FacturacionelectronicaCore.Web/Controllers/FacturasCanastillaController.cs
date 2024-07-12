@@ -28,6 +28,10 @@ namespace FacturacionelectronicaCore.Web.Controllers
         [HttpPost("GetFactura")]
         public async Task<IEnumerable<FacturasCanastillaResponse>> BuscarFacturas(FiltroBusqueda filtroFactura)
         => await _facturaNegocio.GetFacturas(filtroFactura.FechaInicial, filtroFactura.FechaFinal, filtroFactura.Identificacion, filtroFactura.NombreTercero, filtroFactura.Estacion);
+       
+        [HttpPost("GetFacturasReporte")]
+        public async Task<FacturaCanastillaReporte> GetFacturasReporte(FiltroBusqueda filtroFactura)
+                => await _facturaNegocio.GetFacturasReporte(filtroFactura.FechaInicial, filtroFactura.FechaFinal, filtroFactura.Identificacion, filtroFactura.NombreTercero, filtroFactura.Estacion);
 
 
         [HttpGet("{idFactura}")]

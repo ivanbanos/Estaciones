@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System;
 using FacturacionelectronicaCore.Negocio.Modelo;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FacturacionelectronicaCore.Web.Controllers
 {

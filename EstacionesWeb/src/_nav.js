@@ -13,6 +13,13 @@ const _nav = [
   },
   {
     component: CNavItem,
+    name: 'Canastilla',
+    to: '/CanastillaNormal',
+    icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
+    level: 2,
+  },
+  {
+    component: CNavItem,
     name: 'Turnos',
     to: '/Turnos',
     icon: <CIcon icon={cilCalculator} customClassName="nav-icon" />,
@@ -20,7 +27,7 @@ const _nav = [
   },
   {
     component: CNavItem,
-    name: 'Canastilla',
+    name: 'Canastilla Reporte',
     to: '/Canastilla',
     icon: <CIcon icon={cilCalculator} customClassName="nav-icon" />,
     level: 1,
@@ -43,6 +50,13 @@ const _nav = [
     component: CNavItem,
     name: 'Ventas por clientes',
     to: '/VentasClientes',
+    icon: <CIcon icon={cilCalculator} customClassName="nav-icon" />,
+    level: 1,
+  },
+  {
+    component: CNavItem,
+    name: 'Reporte Fiscal',
+    to: '/ReporteFiscal',
     icon: <CIcon icon={cilCalculator} customClassName="nav-icon" />,
     level: 1,
   },

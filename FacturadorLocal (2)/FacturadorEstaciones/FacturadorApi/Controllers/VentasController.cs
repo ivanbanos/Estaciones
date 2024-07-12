@@ -615,40 +615,40 @@ namespace FacturadorEstacionesAPI.Controllers
                 try
                 {
                     var formas = _estacionesRepositorio.BuscarFormasPagos();
-                    _conexionEstacionRemota.EnviarFacturas(new List<Factura>() { factura }, formas, token);
-
-                    if (factura.Consecutivo == 0)
-                    {
-                        var guid = _conexionEstacionRemota.ObtenerOrdenDespachoPorIdVentaLocal(factura.ventaId, token);
-                        var result = _conexionEstacionRemota.CrearFacturaOrdenesDeDespacho(guid.ToString(), token);
-                        _estacionesRepositorio.ActuralizarFacturasEnviados(new List<int>() { factura.ventaId });
-                        return result;
-                    }
-                    else
-                    {
-                        var guid = _conexionEstacionRemota.ObtenerFacturaPorIdVentaLocal(factura.ventaId, token);
-                        var result = _conexionEstacionRemota.CrearFacturaFacturas(guid.ToString(), token);
-                        _estacionesRepositorio.ActuralizarFacturasEnviados(new List<int>() { factura.ventaId });
-                        return result;
-                    }
+                    _conexionEstacionRemota.EnviarFacturas(new List<Factura>() { factura }, formas, token); 
+                    _estacionesRepositorio.ActuralizarFacturasEnviados(new List<int>() { factura.ventaId });
+                    return "Ok";
+                    //if (factura.Consecutivo == 0)
+                    //{
+                    //    var result = _conexionEstacionRemota.CrearFacturaOrdenesDeDespachoByVenta(factura.ventaId, token);
+                    //    _estacionesRepositorio.ActuralizarFacturasEnviados(new List<int>() { factura.ventaId });
+                    //    return result;
+                    //}
+                    //else
+                    //{
+                    //    var result = _conexionEstacionRemota.CrearFacturaFacturasyVenta(factura.ventaId, token);
+                    //    _estacionesRepositorio.ActuralizarFacturasEnviados(new List<int>() { factura.ventaId });
+                    //    return result;
+                    //}
                 }
                 catch (Exception)
                 {
                     token = _conexionEstacionRemota.getToken();
                     var formas = _estacionesRepositorio.BuscarFormasPagos();
-                    _conexionEstacionRemota.EnviarFacturas(new List<Factura>() { factura }, formas, token);
+                    _conexionEstacionRemota.EnviarFacturas(new List<Factura>() { factura }, formas, token); 
+                    _estacionesRepositorio.ActuralizarFacturasEnviados(new List<int>() { factura.ventaId });
+                    return "Ok";
+                    //if (factura.Consecutivo == 0)
+                    //{
+                    //    var guid = _conexionEstacionRemota.ObtenerOrdenDespachoPorIdVentaLocal(factura.ventaId, token);
+                    //    return _conexionEstacionRemota.CrearFacturaOrdenesDeDespacho(guid.ToString(), token);
 
-                    if (factura.Consecutivo == 0)
-                    {
-                        var guid = _conexionEstacionRemota.ObtenerOrdenDespachoPorIdVentaLocal(factura.ventaId, token);
-                        return _conexionEstacionRemota.CrearFacturaOrdenesDeDespacho(guid.ToString(), token);
-
-                    }
-                    else
-                    {
-                        var guid = _conexionEstacionRemota.ObtenerFacturaPorIdVentaLocal(factura.ventaId, token);
-                        return _conexionEstacionRemota.CrearFacturaFacturas(guid.ToString(), token);
-                    }
+                    //}
+                    //else
+                    //{
+                    //    var guid = _conexionEstacionRemota.ObtenerFacturaPorIdVentaLocal(factura.ventaId, token);
+                    //    return _conexionEstacionRemota.CrearFacturaFacturas(guid.ToString(), token);
+                    //}
                 }
             } catch(Exception e)
             {
@@ -663,13 +663,13 @@ namespace FacturadorEstacionesAPI.Controllers
             try
             {
                 var formas = _estacionesRepositorio.BuscarFormasPagos();
-                return _conexionEstacionRemota.EnviarFacturas(new List<Factura>() { factura }, formas, token);
+                return true;//_conexionEstacionRemota.EnviarFacturas(new List<Factura>() { factura }, formas, token);
             }
             catch (Exception)
             {
                 token = _conexionEstacionRemota.getToken();
                 var formas = _estacionesRepositorio.BuscarFormasPagos();
-                return _conexionEstacionRemota.EnviarFacturas(new List<Factura>() { factura }, formas, token);
+                return true;//_conexionEstacionRemota.EnviarFacturas(new List<Factura>() { factura }, formas, token);
             }
         }
 

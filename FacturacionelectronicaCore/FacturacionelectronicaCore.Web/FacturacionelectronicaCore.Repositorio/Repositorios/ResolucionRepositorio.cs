@@ -31,20 +31,17 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         }
 
 
-        public async Task<int> GetFacturaelectronicaPorPRefijo(string prefijo)
+        public async Task<ResolucionFacturaElectronica> GetFacturaelectronicaPorPRefijo(string estacion)
         {
-
             var paramList = new DynamicParameters();
-            paramList.Add("prefijo", prefijo);
-            return await _sqlHelper.InsertOrUpdateOrDeleteAsync("getNumeration", new { prefijo = prefijo });
+
+            paramList.Add("estacion", estacion);
+            return (await _sqlHelper.GetsAsync<ResolucionFacturaElectronica>("getNumeration", paramList)).FirstOrDefault();
         }
-        public async Task SetFacturaelectronicaPorPRefijo(string prefijo, int numeroActual)
+        public async Task SetFacturaelectronicaPorPRefijo(string estacion, int numeroActual)
         {
 
-            var paramList = new DynamicParameters();
-            paramList.Add("prefijo", prefijo);
-            paramList.Add("numeroActual", numeroActual);
-            await _sqlHelper.InsertOrUpdateOrDeleteAsync("setNumeration", new { prefijo = prefijo, numeroActual = numeroActual });
+            await _sqlHelper.InsertOrUpdateOrDeleteAsync("setNumeration", new { estacion, numeroActual });
         }
 
         public async Task AnularResolucion(Guid resolucion)

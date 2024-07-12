@@ -43,5 +43,6 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public IEnumerable<OrdenDeDespacho> Ordenes { get; set; }
         public string idFacturaElectronica { get; set; }
         public string IdEstacion { get; set; }
+        public DateTime FechaReporte { get; set; }
     }
 }

@@ -66,6 +66,12 @@ namespace FacturacionelectronicaCore.Web.Controllers
             var result = await _ordenDeDespachoNegocio.EnviarAFacturacion(ordenGuid);
             return Ok(result);
         }
+        [HttpGet("EnviarFacturacion/{idVentaLocal}/{estacion}")]
+        public async Task<ActionResult<string>> EnviarFacturacion(int idVentaLocal, Guid estacion)
+        {
+            var result = await _ordenDeDespachoNegocio.EnviarAFacturacion(idVentaLocal, estacion);
+            return Ok(result);
+        }
 
         [HttpPost("CrearFacturaOrdenesDeDespacho")]
         public async Task<ActionResult<string>> CrearFacturaOrdenesDeDespacho(IEnumerable<OrdenesDeDespachoGuids> ordenesDeDespacho)

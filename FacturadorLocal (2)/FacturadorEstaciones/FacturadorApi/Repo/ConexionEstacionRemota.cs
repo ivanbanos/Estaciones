@@ -103,35 +103,37 @@ namespace EnviadorInformacionService
         }
         public string CrearFacturaOrdenesDeDespacho(string guid, string token)
         {
-            List<FacturasEntity> guids = new List<FacturasEntity>() { new FacturasEntity() { Guid = Guid.Parse(guid) } };
+            return "Ok";
+            //        List<FacturasEntity> guids = new List<FacturasEntity>() { new FacturasEntity() { Guid = Guid.Parse(guid) } };
 
 
-            using (var client = new HttpClient())
-            {
-                client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
-                client.DefaultRequestHeaders.Authorization =
-    new AuthenticationHeaderValue("Bearer", token);
-                var path = $"/api/OrdenesDeDespacho/EnviarFacturacion/{guid}";
-                var response = client.GetAsync($"{url}{path}").Result;
-                string responseBody = response.Content.ReadAsStringAsync().Result;
-                return responseBody;
-            }
+            //        using (var client = new HttpClient())
+            //        {
+            //            client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
+            //            client.DefaultRequestHeaders.Authorization =
+            //new AuthenticationHeaderValue("Bearer", token);
+            //            var path = $"/api/OrdenesDeDespacho/EnviarFacturacion/{guid}";
+            //            var response = client.GetAsync($"{url}{path}").Result;
+            //            string responseBody = response.Content.ReadAsStringAsync().Result;
+            //            return responseBody;
+            //        }
         }
 
         public string CrearFacturaFacturas(string guid, string token)
         {
-            List<FacturasEntity> guids = new List<FacturasEntity>() { new FacturasEntity() { Guid = Guid.Parse(guid) } };
+            return "Ok";
+            //        List<FacturasEntity> guids = new List<FacturasEntity>() { new FacturasEntity() { Guid = Guid.Parse(guid) } };
 
-            using (var client = new HttpClient())
-            {
-                client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
-                client.DefaultRequestHeaders.Authorization =
-    new AuthenticationHeaderValue("Bearer", token);
-                var path = $"/api/Factura/EnviarFacturacion/{guid}";
-                var response = client.GetAsync($"{url}{path}").Result;
-                //string responseBody = response.Content.ReadAsStringAsync().Result;
-                return "Ok";
-            }
+            //        using (var client = new HttpClient())
+            //        {
+            //            client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
+            //            client.DefaultRequestHeaders.Authorization =
+            //new AuthenticationHeaderValue("Bearer", token);
+            //            var path = $"/api/Factura/EnviarFacturacion/{guid}";
+            //            var response = client.GetAsync($"{url}{path}").Result;
+            //            //string responseBody = response.Content.ReadAsStringAsync().Result;
+            //            return "Ok";
+            //        }
         }
         public class FacturasEntity
         {
@@ -158,7 +160,7 @@ namespace EnviadorInformacionService
                     response.EnsureSuccessStatusCode();
                 }catch(Exception ex)
                 {
-                    throw new Exception(response.Content.ReadAsStringAsync().Result);
+                    throw;
                 }
                 string responseBody = response.Content.ReadAsStringAsync().Result;
                 return response.StatusCode == System.Net.HttpStatusCode.OK;
@@ -220,6 +222,35 @@ namespace EnviadorInformacionService
 
                 return JsonConvert.DeserializeObject<ResolucionElectronica>(response.Content.ReadAsStringAsync().Result);
             }
+        }
+
+        internal string CrearFacturaFacturasyVenta(int ventaId, string token)
+        {
+            //        using (var client = new HttpClient())
+            //        {
+            //            client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
+            //            client.DefaultRequestHeaders.Authorization =
+            //new AuthenticationHeaderValue("Bearer", token);
+            //            var path = $"/api/Factura/EnviarFacturacion/{ventaId}/{estacion}";
+            //            var response = client.GetAsync($"{url}{path}").Result;
+            //            return "Ok";
+            //        }
+
+            return "Ok";
+        }
+
+        internal string CrearFacturaOrdenesDeDespachoByVenta(int ventaId, string token)
+        {
+            return "Ok";
+            //        using (var client = new HttpClient())
+            //        {
+            //            client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
+            //            client.DefaultRequestHeaders.Authorization =
+            //new AuthenticationHeaderValue("Bearer", token);
+            //            var path = $"/api/OrdenesDeDespacho/EnviarFacturacion/{ventaId}/{estacion}";
+            //            var response = client.GetAsync($"{url}{path}").Result;
+            //            return "Ok";
+            //        }
         }
     }
 }

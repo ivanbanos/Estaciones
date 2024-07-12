@@ -18,6 +18,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         Task<string> GenerarFacturaElectronica(List<Modelo.OrdenDeDespacho> ordenes, Modelo.Tercero tercero, IEnumerable<Item> items);
         Task<string> GenerarFacturaElectronica(List<Modelo.Factura> facturas, Modelo.Tercero tercero, IEnumerable<Item> items);
         Task<ResponseInvoice> GetFacturaElectronica(string id);
-        Task<ResolucionElectronica> GetResolucionElectronica();
+        Task<ResolucionElectronica> GetResolucionElectronica(string estacion);
+
+        Task<string> getJson(Modelo.OrdenDeDespacho ordenDeDespachoEntity, Guid estacio);
     }
 }

@@ -39,5 +39,6 @@ namespace FactoradorEstacionesModelo.Objetos
         public decimal Descuento { get; set; }
         public string CEDULA { get; set; }
         public string COD_EMP { get; set; }
+        public DateTime? FECHA_REAL { get; set; }
     }
 }

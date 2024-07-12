@@ -34,5 +34,6 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
         public DateTime FechaProximoMantenimiento { get; set; }
         public string Vendedor { get; set; }
         public string idFacturaElectronica { get; set; }
+        public DateTime FechaReporte { get; set; }
     }
 }

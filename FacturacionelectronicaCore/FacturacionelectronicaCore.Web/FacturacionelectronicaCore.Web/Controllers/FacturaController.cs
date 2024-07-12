@@ -71,6 +71,13 @@ namespace FacturacionelectronicaCore.Web.Controllers
             var result = await _facturaNegocio.EnviarAFacturacion(ordenGuid);
             return Ok(result);
         }
+        [HttpGet("EnviarFacturacion/{idVentaLocal}/{estacion}")]
+        public async Task<ActionResult> EnviarFacturacion(int idVentaLocal, Guid estacion)
+        {
+            var result = await _facturaNegocio.EnviarAFacturacion(idVentaLocal, estacion);
+            return Ok(result);
+        }
+        
 
         [HttpPost("CrearFacturaFacturas")]
         public async Task<ActionResult<string>> CrearFacturaFacturas(IEnumerable<FacturasEntity> facturasGuis)
