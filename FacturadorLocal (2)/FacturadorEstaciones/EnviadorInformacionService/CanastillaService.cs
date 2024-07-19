@@ -338,9 +338,9 @@ namespace EnviadorInformacionService
                 foreach (var canastilla in _factura.canastillas)
                 {
                     lineasImprimir.Add(new LineasImprimir($"Producto: {canastilla.Canastilla.descripcion.Trim()}", false));
-                    lineasImprimir.Add(new LineasImprimir($"Cantidad: {string.Format("{0:#,0.000}", canastilla.cantidad)}", false));
+                    lineasImprimir.Add(new LineasImprimir($"Cantidad: {string.Format("{0:#,0.00}", canastilla.cantidad)}", false));
                     lineasImprimir.Add(new LineasImprimir($"Precio: {canastilla.precioBruto.ToString("F")}", false));
-                    lineasImprimir.Add(new LineasImprimir($"Subtotal: {canastilla.subtotal}", false));
+                    lineasImprimir.Add(new LineasImprimir($"Subtotal: {string.Format("{0:#,0.00}", canastilla.subtotal)}", false));
                 }
 
             }
@@ -361,8 +361,8 @@ namespace EnviadorInformacionService
                 {
                     lineasImprimir.Add(new LineasImprimir($"Producto: {canastilla.Canastilla.descripcion.Trim()}", false));
                     lineasImprimir.Add(new LineasImprimir($"Cantidad: {string.Format("{0:#,0.000}", canastilla.cantidad)}", false));
-                    lineasImprimir.Add(new LineasImprimir($"Iva: {canastilla.iva}  ", false));
-                    lineasImprimir.Add(new LineasImprimir($"Total: {canastilla.total}", false));
+                    lineasImprimir.Add(new LineasImprimir($"Iva: {string.Format("{0:#,0.00}", canastilla.iva)}  ", false));
+                    lineasImprimir.Add(new LineasImprimir($"Total: {string.Format("{0:#,0.00}", canastilla.total)}", false));
                 }
             }
             else
@@ -378,7 +378,7 @@ namespace EnviadorInformacionService
             //lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Subtotal sin IVA : ", String.Format("{0:#,0.00}", _factura.subtotal)), false));
             //lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Subtotal IVA :", $"{_factura.iva}"), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Subtotal IVA :", $"{string.Format("{0:#,0.00}", _factura.iva)}"), false));
             //lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("TOTAL : ", String.Format("{0:#,0.00}", _factura.total)), false));
             //lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));

@@ -38,7 +38,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
             Iva = "0";
             Total = factura.SubTotal.ToString("F3",
                   CultureInfo.InvariantCulture);
-            Subtotal = factura.SubTotal.ToString("F3",
+            Subtotal = (factura.SubTotal+factura.Descuento).ToString("F3",
                   CultureInfo.InvariantCulture);
             FechaProximoMantenimiento = factura.FechaProximoMantenimiento;
             Guid = factura.Guid;
