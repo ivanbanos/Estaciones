@@ -455,5 +455,19 @@ namespace FactoradorEstacionesModelo.Convertidor
 
             return request;
         }
+
+        public IEnumerable<Fidelizado> ConvertirFidelizado(DataTable dt)
+        {
+            List<Fidelizado> response = new List<Fidelizado>();
+
+            response.AddRange(
+                dt.AsEnumerable().Select(dr => new Fidelizado()
+                {
+                    Puntos = (float)dr.Field<double>("puntos"),
+                    Documento = dr.Field<string>("documento")
+                }
+            ));
+            return response;
+        }
     }
 }

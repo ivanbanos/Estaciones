@@ -108,7 +108,8 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
 
                 }
                 if (ordenDeDespachoEntity == null
-                    || ordenDeDespachoEntity.idFacturaElectronica == null)
+                    || ordenDeDespachoEntity.idFacturaElectronica == null
+                    || ordenDeDespachoEntity.idFacturaElectronica.Contains("error"))
                 {
 
                     var ordenesentity = new List<Repositorio.Entities.OrdenDeDespacho>
@@ -312,13 +313,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             {
                 if (ordenDeDespachoEntity.idFacturaElectronica != null)
                 {
-                    if (_alegra.Proveedor == "ALEGRA")
-                    {
-                        var factura = await _alegraFacade.GetFacturaElectronica(ordenDeDespachoEntity.idFacturaElectronica.Split(':')[1]);
-                        return $"Factura electrónica {factura.numberTemplate.fullNumber}\n\rCUFE: {factura.stamp.cufe}";
-                    }
-                    ////var factura = await _alegraFacade.GetFacturaElectronica(facturaEntity.idFacturaElectronica.Split(':')[1]);
-
+                    
                     if (ordenDeDespachoEntity.idFacturaElectronica.Split(':')[0] != "error")
                     {
                         var info = ordenDeDespachoEntity.idFacturaElectronica.Split(':');
@@ -334,11 +329,32 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         {
             try
             {
-                var facturasRepo = _mapper.Map<IEnumerable<Modelo.FacturaCanastilla>, IEnumerable<Repositorio.Entities.FacturaCanastilla>>(facturas);
-
-                foreach (var factura in facturasRepo)
+                foreach (var factura in facturas)
                 {
-                    await _facturaCanastillaRepository.Add(factura, factura.canastillas, estacion);
+                    var isGenerada = true;// _facturaCanastillaRepository.FacturaGenerada(factura.FacturasCanastillaId, estacion);
+                    var idFactruraElectronica = "";
+                    if (!isGenerada)
+                    {
+                        var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.terceroId.Identificacion)).FirstOrDefault();
+                        if (terceroEntity != null)
+                        {
+                            var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
+                            if (_alegra.ValidaTercero && tercero.idFacturacion == null)
+                            {
+
+                                idFactruraElectronica = "error:Tercero no está apto para facturación electrónica";
+                            }
+                            var response = await _alegraFacade.GenerarFacturaElectronica(factura, tercero, estacion);
+
+                            idFactruraElectronica = response;
+                        }
+                        idFactruraElectronica = $"error:Tercero {factura.terceroId} no encontrado";
+
+                        var facturaRepo = _mapper.Map<Modelo.FacturaCanastilla, Repositorio.Entities.FacturaCanastilla>(factura);
+
+                        await _facturaCanastillaRepository.Add(facturaRepo, facturaRepo.canastillas, estacion);
+                    }
+                    
                 }
                 return 1;
             }

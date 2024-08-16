@@ -4,6 +4,7 @@ using FacturacionelectronicaCore.Repositorio.Repositorios;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -53,16 +54,72 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero, Guid estacionGuid)
         {
+            var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
+            var option = new Alegra() { Url = alegraOptions.Url, Token = resolucion?.token ?? alegraOptions.Token, Correo = resolucion?.correo ?? alegraOptions.Correo };
+
             var item = await GetItem(orden.Combustible);
             if (item == null)
             {
-                return "Combustible no creado";
+                return $"error:Combustible no creado:{orden.Combustible}";
             }
+            var id = 0;
+            var contacts = await GetTerceroByIdentification(tercero.Identificacion.Trim(), estacionGuid);
+            if (!contacts.Any())
+            {
+                try
+                {
 
+
+                    var contact = tercero.ConvertirAContact();
+                    Console.WriteLine(JsonConvert.SerializeObject(contact));
+                    id = await contactsHandler.CrearCliente
+                         (contact, option);
+                    contacts = await GetTerceroByIdentification(tercero.Identificacion.Trim(), estacionGuid);
+                    
+                }
+                catch (Exception ex)
+                {
+
+                    return "error:" + JsonConvert.SerializeObject(contacts)   + ":" + JsonConvert.SerializeObject(orden.ConvertirAInvoice(item)) + ":" + JsonConvert.SerializeObject(tercero.ConvertirAContact());
+                }
+            }
+            id = contacts?.First()?.id ?? 0;
+            var invoice = null as ResponseInvoice;
+            try
+            {
+                invoice = await invoiceHandler.CrearFatura(orden.ConvertirAInvoice(item, id), option);
+                return "Ok:"+invoice.numberTemplate.prefix + invoice.numberTemplate.number + ":" + invoice.stamp.cufe + ":" + JsonConvert.SerializeObject(invoice) + ":" + JsonConvert.SerializeObject(orden.ConvertirAInvoice(item)) + ":" + JsonConvert.SerializeObject(tercero.ConvertirAContact());
+            } catch(Exception ex)
+            {
+
+                return "error:"  + JsonConvert.SerializeObject(invoice) + ":" + JsonConvert.SerializeObject(orden.ConvertirAInvoice(item)) + ":" + tercero.ConvertirAContact();
+            }
+        }
+
+        private async Task<IEnumerable<TerceroResponse>> GetTerceroByIdentification(string identificacion, Guid estacionGuid)
+        {
             var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
             var option = new Alegra() { Url = alegraOptions.Url, Token = resolucion?.token ?? alegraOptions.Token, Correo = resolucion?.correo ?? alegraOptions.Correo };
-            var invoice = await invoiceHandler.CrearFatura(orden.ConvertirAInvoice(item), option);
-            return invoice.numberTemplate.prefix + invoice.numberTemplate.number + ":" + invoice.id;
+
+            using (var client = new HttpClient())
+            {
+                client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
+                client.DefaultRequestHeaders.Authorization =
+    new AuthenticationHeaderValue("Basic", option.Auth);
+                var path = $"{option.Url}contacts/?order_direction=ASC&identification={identificacion}";
+                var response = client.GetAsync(path).Result;
+                string responseBody = await response.Content.ReadAsStringAsync();
+                try
+                {
+                    response.EnsureSuccessStatusCode();
+                }
+                catch (Exception ex)
+                {
+
+                }
+
+                return JsonConvert.DeserializeObject<IEnumerable<TerceroResponse>>(responseBody);
+            }
         }
 
         public async Task<string> GenerarFacturaElectronica(List<Modelo.OrdenDeDespacho> ordenes, Modelo.Tercero tercero, IEnumerable<Item> items)
@@ -128,6 +185,11 @@ new AuthenticationHeaderValue("Basic", alegraOptions.Auth);
 
             return JsonConvert.DeserializeObject<IEnumerable<TerceroResponse>>(responseBody);
         }
+        }
+
+        public Task<string> GenerarFacturaElectronica(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid)
+        {
+            throw new NotImplementedException();
         }
     }
 }

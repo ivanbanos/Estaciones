@@ -164,8 +164,8 @@ namespace EnviadorInformacionService
         public bool EnviarFacturas(IEnumerable<FacturaSiges> facturas, IEnumerable<FormaPagoSiges> formas, Guid estacion, string token)
         {
             RequestEnviarFacturas request = new RequestEnviarFacturas();
-            request.facturas = facturas.Where(x => x.Consecutivo != 0).Select(x => new FacturacionelectronicaCore.Negocio.Modelo.Factura(x, formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).FirstOrDefault()));
-            request.ordenDeDespachos = facturas.Where(x => x.Consecutivo == 0).Select(x => new FacturacionelectronicaCore.Negocio.Modelo.OrdenDeDespacho(x, formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).FirstOrDefault()));
+            request.facturas = new List<FacturacionelectronicaCore.Negocio.Modelo.Factura>();
+            request.ordenDeDespachos = facturas.Select(x => new FacturacionelectronicaCore.Negocio.Modelo.OrdenDeDespacho(x, formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).FirstOrDefault()));
             request.Estacion = estacion;
             using (var client = new HttpClient())
             {

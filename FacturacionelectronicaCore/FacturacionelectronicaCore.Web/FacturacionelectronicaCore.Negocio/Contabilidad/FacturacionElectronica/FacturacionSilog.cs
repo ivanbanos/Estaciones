@@ -48,7 +48,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             try
             {
 
-                var invoice = await GetFacturaSilog(factura, tercero, estacionGuid);
+                var invoice = await GetFacturaSilog(factura, tercero, estacionGuid.ToString());
                 Console.WriteLine(JsonConvert.SerializeObject(invoice));
                 Regex regex = new Regex(@"[ ]{2,}", RegexOptions.None);
                 var str = regex.Replace(factura.Tercero.Nombre, @" ");
@@ -75,7 +75,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         var respuestaSilog = JsonConvert.DeserializeObject<REspuestaSilog>(responseBody);
                         if (responseBody.ToLower().Contains("error"))
                         {
-                           throw new AlegraException(responseBody + JsonConvert.SerializeObject(request));
+                            throw new AlegraException(responseBody + JsonConvert.SerializeObject(request));
 
                         }
                         else
@@ -101,7 +101,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
         }
 
-        public async Task<FacturaSilog> GetFacturaSilog(Modelo.Factura x, Modelo.Tercero tercero, Guid estacionGuid)
+        public async Task<FacturaSilog> GetFacturaSilog(Modelo.Factura x, Modelo.Tercero tercero, string estacionGuid)
         {
             //var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
 
@@ -128,7 +128,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
             return new FacturaSilog()
             {
-                Guid = estacionGuid,
+                Guid = Guid.Parse(estacionGuid),
                 Consecutivo = x.Consecutivo,
                 Combustible = x.Combustible,
                 Cantidad = x.Cantidad,
@@ -223,7 +223,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     return "PERSONA_NATURAL";
             }
         }
-        public async Task<FacturaSilog> GetFacturaSilog(Modelo.OrdenDeDespacho x, Modelo.Tercero tercero, Guid estacionGuid)
+        public async Task<FacturaSilog> GetFacturaSilog(Modelo.OrdenDeDespacho x, Modelo.Tercero tercero, string estacionGuid)
         {
             // var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
             var nombre = "";
@@ -250,39 +250,40 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
             return new FacturaSilog()
             {
-                Guid = estacionGuid,
-            Consecutivo = x.IdVentaLocal,
-            Combustible = x.Combustible,
-            Cantidad = (decimal)x.Cantidad,
-            Precio = (decimal)x.Precio,
-            Total = (decimal)x.Total,
-            Placa = x.Placa,
-            Kilometraje = x.Kilometraje,
-            Surtidor = x.Surtidor + "",
-            Cara = x.Cara + "",
-            Manguera = x.Manguera + "",
-            FormaDePago = x.FormaDePago,
-            Fecha = x.Fecha,
-            Tercero = new TerceroSilog() {
-                Nombre = string.IsNullOrEmpty(tercero.Nombre) ? "No informado" : tercero.Nombre,
-            Direccion = string.IsNullOrEmpty(tercero.Direccion) ? "No informado" : tercero.Direccion,
-            Telefono = string.IsNullOrEmpty(tercero.Telefono) ? "No informado" : tercero.Telefono,
-            Correo = string.IsNullOrEmpty(tercero.Correo) ? "No informado" : tercero.Correo,
-            DescripcionTipoIdentificacion = string.IsNullOrEmpty(tercero.DescripcionTipoIdentificacion) ? "No especificada" : tercero.DescripcionTipoIdentificacion,
-            Identificacion = string.IsNullOrEmpty(tercero.Identificacion) ? "No informado" : tercero.Identificacion,
-            IdLocal = tercero.IdLocal
-        },
-            Descuento = x.Descuento,
-            IdLocal = x.IdLocal,
-            IdVentaLocal = x.IdVentaLocal,
-            IdTerceroLocal = x.Tercero.IdLocal,
-            FechaProximoMantenimiento = x.FechaProximoMantenimiento ,
-            SubTotal = x.SubTotal,
-            Vendedor = x.Vendedor,
-            Identificacion = x.Tercero.Identificacion,
-            Prefijo = alegraOptions.Prefix,
-            Cedula = tercero.Identificacion,
-        };
+                Guid = Guid.Parse(estacionGuid),
+                Consecutivo = x.IdVentaLocal,
+                Combustible = x.Combustible,
+                Cantidad = (decimal)x.Cantidad,
+                Precio = (decimal)x.Precio,
+                Total = (decimal)x.Total,
+                Placa = x.Placa,
+                Kilometraje = x.Kilometraje,
+                Surtidor = x.Surtidor + "",
+                Cara = x.Cara + "",
+                Manguera = x.Manguera + "",
+                FormaDePago = x.FormaDePago,
+                Fecha = x.Fecha,
+                Tercero = new TerceroSilog()
+                {
+                    Nombre = string.IsNullOrEmpty(tercero.Nombre) ? "No informado" : tercero.Nombre,
+                    Direccion = string.IsNullOrEmpty(tercero.Direccion) ? "No informado" : tercero.Direccion,
+                    Telefono = string.IsNullOrEmpty(tercero.Telefono) ? "No informado" : tercero.Telefono,
+                    Correo = string.IsNullOrEmpty(tercero.Correo) ? "No informado" : tercero.Correo,
+                    DescripcionTipoIdentificacion = string.IsNullOrEmpty(tercero.DescripcionTipoIdentificacion) ? "No especificada" : tercero.DescripcionTipoIdentificacion,
+                    Identificacion = string.IsNullOrEmpty(tercero.Identificacion) ? "No informado" : tercero.Identificacion,
+                    IdLocal = tercero.IdLocal
+                },
+                Descuento = x.Descuento,
+                IdLocal = x.IdLocal,
+                IdVentaLocal = x.IdVentaLocal,
+                IdTerceroLocal = x.Tercero.IdLocal,
+                FechaProximoMantenimiento = x.FechaProximoMantenimiento,
+                SubTotal = x.SubTotal,
+                Vendedor = x.Vendedor,
+                Identificacion = x.Tercero.Identificacion,
+                Prefijo = alegraOptions.Prefix,
+                Cedula = tercero.Identificacion,
+            };
         }
 
         public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero, Guid estacionGuid)
@@ -291,7 +292,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             try
             {
 
-                var invoice = await GetFacturaSilog(orden, tercero, estacionGuid);
+                var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
+                var invoice = await GetFacturaSilog(orden, tercero, estacionGuid.ToString());
 
                 Console.WriteLine(JsonConvert.SerializeObject(invoice));
                 Regex regex = new Regex(@"[ ]{2,}", RegexOptions.None);
@@ -299,6 +301,14 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 Console.WriteLine(orden.Vendedor);
                 var cedula = await _empleadoRepositorio.GetEmpleadoByName(orden.Vendedor.Trim());
                 RequestContabilidad request = new RequestContabilidad(invoice, cedula?.Trim(), alegraOptions, estacionGuid.ToString());
+                if (resolucion != null && !string.IsNullOrEmpty(resolucion.token))
+                {
+
+                    invoice = await GetFacturaSilog(orden, tercero, resolucion.token);
+
+                    request = new RequestContabilidad(invoice, cedula?.Trim(), alegraOptions, resolucion.token);
+                }
+
 
                 using (var client = new HttpClient())
                 {
@@ -323,7 +333,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         }
                         else
                         {
-                            return "Ok:" + respuestaSilog.datos_factura.FirstOrDefault()?.arr_facturas.FirstOrDefault()?.prefijo_dian +respuestaSilog.datos_factura.FirstOrDefault()?.arr_facturas.FirstOrDefault()?.nro_dian + ":" + respuestaSilog.uuid_cufe;
+                            return "Ok:" + respuestaSilog.datos_factura.FirstOrDefault()?.arr_facturas.FirstOrDefault()?.prefijo_dian + respuestaSilog.datos_factura.FirstOrDefault()?.arr_facturas.FirstOrDefault()?.nro_dian + ":" + respuestaSilog.uuid_cufe;
 
                         }
                     }
@@ -372,7 +382,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<ResolucionElectronica> GetResolucionElectronica(string estacion)
         {
-            try {
+            try
+            {
                 var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacion);
                 return new ResolucionElectronica
                 {
@@ -380,7 +391,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     prefix = resolucion.prefijo
 
                 };
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
                 return new ResolucionElectronica
                 {
@@ -389,20 +401,20 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
                 };
             }
-            
+
 
         }
 
         public async Task<string> getJson(Modelo.OrdenDeDespacho orden, Guid estacion)
         {
-            var factura = await GetFacturaSilog(orden, orden.Tercero, estacion);
+            var factura = await GetFacturaSilog(orden, orden.Tercero, estacion.ToString());
 
             Console.WriteLine(JsonConvert.SerializeObject(factura));
             Regex regex = new Regex(@"[ ]{2,}", RegexOptions.None);
             var str = regex.Replace(orden.Tercero.Nombre, @" ");
             Console.WriteLine(orden.Vendedor);
             var cedula = await _empleadoRepositorio.GetEmpleadoByName(orden.Vendedor.Trim());
-           return JsonConvert.SerializeObject(new RequestContabilidad(factura, cedula?.Trim(), alegraOptions, estacion.ToString()));
+            return JsonConvert.SerializeObject(new RequestContabilidad(factura, cedula?.Trim(), alegraOptions, estacion.ToString()));
 
         }
         public async Task<IEnumerable<TerceroResponse>> GetTerceros(int start)
@@ -427,6 +439,11 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
                 return JsonConvert.DeserializeObject<IEnumerable<TerceroResponse>>(responseBody);
             }
+        }
+
+        public Task<string> GenerarFacturaElectronica(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid)
+        {
+            throw new NotImplementedException();
         }
     }
 }

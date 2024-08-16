@@ -29,6 +29,7 @@ namespace EnviadorInformacionService
         private readonly IConexionEstacionRemota _conexionEstacionRemota;
         private readonly Guid estacionFuente;
         private readonly bool MultiplicarPor10;
+        private readonly IFidelizacion _fidelizacion;
 
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly bool generaFacturaElectronica;
@@ -90,6 +91,7 @@ namespace EnviadorInformacionService
             _estacionesRepositorio = new EstacionesRepositorioSqlServer();
             formas = _estacionesRepositorio.BuscarFormasPagos();
             imprimiendo = 0;
+            _fidelizacion = new FidelizacionConexionApi();
         }
         public void Execute()
         {
@@ -567,6 +569,24 @@ namespace EnviadorInformacionService
         private EstacionesRepositorioSqlServer _estacionesRepositorio;
         private List<FormasPagos> formas;
         private List<LineasImprimir> lineasImprimir;
+
+        private IEnumerable<LineasImprimir> getPuntos(int ventaId)
+        {
+            var fidelizado = _estacionesRepositorio.getFidelizado(ventaId);
+            if (fidelizado != null)
+            {
+                fidelizado = _fidelizacion.GetFidelizados(fidelizado.Documento).Result != null ? _fidelizacion.GetFidelizados(fidelizado.Documento).Result.FirstOrDefault() : fidelizado;
+                if (fidelizado != null)
+                {
+                    return new List<LineasImprimir>() {
+                    new LineasImprimir(formatoTotales("Fidelizado:", fidelizado.Nombre??fidelizado.Documento), false)
+                , new LineasImprimir(formatoTotales("Puntos:", fidelizado.Puntos.ToString()), false)};
+                }
+            }
+            return new List<LineasImprimir>() { new LineasImprimir("Usuario no fidelizado", false) };
+
+
+        }
         private void Imprimir(FactoradorEstacionesModelo.Objetos.Factura factura)
         {
             _factura = factura;
@@ -738,6 +758,13 @@ namespace EnviadorInformacionService
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Manguera : ", _mangueras.COD_MAN + ""), false));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendedor : ", _venta.EMPLEADO.Trim() + ""), false));
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+            if (MultiplicarPor10)
+            {
+                _venta.PRECIO_UNI = _venta.PRECIO_UNI * 10;
+                _venta.VALORNETO = _venta.VALORNETO * 10;
+                _venta.VALORNETO = _venta.TOTAL * 10;
+                _venta.Descuento = _venta.Descuento * 10;
+            }
             if (_infoEstacion.ImpresionPDA)
             {
                 lineasImprimir.Add(new LineasImprimir($"Producto: {_mangueras.DESCRIPCION.Trim()}", false));

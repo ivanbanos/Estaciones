@@ -11,9 +11,6 @@ namespace FacturacionelectronicaCore.Web.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-#if !DEBUG
-    [Authorize]
-#endif
     public class TurnosController : ControllerBase
     {
         private readonly ITurnoNegocio _turnoNegocio;

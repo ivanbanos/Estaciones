@@ -927,16 +927,18 @@ begin try
 
     insert into @facturasTemp (id)
 	select 
-	top(100)ventaId
+	top(20)ventaId
 	from FacturasPOS
-    where enviada = 0 or enviada is null
+    where (enviada = 0 or enviada is null)
+    and fecha < DATEADD(minute, -10, GETDATE())
 	order by ventaId desc
 
 	insert into @facturasTemp (id)
 	select 
-	top(100)ventaId
+	top(20)ventaId
 	from OrdenesDeDespacho
-    where enviada = 0 or enviada is null
+    where (enviada = 0 or enviada is null)
+    and fecha < DATEADD(minute, -10, GETDATE())
 	order by ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int
@@ -1388,12 +1390,6 @@ begin try
 		select @consecutivoActual = case when isnull(max(consecutivo)+1, @consecutivoActual) > @consecutivoActual then isnull(max(consecutivo)+1, @consecutivoActual) else @consecutivoActual end  from FacturasCanastilla where resolucionId = @ResolucionId
 
 
-		if @fechafinal is null or @fechafinal < GETDATE() or @ConsecutivoFinal <= @consecutivoActual
-		begin
-			update Resoluciones set estado = 'VE' WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-			select @facturaPOSId as facturaPOSId
-		end
-		else
 		begin
 			if @soloGeneraOrdenes = 'SI' or (  @clientesCreditoGeneranFactura != 'SI' and @COD_FOR_PAG !=1)
 			begin
@@ -1403,37 +1399,22 @@ begin try
 			
 				select @facturaPOSId = SCOPE_IDENTITY()
 
-				select @facturaPOSId as facturaPOSId
 				
 			end
 			else
 			begin
-			while @facturaPOSId is null
-			begin
-				select @verificarConsecutivo = null
-				select @verificarConsecutivo = consecutivo from FacturasPOS  where  consecutivo = @consecutivoActual
-				if (@verificarConsecutivo is not null )
-				begin 
-					update Resoluciones set consecutivoActual = consecutivoActual+1 WHERE esPos = 'S' and estado = 'AC'  and (@mismaResolucion = 'SI' or tipo = 0)
-					select @consecutivoActual=consecutivoActual from Resoluciones where esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-				end
-				else
-				begin
-					insert into FacturasPOS (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago)
-					select @Fecha, @ResolucionId, @consecutivoActual, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @COD_FOR_PAG
-					from Resoluciones WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
+			insert into OrdenesDeDespacho (fecha,resolucionId,consecutivo,ventaId,estado,terceroid, Placa, Kilometraje, enviada, codigoFormaPago)
+				values(@Fecha, @ResolucionId, -1, @ventaId, 'CR',@terceroId, @Placa, @Kilometraje, 0, @COD_FOR_PAG)
 			
-					select @facturaPOSId = SCOPE_IDENTITY()
-
-					update Resoluciones set consecutivoActual = @consecutivoActual+1 WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 0)
-				end
+				select @facturaPOSId = SCOPE_IDENTITY()
 			end
 			--exec MandarImprimir @ventaId=@ventaId
-				select @facturaPOSId as facturaPOSId
-			end
+			
 		end
+        
 	end
 
+				select @facturaPOSId as facturaPOSId
 	
 end try
 begin catch
@@ -2007,7 +1988,7 @@ select @soloOrdenes=configId from configuracionEstacion where descripcion = 'Sol
 
 IF @soloOrdenes is null
 begin
-INSERT INTO configuracionEstacion(descripcion,valor) values('SoloGeneraOrdenes','SI')
+INSERT INTO configuracionEstacion(descripcion,valor) values('SoloGeneraOrdenes','NO')
 end
 GO
 
@@ -3288,7 +3269,7 @@ CREATE procedure [dbo].GetVentaFidelizarAutomatica
 as
 begin try
     set nocount on;
-	select TOP (1) Venta.total as ValorVenta, Fidelizado.documento as DocumentoFidelizado, Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo) as Factura  from Venta
+	select TOP (1) Venta.total as ValorVenta, Fidelizado.documento as DocumentoFidelizado, case when FacturasPOS.ventaId is null then convert(varchar,OrdenesDeDespacho.facturaPOSId) else Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo) end as Factura   from Venta
 	left join FacturasPOS on FacturasPOS.ventaId = Venta.Id
     left join OrdenesDeDespacho on OrdenesDeDespacho.ventaId = Venta.Id
 	inner join Resoluciones on  (FacturasPOS.resolucionId is not null and FacturasPOS.resolucionId = Resoluciones.ResolucionId) or (OrdenesDeDespacho.resolucionId is not null and OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId) 
@@ -3693,7 +3674,7 @@ CREATE procedure [dbo].GetVentaFidelizarAutomaticaPorVenta
 as
 begin try
     set nocount on;
-	select TOP (1) Venta.total as ValorVenta, '' as DocumentoFidelizado, Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo) as Factura  from Venta
+	select TOP (1) Venta.total as ValorVenta, '' as DocumentoFidelizado, case when FacturasPOS.ventaId is null then convert(varchar,OrdenesDeDespacho.facturaPOSId) else Resoluciones.descripcion+'-'+convert(varchar,FacturasPOS.consecutivo) end as Factura  from Venta
 	left join FacturasPOS on FacturasPOS.ventaId = Venta.Id
     left join OrdenesDeDespacho on OrdenesDeDespacho.ventaId = Venta.Id
 	inner join Resoluciones on  (FacturasPOS.resolucionId is not null and FacturasPOS.resolucionId = Resoluciones.ResolucionId) or (OrdenesDeDespacho.resolucionId is not null and OrdenesDeDespacho.resolucionId = Resoluciones.ResolucionId) 

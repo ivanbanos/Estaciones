@@ -366,7 +366,7 @@ namespace SigesServicio
             }
             else
             {
-                lineasImprimir.Add(new LineasImprimir("SISTEMA POS No: " + _factura.DescripcionResolucion + "-" + _factura.Consecutivo, true));
+                lineasImprimir.Add(new LineasImprimir("Orden de Servicio Temporal: " + _factura.facturaPOSId, true));
             }
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));

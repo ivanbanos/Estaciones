@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 
 namespace FacturacionelectronicaCore.Negocio.Modelo
 {
@@ -38,6 +39,14 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
 
         public OrdenDeDespacho(FactoradorEstacionesModelo.Objetos.Factura x, string forma)
         {
+            var MultiplicarPor10 = bool.Parse(ConfigurationManager.AppSettings["MultiplicarPor10"]);
+            if (MultiplicarPor10)
+            {
+                x.Venta.PRECIO_UNI = x.Venta.PRECIO_UNI * 10;
+                x.Venta.VALORNETO = x.Venta.VALORNETO * 10;
+                x.Venta.VALORNETO = x.Venta.TOTAL * 10;
+                x.Venta.Descuento = x.Venta.Descuento * 10;
+            }
             Guid = Guid.NewGuid();
             Combustible = x.Venta.Combustible;
             Cantidad = (double)x.Venta.CANTIDAD;

@@ -858,5 +858,14 @@ namespace FacturadorEstacionesRepositorio
 
         }
 
+        public Fidelizado getFidelizado(int ventaId)
+        {
+DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetFidelizado",
+                            new Dictionary<string, object>{
+
+                    {"@ventaId", ventaId }
+                            });
+            return _convertidor.ConvertirFidelizado(dt).FirstOrDefault();
+    }
     }
 }

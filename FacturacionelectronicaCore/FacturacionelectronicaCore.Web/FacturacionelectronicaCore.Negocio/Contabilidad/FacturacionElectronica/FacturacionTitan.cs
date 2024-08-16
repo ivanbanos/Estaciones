@@ -491,5 +491,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 return JsonConvert.DeserializeObject<IEnumerable<TerceroResponse>>(responseBody);
             }
         }
+
+        public Task<string> GenerarFacturaElectronica(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

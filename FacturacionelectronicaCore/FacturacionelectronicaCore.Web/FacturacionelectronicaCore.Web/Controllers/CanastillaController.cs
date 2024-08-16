@@ -12,9 +12,6 @@ namespace FacturacionelectronicaCore.Web.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-#if !DEBUG
-    [Authorize]
-#endif
     public class CanastillaController : ControllerBase
     {
         private readonly ICanastillaNegocio _canastillaNegocio;

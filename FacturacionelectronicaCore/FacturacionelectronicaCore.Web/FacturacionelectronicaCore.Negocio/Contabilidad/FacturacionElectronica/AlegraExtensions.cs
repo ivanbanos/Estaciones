@@ -103,15 +103,16 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                  }
             };
         }
-        public static Invoice ConvertirAInvoice(this Modelo.OrdenDeDespacho orden, Item item)
+        public static Invoice ConvertirAInvoice(this Modelo.OrdenDeDespacho orden, Item item, int client=0)
         {
             return new Invoice()
             {
-                client = orden.Tercero.idFacturacion,
+                client = client!=0?client.ToString():orden.Tercero.idFacturacion,
                 date = orden.Fecha.ToString("yyyy-MM-dd"),
                 dueDate = orden.Fecha.ToString("yyyy-MM-dd"),
                 paymentForm = GetPaymentForm(orden.FormaDePago),
                 paymentMethod = GetPaymentMethod(orden.FormaDePago),
+                numberDeliveryOrder=orden.IdVentaLocal.ToString(),
                  stamp = new Stamp() { generateStamp = true},
                  items = new System.Collections.Generic.List<ItemInvoice>() { 
                  new ItemInvoice()
@@ -206,23 +207,52 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public static Contacts ConvertirAContact(this Modelo.Tercero tercero)
         {
-            return new Contacts()
+            if (tercero.DescripcionTipoIdentificacion == "Nit")
             {
-                name = new Name() { firstName = tercero.Nombre, lastName = tercero.Apellidos, secondName = tercero.Segundo },
-                identificationObject = new Identification() { number = tercero.Identificacion, type = GetTipoIdentificacion(tercero.DescripcionTipoIdentificacion) },
-                address = new Address() { city = tercero .Municipio, country = tercero.Pais, department = tercero.Departamento, description = tercero.Direccion, zipCode = tercero.CodigoPostal },
-                comments = tercero.Comentarios,
-                email = tercero.Correo,
-                kindOfPerson = GetKindOfPErson(tercero.TipoPersona),
-                mobile = tercero.Celular,
-                phonePrimary = tercero.Telefono,
-                phoneSecondary = tercero.Telefono2,
-                observations = tercero.Comentarios,
-                regime = GetRegime(tercero.ResponsabilidadTributaria),
-                seller = tercero.Vendedor,
-                settings = new Settings() { sendElectronicDocuments = true},
-                type = new System.Collections.Generic.List<string>() { "client" }
-            };
+
+                return new Contacts()
+                {
+                    name = tercero.Nombre,
+                    identificationObject = new Identification() { 
+                        number = tercero.Identificacion, type = GetTipoIdentificacion(tercero.DescripcionTipoIdentificacion) ,
+                    dv=9},
+                    kindOfPerson = GetKindOfPErson(tercero.DescripcionTipoIdentificacion),
+                    regime = GetRegime(tercero.ResponsabilidadTributaria),
+                    ignoreRepeated=false
+                };
+            }
+            else
+            {
+                var nombre = "";
+                var apellido = "";
+                var nombreCompleto = tercero.Nombre.Trim();
+                if (string.IsNullOrEmpty(tercero.Apellidos) || tercero.Apellidos.Contains("no informado"))
+                {
+                    if (nombreCompleto.Split(' ').Count() > 1)
+                    {
+                        nombre = nombreCompleto.Substring(0, nombreCompleto.LastIndexOf(" "));
+                        apellido = nombreCompleto.Split(' ').Last();
+                    }
+                    else
+                    {
+                        nombre = nombreCompleto;
+                        apellido = "no informado";
+                    }
+                }
+                else
+                {
+                    nombre = nombreCompleto;
+                    apellido = tercero.Apellidos;
+                }
+                return new Contacts()
+                {
+                    nameObject = new Name() { firstName = nombre, lastName = apellido },
+                    identificationObject = new Identification() { number = tercero.Identificacion, type = GetTipoIdentificacion(tercero.DescripcionTipoIdentificacion) },
+                    kindOfPerson = GetKindOfPErson(tercero.DescripcionTipoIdentificacion),
+                    regime = GetRegime(tercero.ResponsabilidadTributaria),
+                    ignoreRepeated = false
+                };
+            }
         }
 
         private static string GetRegime(int responsabilidadTributaria)
@@ -244,17 +274,17 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
         }
 
-        private static string GetKindOfPErson(int tipoPersona)
+        private static string GetKindOfPErson(string descripcionTipoIdentificacion)
         {
-            switch (tipoPersona)
+            if (descripcionTipoIdentificacion == "Nit")
             {
-                case 1:
-                    return "LEGAL_ENTITY";
-                case 2:
-                    return "PERSON_ENTITY";
-                default:
-                    return "LEGAL_ENTITY";
+                return "LEGAL_ENTITY";
             }
+            else
+            {
+                return "PERSON_ENTITY";
+            }
+        
         }
 
         private static string GetTipoIdentificacion(string descripcionTipoIdentificacion)

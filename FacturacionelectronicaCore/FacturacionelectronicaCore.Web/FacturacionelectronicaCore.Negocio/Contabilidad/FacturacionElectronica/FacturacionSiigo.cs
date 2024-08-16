@@ -476,5 +476,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         {
             throw new NotImplementedException();
         }
+
+        public Task<string> GenerarFacturaElectronica(FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

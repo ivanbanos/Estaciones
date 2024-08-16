@@ -17,6 +17,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
     {
         public string type { get; set; }
         public string number { get; set; }
+        public int dv { get; internal set; }
     }
 
     public class Settings
@@ -35,8 +36,11 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
     public class Contacts
     {
-        public int id { internal get; set; }
-        public Name name { get; set; }
+        public bool ignoreRepeated { get; set; }
+
+        public int id {  get; set; }
+        public string name { get; set; }
+        public Name nameObject { get; set; }
         public Identification identificationObject { get; set; }
         public string email { get; set; }
         public string phonePrimary { get; set; }

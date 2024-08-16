@@ -11,6 +11,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
     {
         public Task<string> GenerarFacturaElectronica(Modelo.Factura factura, Modelo.Tercero tercero, Guid estacionGuid);
         public Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho factura, Modelo.Tercero tercero, Guid estacionGuid);
+        public Task<string> GenerarFacturaElectronica(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid);
         public Task<int> GenerarTercero(Modelo.Tercero tercero);
         Task ActualizarTercero(Modelo.Tercero t, string idFacturacion);
         Task<Item> GetItem(string name);

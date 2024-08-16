@@ -11,9 +11,6 @@ namespace FacturacionelectronicaCore.Web.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-#if !DEBUG
-    [Authorize]
-#endif
     public class CuposInfoController : ControllerBase
     {
         private readonly ICupoNegocio _cupoNegocio;
