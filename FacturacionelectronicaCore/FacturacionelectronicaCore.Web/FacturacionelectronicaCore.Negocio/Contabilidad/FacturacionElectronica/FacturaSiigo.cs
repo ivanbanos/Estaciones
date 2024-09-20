@@ -119,7 +119,7 @@ public class FacturaSiigo
     public DocumentSiigoRequest document { get; set; }
     public string date { get; set; }
     public CustomerSiigoRequest customer { get; set; }
-    public int cost_center { get; set; }
+    public int? cost_center { get; set; }
     public CurrencySiigoRequest currency { get; set; }
     public int seller { get; set; }
     public StampSiigoRequest stamp { get; set; }

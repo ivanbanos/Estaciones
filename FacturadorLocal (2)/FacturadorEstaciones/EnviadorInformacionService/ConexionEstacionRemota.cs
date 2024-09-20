@@ -7,6 +7,7 @@ using FacturacionelectronicaCore.Web.Controllers;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OfficeOpenXml.FormulaParsing.LexicalAnalysis;
 using ReporteFacturas;
 using System;
 using System.Collections.Generic;
@@ -375,6 +376,21 @@ namespace EnviadorInformacionService
                 var response = client.PostAsync($"{url}{path}", content).Result;
                 response.EnsureSuccessStatusCode();
                 string responsebody = response.Content.ReadAsStringAsync().Result;
+            }
+        }
+
+        public string GetInfoFacturaElectronicaCanastilla(int consecutivo, Guid estacionFuente, string token)
+        {
+            using (var client = new HttpClient())
+            {
+                var path = $"/api/ManejadorInformacionLocal/GetInfoFacturaElectronicaCanastilla/{consecutivo}/estacion/{estacionFuente}";
+
+                client.Timeout = new TimeSpan(0, 0, 0, 5, 0);
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+                var response = client.GetAsync($"{url}{path}").Result;
+                response.EnsureSuccessStatusCode();
+                return response.Content.ReadAsStringAsync().Result;
             }
         }
     }

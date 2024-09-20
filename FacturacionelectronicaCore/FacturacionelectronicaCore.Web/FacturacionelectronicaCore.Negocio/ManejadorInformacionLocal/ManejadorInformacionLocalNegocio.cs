@@ -95,8 +95,8 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                     || ordenDeDespachoEntity.idFacturaElectronica.Contains("error"))
                     && _alegra.EnvioDirecto)
                 {
-                    if ((x.Fecha > DateTime.Now.AddDays(-1) 
-                        || (_alegra.EnviaMes && DateTime.Now.Month == x.Fecha.Month))
+                    if ((x.Fecha > DateTime.Now.AddMonths(-1) 
+                        || (_alegra.EnviaMes && DateTime.Now.AddMonths(-1) < x.Fecha))
                         && (_alegra.EnviaCreditos || (!x.FormaDePago.ToLower().Contains("dir") && !x.FormaDePago.ToLower().Contains("calibra") && !x.FormaDePago.ToLower().Contains("puntos"))))
                     {
 
@@ -109,7 +109,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                 }
                 if (ordenDeDespachoEntity == null
                     || ordenDeDespachoEntity.idFacturaElectronica == null
-                    || ordenDeDespachoEntity.idFacturaElectronica.Contains("error"))
+                    || ordenDeDespachoEntity.idFacturaElectronica.Contains("error") || !_alegra.Desactivado)
                 {
 
                     var ordenesentity = new List<Repositorio.Entities.OrdenDeDespacho>
@@ -143,7 +143,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                         SubTotal = x.SubTotal,
                         Surtidor = x.Surtidor,
                         Total = x.Total,
-                        idFacturaElectronica = x.idFacturaElectronica,
+                        idFacturaElectronica = x.idFacturaElectronica ?? ordenDeDespachoEntity?.idFacturaElectronica,
                         Vendedor = x.Vendedor,
                         }
                     };

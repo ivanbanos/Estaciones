@@ -11,6 +11,9 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Threading;
+using FacturacionelectronicaCore.Repositorio.Entities;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
@@ -24,6 +27,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         private readonly ResolucionNumber _resolucionNumber;
         private readonly IResolucionRepositorio _resolucionRepositorio;
         private readonly IEmpleadoRepositorio _empleadoRepositorio;
+        private static readonly Semaphore _semaphore = new(initialCount: 1, maximumCount: 1);
 
         public FacturacionSiigo(IOptions<Alegra> alegra, ResolucionNumber resolucionNumber, IResolucionRepositorio resolucionRepositorio, IEmpleadoRepositorio empleadoRepositorio)
         {
@@ -42,21 +46,31 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<string> GenerarFacturaElectronica(Modelo.Factura factura, Modelo.Tercero tercero, Guid estacionGuid)
         {
+            var invoice = await GetFacturaSiigo(factura, tercero, estacionGuid);
             try
             {
 
-                var invoice = await GetFacturaSiigo(factura, tercero, estacionGuid);
-                Console.WriteLine(JsonConvert.SerializeObject(invoice));
+                Console.WriteLine(JsonConvert.SerializeObject(invoice,
+                            Newtonsoft.Json.Formatting.None,
+                            new JsonSerializerSettings
+                            {
+                                NullValueHandling = NullValueHandling.Ignore
+                            }));
                 using (var client = new HttpClient())
                 {
                     try
                     {
-                        var token = await GetToken();
+                        var token = await GetToken(null);
                         client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
                         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);
                         client.DefaultRequestHeaders.Add("Partner-Id", "SIGES");
-                        var content = new StringContent(JsonConvert.SerializeObject(invoice));
+                        var content = new StringContent(JsonConvert.SerializeObject(invoice,
+                            Newtonsoft.Json.Formatting.None,
+                            new JsonSerializerSettings
+                            {
+                                NullValueHandling = NullValueHandling.Ignore
+                            }));
                         content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
                         Console.WriteLine($"{alegraOptions.Url}v1/invoices");
                         var response = await client.PostAsync($"{alegraOptions.Url}v1/invoices", content);
@@ -68,8 +82,13 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         var respuestaSiigo = JsonConvert.DeserializeObject<FacturaSiigoResponse>(responseBody);
                         if (responseBody.ToLower().Contains("error"))
                         {
-                            throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
 
+                            return "error:" + responseBody + ":" + JsonConvert.SerializeObject(invoice,
+                            Newtonsoft.Json.Formatting.None,
+                            new JsonSerializerSettings
+                            {
+                                NullValueHandling = NullValueHandling.Ignore
+                            });
                         }
                         else
                         {
@@ -83,7 +102,13 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
                         Console.WriteLine(ex);
                         Console.WriteLine(ex.StackTrace);
-                        throw;
+                        return "error:" + ex.Message +  ":" + JsonConvert.SerializeObject(invoice,
+                            Newtonsoft.Json.Formatting.None,
+                            new JsonSerializerSettings
+                            {
+                                NullValueHandling = NullValueHandling.Ignore
+                            });
+
                     }
                 }
             }
@@ -91,7 +116,13 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             {
                 Console.WriteLine(ex);
                 Console.WriteLine(ex.StackTrace);
-                throw;
+
+                return "error:" + ex.Message + ":" + JsonConvert.SerializeObject(invoice,
+                            Newtonsoft.Json.Formatting.None,
+                            new JsonSerializerSettings
+                            {
+                                NullValueHandling = NullValueHandling.Ignore
+                            });
             }
         }
         private string GetTipoIdentificacion(string descripcionTipoIdentificacion)
@@ -187,7 +218,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
             else if (combustible.ToLower().Contains("corri"))
             {
-                return "112";
+                return "1";
             }
             else
             {
@@ -197,13 +228,17 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         private int GetPaymentType(string formaDePago)
         {
-            if (formaDePago.ToLower().Contains("efectivo"))
+            if (formaDePago.ToLower().Contains("de"))
             {
-                return 7765;
+                return 1659;
             }
-            else
+            else if (formaDePago.ToLower().Contains("cre"))
             {
-                return 4225;
+                return 1660;
+            }
+            else 
+            {
+                return 1657;
             }
         }
 
@@ -219,9 +254,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
         }
 
-        public async Task<FacturaSiigo> GetFacturaSiigo(Modelo.OrdenDeDespacho x, Modelo.Tercero tercero, Guid estacionGuid)
+        public async Task<FacturaSiigo> GetFacturaSiigo(Modelo.OrdenDeDespacho x, Modelo.Tercero tercero, Guid estacionGuid, ResolucionFacturaElectronica numero)
         {
-            var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
 
             var nombre = "";
             var apellido = "";
@@ -247,8 +281,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             return new FacturaSiigo()
             {
 
-                stamp = new StampSiigoRequest { send = true },
-                document = new DocumentSiigoRequest { id = alegraOptions.Documento },
+                stamp = new StampSiigoRequest { send = false },
+                document = new DocumentSiigoRequest { id = int.Parse(numero.idNumeracion) },
                 date = x.Fecha.ToString("yyyy-MM-dd"),
                 
                 customer = new CustomerSiigoRequest
@@ -274,6 +308,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         last_name = apellido, email = string.IsNullOrEmpty(tercero.Correo) || tercero.Correo == "no informado" ? alegraOptions.Correo : tercero.Correo, } }
                 },
                 seller = alegraOptions.Seller,
+                
                 payments = new List<PaymentSiigoRequest>
                 {
                     new PaymentSiigoRequest{ id = GetPaymentType(x.FormaDePago), value =Math.Round( Convert.ToDouble(Math.Round(x.Precio,2)*Math.Round(x.Cantidad,2)),2)}
@@ -290,19 +325,18 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
                     }
                 },
-                cost_center = 85
             };
         }
 
-        public async Task<string> GetToken()
+        public async Task<string> GetToken(ResolucionFacturaElectronica numero)
         {
 
             try
             {
                 var tokenrequets = new SiigoTokenRequest
                 {
-                    access_key = alegraOptions.AccessKey,
-                    username = alegraOptions.Correo
+                    access_key = alegraOptions.Token,
+                    username = numero.correo
 
                 };
                 Console.WriteLine(JsonConvert.SerializeObject(tokenrequets));
@@ -344,22 +378,35 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero, Guid estacionGuid)
         {
 
+
+            _semaphore.WaitOne();
+
+            var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
+            var invoice = await GetFacturaSiigo(orden, tercero, estacionGuid, numero);
             try
             {
 
-                var invoice = await GetFacturaSiigo(orden, tercero, estacionGuid);
-
-                Console.WriteLine(JsonConvert.SerializeObject(invoice));
+                Console.WriteLine(JsonConvert.SerializeObject(invoice,
+                            Newtonsoft.Json.Formatting.None,
+                            new JsonSerializerSettings
+                            {
+                                NullValueHandling = NullValueHandling.Ignore
+                            }));
                 using (var client = new HttpClient())
                 {
                     try
                     {
-                        var token = await GetToken();
+                        var token = await GetToken(numero);
                         client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
                         client.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue("Bearer", token);
                         client.DefaultRequestHeaders.Add("Partner-Id", "SIGES");
-                        var content = new StringContent(JsonConvert.SerializeObject(invoice));
+                        var content = new StringContent(JsonConvert.SerializeObject(invoice,
+                            Newtonsoft.Json.Formatting.None,
+                            new JsonSerializerSettings
+                            {
+                                NullValueHandling = NullValueHandling.Ignore
+                            }));
                         content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
                         Console.WriteLine($"{alegraOptions.Url}v1/invoices");
                         var response = await client.PostAsync($"{alegraOptions.Url}v1/invoices", content);
@@ -371,13 +418,19 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         var respuestaSiigo = JsonConvert.DeserializeObject<FacturaSiigoResponse>(responseBody);
                         if (responseBody.ToLower().Contains("error"))
                         {
-                            throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
 
+                            return "error:" + responseBody + ":" + JsonConvert.SerializeObject(invoice,
+                            Newtonsoft.Json.Formatting.None,
+                            new JsonSerializerSettings
+                            {
+                                NullValueHandling = NullValueHandling.Ignore
+                            });
                         }
                         else
                         {
-                            Console.WriteLine("Ok:" + orden.IdVentaLocal + ":" + respuestaSiigo.stamp.cufe);
-                            return "Ok:" + respuestaSiigo.prefix+respuestaSiigo.number + ":" + (respuestaSiigo.stamp.cufe ?? respuestaSiigo.prefix + respuestaSiigo.number);
+                            Console.WriteLine("Ok:" + orden.IdVentaLocal + ":" + respuestaSiigo.stamp?.cufe);
+                            //await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), invoice.document.id + 1);
+                            return "Ok:" + respuestaSiigo.prefix + respuestaSiigo.number + ":" + (respuestaSiigo.stamp?.cufe ?? respuestaSiigo.prefix + respuestaSiigo.number);
 
                         }
                     }
@@ -386,7 +439,13 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
                         Console.WriteLine(ex);
                         Console.WriteLine(ex.StackTrace);
-                        throw;
+                        return "error:" + ex.Message + ":" + JsonConvert.SerializeObject(invoice,
+                            Newtonsoft.Json.Formatting.None,
+                            new JsonSerializerSettings
+                            {
+                                NullValueHandling = NullValueHandling.Ignore
+                            });
+
                     }
                 }
             }
@@ -394,7 +453,17 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             {
                 Console.WriteLine(ex);
                 Console.WriteLine(ex.StackTrace);
-                throw;
+
+                return "error:" + ex.Message + ":" + JsonConvert.SerializeObject(invoice,
+                            Newtonsoft.Json.Formatting.None,
+                            new JsonSerializerSettings
+                            {
+                                NullValueHandling = NullValueHandling.Ignore
+                            });
+            }
+            finally
+            {
+                _semaphore.Release();
             }
         }
 
@@ -477,7 +546,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             throw new NotImplementedException();
         }
 
-        public Task<string> GenerarFacturaElectronica(FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid)
+
+        public Task<string> GenerarFacturaElectronica(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid)
         {
             throw new NotImplementedException();
         }

@@ -28,6 +28,19 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public string first_name { get; set; }
         public string family_name { get; set; }
     }
+    public class CustomerDataicoWithoutAdress
+    {
+        public string email { get; set; }
+        public string phone { get; set; }
+        public string party_identification_type { get; set; }
+        public string party_identification { get; set; }
+        public string party_type { get; set; }
+        public string tax_level_code { get; set; }
+        public string regimen { get; set; }
+        public string company_name { get; set; }
+        public string first_name { get; set; }
+        public string family_name { get; set; }
+    }
 
     public class InvoiceDataico
     {
@@ -46,6 +59,22 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public List<ItemDataico> items { get; set; }
     }
 
+    public class InvoiceDataicoWithoutAddress
+    {
+        public string env { get; set; }
+        public string dataico_account_id { get; set; }
+        public int number { get; set; }
+        public string issue_date { get; set; }
+        public string payment_date { get; set; }
+        public string order_reference { get; set; }
+        public string invoice_type_code { get; set; }
+        public string payment_means { get; set; }
+        public string payment_means_type { get; set; }
+        public NumberingDataico numbering { get; set; }
+        public List<string> notes { get; set; }
+        public CustomerDataicoWithoutAdress customer { get; set; }
+        public List<ItemDataico> items { get; set; }
+    }
     public class ItemDataico
     {
         public string sku { get; set; }
@@ -74,6 +103,11 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
     {
         public ActionsDataico actions { get; set; }
         public InvoiceDataico invoice { get; set; }
+    }
+    public class FacturaDataicoWithoutAddress
+    {
+        public ActionsDataico actions { get; set; }
+        public InvoiceDataicoWithoutAddress invoice { get; set; }
     }
 
     public class TaxisDataico

@@ -7,6 +7,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
     public class Alegra
     {
+
         public string Proveedor { get; set; }
         public bool UsaAlegra { get; set; }
         public string Token { get; set; }
@@ -38,5 +39,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public bool EnvioDirecto { get; set; }
         public bool EnviaCreditos { get; set; }
         public bool EnviaMes { get; set; }
+        public bool Desactivado { get; set; }
+        public string City { get;  set; }
+        public string Department { get; set; }
+        public bool ExcluirDireccion { get; set; }
     }
 }

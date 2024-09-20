@@ -13,6 +13,7 @@ using System.ServiceProcess;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static Microsoft.IO.RecyclableMemoryStreamManager;
 
 namespace EnviadorInformacionService
 {
@@ -298,31 +299,45 @@ namespace EnviadorInformacionService
             lineasImprimir.Add(new LineasImprimir(_infoEstacion.Telefono, true));
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             var infoTemp = "";
-            //if (generaFacturaElectronica)
-            //{
-            //    try
-            //    {
-            //        infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, estacionFuente, _conexionEstacionRemota.getToken());
+            if (generaFacturaElectronica )
+            {
+                try
+                {
+                    var intentos = 0;
+                    do
+                    {
+                        infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronicaCanastilla(_factura.consecutivo, estacionFuente, _conexionEstacionRemota.getToken());
+                        Thread.Sleep(100);
+                    } while (infoTemp == null || intentos++ < 3);
 
-            //    }
-            //    catch (Exception)
-            //    {
-            //        infoTemp = null;
-            //    }
-            //}
+                    Console.WriteLine("info fac elec " + infoTemp);
+                    Logger.Info("info fac elec " + infoTemp);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Info("info fac elec " + ex.Message);
+                    Logger.Info("info fac elec " + ex.StackTrace);
+                    Console.WriteLine("info fac elec " + ex.Message);
+                    Console.WriteLine("info fac elec " + ex.StackTrace);
+                }
+            }
             if (!string.IsNullOrEmpty(infoTemp))
             {
                 infoTemp = infoTemp.Replace("\n\r", " ");
 
                 var facturaElectronica = infoTemp.Split(' ');
 
-                lineasImprimir.Add(new LineasImprimir("Factura Electrónica" + facturaElectronica[2], true));
+                lineasImprimir.Add(new LineasImprimir("Factura Electrónica de Venta " + facturaElectronica[2], true));
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[3], true));
-                lineasImprimir.Add(new LineasImprimir(facturaElectronica[4], true));
+                lineasImprimir.Add(new LineasImprimir(facturaElectronica[4].Substring(0, facturaElectronica[4].Length / 2), true));
+                lineasImprimir.Add(new LineasImprimir(facturaElectronica[4].Substring(facturaElectronica[4].Length / 2), true));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                lineasImprimir.Add(new LineasImprimir("Venta: " + _factura.consecutivo, false));
             }
-            
-                lineasImprimir.Add(new LineasImprimir("SISTEMA POS CANASTILLA No: " + _factura.resolucion.DescripcionResolucion + "-" + _factura.consecutivo, true));
-            
+            else
+            {
+                lineasImprimir.Add(new LineasImprimir("Orden de Servicio Temporal: " + _factura.consecutivo, true));
+            }
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", _factura.terceroId.Nombre == null ? "" : _factura.terceroId.Nombre.Trim()), false));
