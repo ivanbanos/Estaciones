@@ -9,6 +9,7 @@ using ServicioSIGES;
 using System.Net.NetworkInformation;
 using Modelo;
 using Newtonsoft.Json;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SigesServicio
 {
@@ -205,7 +206,7 @@ namespace SigesServicio
             {
                 lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Manguera :", turnosurtidor.Manguera.Descripcion), false));
                 lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Combustible :", turnosurtidor.Combustible.Descripcion), false));
-                lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Precio :", $"${string.Format("{0:N2}", turnosurtidor.Combustible.Precio)}"), false));
+                lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Precio :", $"${turnosurtidor.Combustible.Precio:F2}"), false));
                 lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Apertura :", turnosurtidor.Apertura.ToString()), false));
                 if (turnoimprimir.FechaCierre.HasValue)
                 {
@@ -215,8 +216,8 @@ namespace SigesServicio
                     Logger.Info("turno surtidor " + JsonConvert.SerializeObject(turnosurtidor));
                     totalCantidad += turnosurtidor.Cierre.Value - turnosurtidor.Apertura;
                     totalVenta += (turnosurtidor.Cierre.Value - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio;
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Cantidad :", string.Format("{0:N2}", turnosurtidor.Cierre- turnosurtidor.Apertura)), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", (turnosurtidor.Cierre - turnosurtidor.Apertura)*turnosurtidor.Combustible.Precio)}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Cantidad :", $"{turnosurtidor.Cierre - turnosurtidor.Apertura:F2}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${(turnosurtidor.Cierre - turnosurtidor.Apertura)*turnosurtidor.Combustible.Precio:F2}"), false));
 
                 }
 
@@ -241,13 +242,13 @@ namespace SigesServicio
                         {
                             cantidadTotalmenosEfectivo += forma.Sum(x => x.Cantidad);
                             ventaTotalmenosEfectivo += forma.Sum(x => x.Total);
-                            lineasImprimirTurno.Add(new LineasImprimir(formatoTotales($"{formas.First(x => x.Id == forma.Key).Descripcion.Trim()} :", $"${string.Format("{0:N2}", forma.Sum(x => x.Total))}"), false));
+                            lineasImprimirTurno.Add(new LineasImprimir(formatoTotales($"{formas.First(x => x.Id == forma.Key).Descripcion.Trim()} :", $"${string.Format("{0:#,0.00}", forma.Sum(x => x.Total))}"), false));
 
                         }
                     }
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales($"{formas.First(x => x.Id == 1).Descripcion.Trim()} :", $"${string.Format("{0:N2}", totalVenta - ventaTotalmenosEfectivo)}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales($"{formas.First(x => x.Id == 1).Descripcion.Trim()} :", $"${totalVenta - ventaTotalmenosEfectivo:F2}"), false));
 
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", totalVenta)}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${totalVenta:F2}"), false));
 
 
                     lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
@@ -256,11 +257,11 @@ namespace SigesServicio
                     //Totalizador
                     lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Combustible :", reporteCierrePorTotal.First().Combustible), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Precio :", $"${string.Format("{0:N2}", reporteCierrePorTotal.First().Precio)}"), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Subtotal :", $"${string.Format("{0:N2}", totalVenta)}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Precio :", $"${reporteCierrePorTotal.First().Precio:F2}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Subtotal :", $"${totalVenta:F2}"), false));
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Calibracion :", "$0,00"), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Descuento :", $"${string.Format("{0:N2}", totalVenta)}"), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${string.Format("{0:N2}", totalVenta)}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Descuento :", $"${totalVenta:F2}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${totalVenta:F2}"), false));
 
                     
                 }
@@ -429,15 +430,15 @@ namespace SigesServicio
             if (_infoEstacion.ImpresionPDA)
             {
                 lineasImprimir.Add(new LineasImprimir($"Producto: {_factura.Combustible.Trim()}", false));
-                lineasImprimir.Add(new LineasImprimir($"Cantidad: {string.Format("{0:#,0.000}", _factura.Cantidad)}", false));
-                lineasImprimir.Add(new LineasImprimir($"Precio: {_factura.Precio.ToString("F")}", false));
-                lineasImprimir.Add(new LineasImprimir($"Total: {_factura.Total}", false));
+                lineasImprimir.Add(new LineasImprimir($"Cantidad: {_factura.Cantidad:F2}", false));
+                lineasImprimir.Add(new LineasImprimir($"Precio: ${_factura.Cantidad:F2}", false));
+                lineasImprimir.Add(new LineasImprimir($"Total: ${_factura.Cantidad:F2}", false));
 
             }
             else
             {
                 lineasImprimir.Add(new LineasImprimir(getLienaTarifas("Producto", "   Cant.", "  Precio", "   Total") + "", false));
-                lineasImprimir.Add(new LineasImprimir(getLienaTarifas(_factura.Combustible.Trim(), String.Format("{0:#,0.000}", _factura.Cantidad), _factura.Precio.ToString("F"), String.Format("{0:#,0.00}", _factura.Total), true) + "", false));
+                lineasImprimir.Add(new LineasImprimir(getLienaTarifas(_factura.Combustible.Trim(), $"{_factura.Cantidad:F2}", $"{_factura.Precio:F2}", $"{_factura.Total:F2}", true) + "", false));
             }
             lineasImprimir.Add(new LineasImprimir(guiones.ToString() + "", false));
             lineasImprimir.Add(new LineasImprimir("DISCRIMINACION TARIFAS IVA" + "", true));
@@ -445,7 +446,7 @@ namespace SigesServicio
             if (_infoEstacion.ImpresionPDA)
             {
                 lineasImprimir.Add(new LineasImprimir($"Producto: {_factura.Combustible.Trim()}", false));
-                lineasImprimir.Add(new LineasImprimir($"Cantidad: {string.Format("{0:#,0.000}", _factura.Cantidad)}", false));
+                lineasImprimir.Add(new LineasImprimir($"Cantidad: ${_factura.Cantidad:F2}", false));
                 lineasImprimir.Add(new LineasImprimir($"Tafira: 0 % ", false));
                 lineasImprimir.Add(new LineasImprimir($"Total: {_factura.Total}", false));
 
@@ -453,16 +454,16 @@ namespace SigesServicio
             else
             {
                 lineasImprimir.Add(new LineasImprimir(getLienaTarifas("Producto", "   Cant.", "  Tafira", "   Total") + "", false));
-                lineasImprimir.Add(new LineasImprimir(getLienaTarifas(_factura.Combustible.Trim(), String.Format("{0:#,0.000}", _factura.Cantidad), "0%", String.Format("{0:#,0.00}", _factura.Total), true) + "", false));
+                lineasImprimir.Add(new LineasImprimir(getLienaTarifas(_factura.Combustible.Trim(), $"{_factura.Cantidad:F2}", "0%", $"{_factura.Total:F2}", true) + "", false));
             }
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Descuento: ", String.Format("{0:#,0.00}", _factura.Descuento)), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Descuento: ", $"{_factura.Descuento:F2}"), false));
             //lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Subtotal sin IVA : ", String.Format("{0:#,0.00}", _factura.Subtotal)), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Subtotal sin IVA : ", $"{_factura.Subtotal:F2}"), false));
             //lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Subtotal IVA :", "0,00"), false));
             //lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("TOTAL : ", String.Format("{0:#,0.00}", _factura.Total)), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("TOTAL : ", $"{_factura.Total:F2}"), false));
             //lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
 
             if (_factura.Consecutivo != 0 || impresionFormaDePagoOrdenDespacho)
@@ -496,19 +497,19 @@ namespace SigesServicio
                 lineasImprimir.Add(new LineasImprimir("Del " + _factura.DescripcionResolucion + "-" + _factura.Inicio + " al " + _factura.DescripcionResolucion + "-" + _factura.Final + "", false));
 
             }
-            if (!String.IsNullOrEmpty(_infoEstacion.Linea1))
+            if (!string.IsNullOrEmpty(_infoEstacion.Linea1))
             {
                 lineasImprimir.Add(new LineasImprimir(_infoEstacion.Linea1, false));
             }
-            if (!String.IsNullOrEmpty(_infoEstacion.Linea2))
+            if (!string.IsNullOrEmpty(_infoEstacion.Linea2))
             {
                 lineasImprimir.Add(new LineasImprimir(_infoEstacion.Linea2, false));
             }
-            if (!String.IsNullOrEmpty(_infoEstacion.Linea3))
+            if (!string.IsNullOrEmpty(_infoEstacion.Linea3))
             {
                 lineasImprimir.Add(new LineasImprimir(_infoEstacion.Linea3, false));
             }
-            if (!String.IsNullOrEmpty(_infoEstacion.Linea4))
+            if (!string.IsNullOrEmpty(_infoEstacion.Linea4))
             {
                 lineasImprimir.Add(new LineasImprimir(_infoEstacion.Linea4, false));
             }
@@ -547,7 +548,7 @@ namespace SigesServicio
                 int count = 0;
                 float leftMargin = 5;
                 float topMargin = 10;
-                String line = null;
+                string line = null;
                 int sizePaper = ev.PageSettings.PaperSize.Width;
                 int fonSizeInches = 72 / 9;
                 if (_infoEstacion.CaracteresPorPagina == 0)
@@ -594,7 +595,7 @@ namespace SigesServicio
                 int count = 0;
                 float leftMargin = 5;
                 float topMargin = 10;
-                String line = null;
+                string line = null;
                 int sizePaper = ev.PageSettings.PaperSize.Width;
                 int fonSizeInches = 72 / 9;
                 if (_infoEstacion.CaracteresPorPagina == 0)
@@ -647,7 +648,7 @@ namespace SigesServicio
         {
             var spacesInPage = _infoEstacion.CaracteresPorPagina / 4;
             var tabs = new StringBuilder();
-            if (_infoEstacion.CaracteresPorPagina == 40)
+            if (true)
             {
                 tabs.Append(v1.Substring(0, v1.Length < 12 ? v1.Length : 12));
                 var whitespaces = 12 - v1.Length;

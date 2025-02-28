@@ -1,6 +1,7 @@
 ﻿using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
 using Google.Protobuf.WellKnownTypes;
 using System;
+using System.Configuration;
 using System.Globalization;
 
 namespace FacturacionelectronicaCore.Negocio.Contabilidad
@@ -11,7 +12,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
         public DatosFactura(FacturaSilog factura, string usuario, Alegra options, string estacion)
         {
             Consecutivo = factura.Consecutivo + "";
-            Detalles = $"Placa: {factura.Placa}, Kilometraje : {factura.Kilometraje}";
+            Detalles = $"Placa: {factura.Placa}, Kilometraje : {factura.Kilometraje}, Nro Transaccion : {factura.numeroTransaccion}";
             Placa = factura.Placa;
             Kilometraje = factura.Kilometraje;
             Surtidor = factura.Surtidor;
@@ -36,9 +37,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
             Descuento = factura.Descuento.ToString("F3",
                   CultureInfo.InvariantCulture);
             Iva = "0";
-            Total = factura.SubTotal.ToString("F3",
+            Total = (factura.SubTotal - factura.Descuento).ToString("F3",
                   CultureInfo.InvariantCulture);
-            Subtotal = (factura.SubTotal+factura.Descuento).ToString("F3",
+            Subtotal = factura.SubTotal.ToString("F3",
                   CultureInfo.InvariantCulture);
             FechaProximoMantenimiento = factura.FechaProximoMantenimiento;
             Guid = factura.Guid;
@@ -54,11 +55,16 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
                 {
                     FormaPago = "3";
                 }
+                else if (factura.FormaDePago.ToLower().Contains("trans"))
+                {
+                    FormaPago = "7";
+                    NroTransaccion = factura.numeroTransaccion ?? factura.Kilometraje ?? "NA";
+                }
                 else
                 {
                     FormaPago = "2";
                     TipoTarjeta = GetByFormaPago(factura.FormaDePago.Trim());
-                    NroTransaccion = factura.Kilometraje;
+                    NroTransaccion = factura.numeroTransaccion ?? factura.Kilometraje ?? "NA";
                 }
 
             }

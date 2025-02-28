@@ -20,33 +20,34 @@ namespace ManejadorSurtidor.Messages
 
         public RabbitMQProducer(IOptions<InfoEstacion> infoEstacion)
         {
-            _infoEstacion = infoEstacion.Value; 
-            factory = new ConnectionFactory() { 
-                HostName = _infoEstacion.RabbitHost, UserName = "siges", Password = "siges", 
-                Port = Protocols.DefaultProtocol.DefaultPort,
-                DispatchConsumersAsync = false,
-                ConsumerDispatchConcurrency = 1,
-            };
+            _infoEstacion = infoEstacion.Value;
+            ConnectionFactory factory = new ConnectionFactory();
+            // "guest"/"guest" by default, limited to localhost connections
+            factory.UserName = "siges";
+            factory.Password = "siges";
+            factory.VirtualHost = "/";
+            factory.HostName = _infoEstacion.RabbitHost;
 
-             connection = factory.CreateConnection();
+            connection = factory.CreateConnectionAsync().Result;
         }
         public async Task SendMessage<T>(T message, string queue)
         {
-            using var channel = connection.CreateModel();
-            channel.QueueDeclare(queue: queue,
-                                      durable: true,
-                                     exclusive: false,
-                                     autoDelete: false,
-                                     arguments: null);
+            using var channel = await connection.CreateChannelAsync();
+            await channel.QueueDeclareAsync(queue: queue,
+                                       durable: true,
+                                      exclusive: false,
+                                      autoDelete: false,
+                                      arguments: null);
             var json = JsonConvert.SerializeObject(message);
             var body = Encoding.UTF8.GetBytes(json);
-            for(int i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
             {
                 try
                 {
-                    channel.BasicPublish(exchange: "", routingKey: queue, body: body);
+                    await channel.BasicPublishAsync(exchange: "", routingKey: queue, body: body);
                     break;
-                }catch(Exception ex)
+                }
+                catch (Exception ex)
                 {
 
                     Thread.Sleep(1000);

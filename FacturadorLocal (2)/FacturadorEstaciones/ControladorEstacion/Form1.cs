@@ -15,7 +15,7 @@ namespace ControladorEstacion
             _estacionesRepositorio = estacionesRepositorio;
             InitializeComponent();
             _infoEstacion = infoEstacion.Value;
-            var messageReceiver = new RabbitMQMessagesReceiver(infoEstacion);
+            //var messageReceiver = new RabbitMQMessagesReceiver(infoEstacion);
             var surtidores = _estacionesRepositorio.GetSurtidoresSiges();
             var surtidoresComponets = new List<Surtidor>();
             var posActual = 0;
@@ -26,7 +26,7 @@ namespace ControladorEstacion
                 newSurtidor.Location = new System.Drawing.Point(131, 208 + (209 * posActual));
                 newSurtidor.Name = surtidor.Descripcion;
                 this.Controls.Add(newSurtidor);
-                messageReceiver.Subscribe(newSurtidor);
+                //messageReceiver.Subscribe(newSurtidor);
                 newSurtidor.BringToFront();
                 posActual++;
             }

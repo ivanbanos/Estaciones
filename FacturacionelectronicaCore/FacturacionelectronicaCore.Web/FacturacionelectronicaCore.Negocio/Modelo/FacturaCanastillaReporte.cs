@@ -7,7 +7,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
 {
     public class FacturaCanastillaReporte
     {
-        public IEnumerable<FacturasCanastillaResponse> Facturas { get; set; }
+        public IEnumerable<FacturacionelectronicaCore.Repositorio.Entities.FacturaCanastilla> Facturas { get; set; }
         public IEnumerable<DetalleFormaPago> DetalleFormaPago { get; set; }
         public List<DetalleArticulo> DetalleArticulo { get; internal set; }
     }

@@ -7,6 +7,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
     public class FacturaSilog
     {
+        public string numeroTransaccion { get; set; }
+
         public FacturaSilog() { }
         
         public Guid Guid { get; set; }

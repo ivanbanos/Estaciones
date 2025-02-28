@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ManejadorSurtidor.Messages
+namespace EnviarMensaje
 {
-    public  interface IMessageProducer
+    internal class AdvisoryExample
     {
-        Task SendMessage<T>(T message);
     }
 }

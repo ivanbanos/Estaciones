@@ -10,7 +10,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 		{
 			Consecutivo = factura.Consecutivo+"";
 			Prefijo = factura.Prefijo;
-            Detalles = $"Placa: {factura.Placa}, Kilometraje : {factura.Kilometraje}";
+            Detalles = $"Placa: {factura.Placa}, Kilometraje : {factura.Kilometraje}, Nro Transaccion : {factura.numeroTransaccion}";
             Placa = factura.Placa;
 			Kilometraje = string.IsNullOrEmpty(factura.Kilometraje)?"0.0":factura.Kilometraje.Replace(",", ".");
 			Surtidor = factura.Surtidor;
@@ -29,19 +29,24 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 			fechaUltimoMantenimiento = factura.FechaProximoMantenimiento.ToString("yyyy-MM-dd");
 			Usuario = factura.Cedula.Trim();
 			Guid = estacion.ToString();
-			if (factura.FormaDePago.ToLower().Contains("efectivo"))
+			if (factura.FormaDePago.ToLower().Contains("efec"))
 			{
 				FormaPago = ConfigurationManager.AppSettings["codigoefectivo"];
 			}
 			else if (factura.FormaDePago.ToLower().Contains("dito"))
             {
-				FormaPago = ConfigurationManager.AppSettings["codigocredito"];
-			}
-			else
+                FormaPago = ConfigurationManager.AppSettings["codigocredito"];
+            }
+            else if (factura.FormaDePago.ToLower().Contains("trans"))
+            {
+                FormaPago = ConfigurationManager.AppSettings["codigotransferencia"];
+                NroTransaccion = factura.numeroTransaccion;
+            }
+            else
             {
                 FormaPago = ConfigurationManager.AppSettings["codigovoucher"];
 				TipoTarjeta = ConfigurationManager.AppSettings[factura.FormaDePago.Trim()];
-				NroTransaccion = factura.Kilometraje;
+				NroTransaccion = factura.numeroTransaccion ?? factura.Kilometraje ?? "NoEspecificado";
             }
 			if (factura.Combustible.ToLower().Contains("corriente"))
 			{

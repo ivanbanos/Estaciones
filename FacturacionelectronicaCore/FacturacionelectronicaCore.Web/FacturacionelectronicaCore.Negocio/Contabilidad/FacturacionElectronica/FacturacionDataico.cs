@@ -181,15 +181,16 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 actions = new ActionsDataico() { send_dian = true, send_email = true },
                 invoice = new InvoiceDataico()
                 {
-                    notes = new List<string>(),
+                    notes = new List<string>() { $"Placa: {factura.Placa}, Kilometraje : {factura.Kilometraje}, Nro Transaccion : NA" },
+
                     env = "PRODUCCION",
                     dataico_account_id = alegraOptions.DataicoAccountId,
                     issue_date = DateTime.Now.ToString("dd/MM/yyyy"),
                     payment_date = DateTime.Now.ToString("dd/MM/yyyy"),
                     order_reference = factura.DescripcionResolucion + factura.Consecutivo,
                     invoice_type_code = "FACTURA_VENTA",
-                    payment_means = "CASH",
-                    payment_means_type = "DEBITO",
+                    payment_means = GetPaymentType(factura.FormaDePago),
+                    payment_means_type = GetPaymentMeansType(factura.FormaDePago),
                     number = numero,
                     numbering = new NumberingDataico()
                     {
@@ -217,7 +218,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     items = new List<ItemDataico>(){
                         new ItemDataico()
                         {
-                            sku="0",
+                            sku=GetCodeCombustible(factura.Combustible),
                             price=(double)factura.Precio,
                             description=factura.Combustible,
                             quantity=(double)factura.Cantidad,
@@ -319,15 +320,16 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 actions = new ActionsDataico() { send_dian = true, send_email = true },
                 invoice = new InvoiceDataico()
                 {
-                    notes = new List<string>(),
+                    notes = new List<string>() { $"Placa: {factura.Placa}, Kilometraje : {factura.Kilometraje}, Nro Transaccion : {factura.numeroTransaccion}" },
+
                     env = "PRODUCCION",
                     dataico_account_id = resolucion.idNumeracion,
                     issue_date = DateTime.Now.ToString("dd/MM/yyyy"),
                     payment_date = DateTime.Now.ToString("dd/MM/yyyy"),
                     order_reference = factura.IdVentaLocal.ToString(),
                     invoice_type_code = "FACTURA_VENTA",
-                    payment_means = "CASH",
-                    payment_means_type = "DEBITO",
+                    payment_means = GetPaymentType(factura.FormaDePago),
+                    payment_means_type = GetPaymentMeansType(factura.FormaDePago),
                     number = numero,
                     numbering = new NumberingDataico()
                     {
@@ -355,7 +357,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     items = new List<ItemDataico>(){
                         new ItemDataico()
                         {
-                            sku="0",
+                            sku=GetCodeCombustible(factura.Combustible),
                             price=(double)factura.Precio,
                             description=factura.Combustible,
                             quantity=(double)factura.Cantidad,
@@ -398,15 +400,15 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 actions = new ActionsDataico() { send_dian = true, send_email = true },
                 invoice = new InvoiceDataicoWithoutAddress()
                 {
-                    notes = new List<string>(),
+                    notes = new List<string>() { $"Placa: {factura.Placa}, Kilometraje : {factura.Kilometraje}, Nro Transaccion : {factura.numeroTransaccion}"},
                     env = "PRODUCCION",
                     dataico_account_id = resolucion.idNumeracion,
                     issue_date = DateTime.Now.ToString("dd/MM/yyyy"),
                     payment_date = DateTime.Now.ToString("dd/MM/yyyy"),
                     order_reference = factura.IdVentaLocal.ToString(),
                     invoice_type_code = "FACTURA_VENTA",
-                    payment_means = "CASH",
-                    payment_means_type = "DEBITO",
+                    payment_means = GetPaymentType(factura.FormaDePago),
+                    payment_means_type = GetPaymentMeansType(factura.FormaDePago),
                     number = numero,
                     numbering = new NumberingDataico()
                     {
@@ -427,10 +429,11 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         family_name = apellido,
                         company_name = tercero.Nombre,
                     },
+                    
                     items = new List<ItemDataico>(){
                         new ItemDataico()
                         {
-                            sku="0",
+                            sku=GetCodeCombustible(factura.Combustible),
                             price=(double)factura.Precio,
                             description=factura.Combustible,
                             quantity=(double)factura.Cantidad,
@@ -441,6 +444,86 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     }
                 }
             };
+        }
+        private string GetCodeCombustible(string combustible)
+        {
+            if (combustible.ToLower().Contains("acpm") || combustible.ToLower().Contains("die"))
+            {
+                return alegraOptions.Acpm;
+            }
+            else if (combustible.ToLower().Contains("corri"))
+            {
+                return alegraOptions.Corriente;
+            }
+            else
+            {
+                return alegraOptions.Gas;
+            }
+        }
+
+        private string GetPaymentType(string formaDePago)
+        {
+            if (formaDePago.ToLower().Contains("dé") && formaDePago.ToLower().Contains("tran"))
+            {
+                return "DEBIT_TRANSFER";
+            }
+            else if (formaDePago.ToLower().Contains("dé") && formaDePago.ToLower().Contains("tar"))
+            {
+                return "DEBIT_CARD";
+            }
+            else if (formaDePago.ToLower().Contains("cré") && formaDePago.ToLower().Contains("ban") && formaDePago.ToLower().Contains("tran"))
+            {
+                return "BANK_TRANSFER";
+            }
+            else if (formaDePago.ToLower().Contains("cré") && formaDePago.ToLower().Contains("tran"))
+            {
+                return "CREDIT_TRANSFER";
+            }
+            else if (formaDePago.ToLower().Contains("cré") && formaDePago.ToLower().Contains("tar"))
+            {
+                return "CREDIT_CARD";
+            }
+            else if (formaDePago.ToLower().Contains("ban") && formaDePago.ToLower().Contains("cons"))
+            {
+                return "DEBIT_BANK_TRANSFER";
+            }
+            else
+            {
+                return "CASH";
+            }
+        }
+
+
+        private string GetPaymentMeansType(string formaDePago)
+        {
+            if (formaDePago.ToLower().Contains("dé") && formaDePago.ToLower().Contains("tran"))
+            {
+                return "DEBITO";
+            }
+            else if (formaDePago.ToLower().Contains("dé") && formaDePago.ToLower().Contains("tar"))
+            {
+                return "DEBITO";
+            }
+            else if (formaDePago.ToLower().Contains("cré") && formaDePago.ToLower().Contains("ban") && formaDePago.ToLower().Contains("tran"))
+            {
+                return "DEBITO";
+            }
+            else if (formaDePago.ToLower().Contains("cré") && formaDePago.ToLower().Contains("tran"))
+            {
+                return "CREDITO";
+            }
+            else if (formaDePago.ToLower().Contains("cré") && formaDePago.ToLower().Contains("tar"))
+            {
+                return "CREDITO";
+            }
+            else if (formaDePago.ToLower().Contains("ban") && formaDePago.ToLower().Contains("cons"))
+            {
+                return "DEBITO";
+            }
+            else
+            {
+                return "DEBITO";
+            }
         }
 
         public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero, Guid estacionGuid)
@@ -757,7 +840,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 }
                 catch (Exception)
                 {
-                   
+                    return new ResolucionElectronica(new Numbering() { prefix=resolucion.prefijo, dian_resolutions = new List<DianResolution>() { new DianResolution { number = resolucion.resolucion } } });
                 }
 
                 var respuesta = JsonConvert.DeserializeObject<ResolucionesDataico>(responseBody);
@@ -965,7 +1048,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
             var items = factura.canastillas.Select(x => new ItemDataico()
             {
-                sku = "0",
+                sku = x.Canastilla.CanastillaId.ToString(),
                 price = (double)x.precio,
                 description = x.Canastilla.descripcion,
                 quantity = (double)x.cantidad,
@@ -985,8 +1068,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     payment_date = DateTime.Now.ToString("dd/MM/yyyy"),
                     order_reference = factura.FacturasCanastillaId.ToString(),
                     invoice_type_code = "FACTURA_VENTA",
-                    payment_means = "CASH",
-                    payment_means_type = "DEBITO",
+                    payment_means = GetPaymentType(factura.codigoFormaPago.Descripcion),
+                    payment_means_type = GetPaymentMeansType(factura.codigoFormaPago.Descripcion),
                     number = numero,
                     numbering = new NumberingDataico()
                     {
@@ -1014,6 +1097,16 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     items = items.ToList(),
                 }
             };
+        }
+
+        public Task<string> GetFacturaElectronica(string id, Guid estacionGuid)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Item> GetItem(string name, Alegra options)
+        {
+            throw new NotImplementedException();
         }
     }
 }

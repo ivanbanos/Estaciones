@@ -43,5 +43,13 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public string City { get;  set; }
         public string Department { get; set; }
         public bool ExcluirDireccion { get; set; }
+
+
+        public string Contrasena { get; set; }
+        public string Usuario { get; set; }
+        public string Nit { get; set; }
+        public int Debito { get; set; }
+        public int Credito { get; set; }
+        public int Efectivo { get; set; }
     }
 }

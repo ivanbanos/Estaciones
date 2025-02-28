@@ -1,4 +1,5 @@
-﻿using FactoradorEstacionesModelo;
+﻿using Dominio.Entidades;
+using FactoradorEstacionesModelo;
 using FactoradorEstacionesModelo.Siges;
 using FacturadorEstacionesPOSWinForm;
 using Microsoft.AspNetCore.Connections;
@@ -19,28 +20,29 @@ namespace ControladorEstacion.Messages
     public class RabbitMQMessagesReceiver : IMessagesReceiver , IObservable<string>
     {
         List<IObserver<string>> observers = new List<IObserver<string>>();
-        EventingBasicConsumer consumer;
+        AsyncEventingBasicConsumer consumer;
         private readonly InfoEstacion _infoEstacion;
         public RabbitMQMessagesReceiver(IOptions<InfoEstacion> infoEstacion)
         {
             _infoEstacion = infoEstacion.Value;
-            var factory = new ConnectionFactory() { 
-                HostName = _infoEstacion.RabbitHost, UserName="siges", Password="siges",
-                Port = Protocols.DefaultProtocol.DefaultPort,
-                DispatchConsumersAsync = false,
-                ConsumerDispatchConcurrency = 1,
-            };
-            var connection = factory.CreateConnection();
-            var channel = connection.CreateModel();
+            ConnectionFactory factory = new ConnectionFactory();
+            // "guest"/"guest" by default, limited to localhost connections
+            factory.UserName = "siges";
+            factory.Password = "siges";
+            factory.VirtualHost = "/";
+            factory.HostName = _infoEstacion.RabbitHost;
+            factory.Port = 5672;
+            var conn = factory.CreateConnectionAsync().Result;
+            var channel = conn.CreateChannelAsync().Result;
 
-            channel.QueueDeclare(queue:_infoEstacion.Isla,
+            var ok = channel.QueueDeclareAsync(queue: _infoEstacion.Isla,
                                  durable: true,
                                  exclusive: false,
                                  autoDelete: false,
-                                 arguments: null);
+                                 arguments: null).Result;
 
-            consumer = new EventingBasicConsumer(channel);
-            consumer.Received += (model, ea) =>
+            consumer = new AsyncEventingBasicConsumer(channel);
+            consumer.ReceivedAsync += async (model, ea) =>
             {
                 var body = ea.Body.ToArray();
                 var mensaje = Encoding.UTF8.GetString(body);
@@ -49,18 +51,17 @@ namespace ControladorEstacion.Messages
                     observer.OnNext(mensaje);
                 }
             };
-            channel.BasicConsume(queue: _infoEstacion.Isla,
-                                 autoAck: true,
-                                 consumer: consumer);
+            var basicOk = channel.BasicConsumeAsync(queue: _infoEstacion.Isla,
+                                  autoAck: true,
+                                  consumer: consumer).Result;
         }
         public void ReceiveMessages(string queue)
         {
-            
+
         }
 
         public IDisposable Subscribe(IObserver<string> observer)
         {
-            // Check whether observer is already registered. If not, add it
             if (!observers.Contains(observer))
             {
                 observers.Add(observer);

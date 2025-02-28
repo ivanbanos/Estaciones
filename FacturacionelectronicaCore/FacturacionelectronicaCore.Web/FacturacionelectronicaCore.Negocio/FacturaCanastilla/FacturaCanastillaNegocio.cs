@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FacturaCanastilla = FacturacionelectronicaCore.Repositorio.Entities.FacturaCanastilla;
 
 namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
 {
@@ -21,17 +22,17 @@ namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
             _facturaCanastillaRepository = facturaCanastillaRepository;
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
         }
-        public async Task<IEnumerable<FacturaCanastillaDetalleResponse>> GetDetalleFactura(string idFactura)
+        public async Task<IEnumerable<FacturaCanastilla>> GetDetalleFactura(string idFactura)
         {
-            return await _facturaCanastillaRepository.GetDetalleFactura(idFactura);
+            return null;// await _facturaCanastillaRepository.GetDetalleFactura(idFactura);
         }
 
-        public async Task<FacturasCanastillaResponse> GetFactura(string idFactura)
+        public async Task<FacturaCanastilla> GetFactura(string idFactura)
         {
             return (await _facturaCanastillaRepository.GetFactura(idFactura)).FirstOrDefault();
         }
 
-        public async Task<IEnumerable<FacturasCanastillaResponse>> GetFacturas(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid estacion)
+        public async Task<IEnumerable<FacturaCanastilla>> GetFacturas(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid estacion)
         {
             return await _facturaCanastillaRepository.GetFacturas(fechaInicial, fechaFinal, identificacionTercero, nombreTercero, estacion);
         }
@@ -47,8 +48,7 @@ namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
             if (!string.IsNullOrEmpty(guid))
             {
                 var factura = await GetFactura(guid);
-                factura.facturaCanastillaDetalles = await GetDetalleFactura(guid);
-
+               
                 return factura.consecutivo;
             }
             return 0;
@@ -64,18 +64,17 @@ namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
             var total = 0d;
             foreach (var factura in facturas)
             {
-                factura.facturaCanastillaDetalles = await GetDetalleFactura(factura.Guid.ToString());
-                foreach (var detalle in factura.facturaCanastillaDetalles)
+                foreach (var detalle in factura.canastillas)
                 {
 
-                    if (!detalleArticulos.Any(x => x.Descripcion == detalle.descripcion))
+                    if (!detalleArticulos.Any(x => x.Descripcion == detalle.Canastilla.descripcion))
                     {
-                        detalleArticulos.Add(new DetalleArticulo() { Descripcion = detalle.descripcion, Cantidad=0, Subtotal = 0, Iva = 0, Total = 0 });
+                        detalleArticulos.Add(new DetalleArticulo() { Descripcion = detalle.Canastilla.descripcion, Cantidad=0, Subtotal = 0, Iva = 0, Total = 0 });
                     }
-                    detalleArticulos.First(x => x.Descripcion == detalle.descripcion).Cantidad += 1;
-                    detalleArticulos.First(x => x.Descripcion == detalle.descripcion).Subtotal += detalle.subtotal;
-                    detalleArticulos.First(x => x.Descripcion == detalle.descripcion).Iva += detalle.iva;
-                    detalleArticulos.First(x => x.Descripcion == detalle.descripcion).Total += detalle.total;
+                    detalleArticulos.First(x => x.Descripcion == detalle.Canastilla.descripcion).Cantidad += 1;
+                    detalleArticulos.First(x => x.Descripcion == detalle.Canastilla.descripcion).Subtotal += detalle.subtotal;
+                    detalleArticulos.First(x => x.Descripcion == detalle.Canastilla.descripcion).Iva += detalle.iva;
+                    detalleArticulos.First(x => x.Descripcion == detalle.Canastilla.descripcion).Total += detalle.total;
                     cantidad += 1;
                     subtotal += detalle.subtotal;
                     iva += detalle.iva;
@@ -87,7 +86,7 @@ namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
             var facturaCanastillaReporte = new FacturaCanastillaReporte();
             facturaCanastillaReporte.Facturas = facturas;
             facturaCanastillaReporte.DetalleArticulo = detalleArticulos;
-            List<DetalleFormaPago> formas = facturas.GroupBy(x => x.FormaDePago)
+            List<DetalleFormaPago> formas = facturas.GroupBy(x => x.codigoFormaPago.Descripcion)
                 .Select(x => new DetalleFormaPago()
                 {
                     FormaDePago = x.Key,
@@ -98,5 +97,6 @@ namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
             facturaCanastillaReporte.DetalleFormaPago = formas;
             return facturaCanastillaReporte;
         }
+
     }
 }

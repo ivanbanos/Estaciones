@@ -419,7 +419,10 @@ namespace ManejadorSurtidor
 
                     // _logger.Log(NLog.LogLevel.Info, "Validando boton ");
                     var boton = await lectorIButton.leerBoton(surtidor.PuertoIButton, surtidor.Numero, manguera.Ubicacion == "Par", _logger);
-                    vehiculo = await _sicomConection.validateIButton(boton);
+                    if (_sicom.ValidarOnline)
+                    {
+                        vehiculo = await _sicomConection.validateIButton(boton);
+                    }
                     var vehiculoLocal = _estacionesRepositorio.GetVehiculoSuic(boton);
                     if (vehiculo == null)
                     {
@@ -777,7 +780,7 @@ namespace ManejadorSurtidor
                 Ubicacion = ubicacion,
                 Turno = turno,
                 Empleado = empleado
-            }, "controlador") ;
+            }, "controlador");
         }
 
         private async Task sendVehiculo(VehiculoSuic vehiculoSuic)

@@ -7,6 +7,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 {
     public class Factura
     {
+        public string numeroTransaccion { get; set; }
+
         public Factura() { }
         public Factura(FactoradorEstacionesModelo.Objetos.Factura x, string forma)
         {
@@ -35,6 +37,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
             Identificacion = x.Tercero.identificacion;
             Prefijo = x.DescripcionResolucion;
             Cedula = x.Venta.CEDULA;
+            numeroTransaccion = x.numeroTransaccion;
         }
         public Guid Guid { get; set; }
 

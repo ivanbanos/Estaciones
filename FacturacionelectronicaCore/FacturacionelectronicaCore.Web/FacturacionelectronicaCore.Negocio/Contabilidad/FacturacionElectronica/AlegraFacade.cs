@@ -40,7 +40,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<string> GenerarFacturaElectronica(Modelo.Factura factura, Modelo.Tercero tercero, Guid estacionGuid)
         {
-            var item = await GetItem(factura.Combustible);
+            var item = await GetItem(factura.Combustible, null);
             if (item == null)
             {
                 return "Combustible no creado";
@@ -57,7 +57,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
             var option = new Alegra() { Url = alegraOptions.Url, Token = resolucion?.token ?? alegraOptions.Token, Correo = resolucion?.correo ?? alegraOptions.Correo };
 
-            var item = await GetItem(orden.Combustible);
+            var item = await GetItem(orden.Combustible, option);
             if (item == null)
             {
                 return $"error:Combustible no creado:{orden.Combustible}";
@@ -80,7 +80,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 catch (Exception ex)
                 {
 
-                    return "error:" + JsonConvert.SerializeObject(contacts)   + ":" + JsonConvert.SerializeObject(orden.ConvertirAInvoice(item)) + ":" + JsonConvert.SerializeObject(tercero.ConvertirAContact());
+                    return "error:" + JsonConvert.SerializeObject(contacts)   + ":" + JsonConvert.SerializeObject(orden.ConvertirAInvoice(item)) + ":" + JsonConvert.SerializeObject(tercero.ConvertirAContact()) + ":" + ex.Message + ":" + ex.StackTrace;
                 }
             }
             id = contacts?.First()?.id ?? 0;
@@ -92,7 +92,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             } catch(Exception ex)
             {
 
-                return "error:"  + JsonConvert.SerializeObject(invoice) + ":" + JsonConvert.SerializeObject(orden.ConvertirAInvoice(item)) + ":" + tercero.ConvertirAContact();
+                return "error:"  + JsonConvert.SerializeObject(invoice) + ":" + JsonConvert.SerializeObject(orden.ConvertirAInvoice(item, id)) + ":" + JsonConvert.SerializeObject(tercero.ConvertirAContact()) +JsonConvert.SerializeObject(contacts) + ":" +ex.Message+":"+ex.StackTrace;
             }
         }
 
@@ -106,7 +106,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
                 client.DefaultRequestHeaders.Authorization =
     new AuthenticationHeaderValue("Basic", option.Auth);
-                var path = $"{option.Url}contacts/?order_direction=ASC&identification={identificacion}";
+                var path = $"{option.Url}contacts?order_direction=ASC&identification={identificacion}";
                 var response = client.GetAsync(path).Result;
                 string responseBody = await response.Content.ReadAsStringAsync();
                 try
@@ -117,8 +117,17 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 {
 
                 }
+                try
+                {
 
-                return JsonConvert.DeserializeObject<IEnumerable<TerceroResponse>>(responseBody);
+                    return JsonConvert.DeserializeObject<IEnumerable<TerceroResponse>>(responseBody);
+                }catch(Exception ex)
+                {
+                    return new List<TerceroResponse>()
+                    {
+                        JsonConvert.DeserializeObject<TerceroResponse>(responseBody)
+                    };
+                }
             }
         }
 
@@ -146,9 +155,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             return await invoiceHandler.GetFatura(id, alegraOptions);
         }
 
-        public async Task<Item> GetItem(string name)
+        public async Task<Item> GetItem(string name, Alegra options)
         {
-            return await itemHandler.GetItem(name, alegraOptions);
+            return await itemHandler.GetItem(name, options);
         }
 
         public Task<string> getJson(Modelo.OrdenDeDespacho ordenDeDespachoEntity, Guid estacio)
@@ -188,6 +197,11 @@ new AuthenticationHeaderValue("Basic", alegraOptions.Auth);
         }
 
         public Task<string> GenerarFacturaElectronica(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> GetFacturaElectronica(string id, Guid estacionGuid)
         {
             throw new NotImplementedException();
         }

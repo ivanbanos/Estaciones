@@ -1,12 +1,16 @@
 ﻿using EnviadorInformacionService.Models;
 using FactoradorEstacionesModelo.Objetos;
 using FacturadorEstacionesRepositorio;
+using Gma.QrCodeNet.Encoding.Windows.Render;
+using Gma.QrCodeNet.Encoding;
 using ReporteFacturas;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Drawing.Printing;
+using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.ServiceProcess;
@@ -402,33 +406,31 @@ namespace EnviadorInformacionService
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago : ", forma?.Descripcion?.Trim()), false));
 
 
-            if (!string.IsNullOrEmpty(infoTemp))
-            {
-                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-                lineasImprimir.Add(new LineasImprimir("Resolucion de Facturacion No. ", false));
-                lineasImprimir.Add(new LineasImprimir("18764013579016 de 2021-05-24", false));
-                lineasImprimir.Add(new LineasImprimir("Modalidad Factura Electrónica ", false));
-                lineasImprimir.Add(new LineasImprimir("Desde N° FEE1 hasta FEE1000000", false));
-                lineasImprimir.Add(new LineasImprimir("Vigencia hasta 2021-11-24", false));
-
-            }
-
-            else if (_factura.consecutivo != 0)
-            {
-
-
-                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-                lineasImprimir.Add(new LineasImprimir("Resolucion de Facturacion No. ", false));
-                lineasImprimir.Add(new LineasImprimir(_factura.resolucion.Autorizacion + " de " + _factura.resolucion.FechaInicioResolucion.ToString("dd/MM/yyyy") + " ", false));
-                var numeracion = "Numeracion Autorizada por la DIAN";
-                if (_factura.resolucion.Habilitada)
+           
+                try
                 {
-                    numeracion = "Numeracion Habilitada por la DIAN";
-                }
-                lineasImprimir.Add(new LineasImprimir(numeracion + " ", false));
-                lineasImprimir.Add(new LineasImprimir("Del " + _factura.resolucion.DescripcionResolucion + "-" + _factura.resolucion.ConsecutivoInicial + " al " + _factura.resolucion.DescripcionResolucion + "-" + _factura.resolucion.ConsecutivoFinal + "", false));
+                    var resoluconElectronica = _conexionEstacionRemota.GetResolucionElectronica(_conexionEstacionRemota.getToken());
 
-            }
+                    lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                    if (resoluconElectronica.invoiceText.Contains("desde"))
+                    {
+
+                        lineasImprimir.Add(new LineasImprimir(resoluconElectronica.invoiceText.Substring(0, resoluconElectronica.invoiceText.IndexOf("desde")), false));
+                        lineasImprimir.Add(new LineasImprimir(resoluconElectronica.invoiceText.Substring(resoluconElectronica.invoiceText.IndexOf("desde"), resoluconElectronica.invoiceText.IndexOf("Valido")), false));
+                        lineasImprimir.Add(new LineasImprimir(resoluconElectronica.invoiceText.Substring(resoluconElectronica.invoiceText.IndexOf("Valido")), false));
+                    }
+                    else
+                    {
+
+                        lineasImprimir.Add(new LineasImprimir(resoluconElectronica.invoiceText, false));
+                    }
+                }
+                catch (Exception)
+                {
+                    lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                    lineasImprimir.Add(new LineasImprimir("Modalidad Factura Electrónica ", false));
+                }
+
             if (!String.IsNullOrEmpty(_infoEstacion.Linea1))
             {
                 lineasImprimir.Add(new LineasImprimir(_infoEstacion.Linea1, false));
@@ -450,6 +452,12 @@ namespace EnviadorInformacionService
             lineasImprimir.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress), false));
             lineasImprimir.Add(new LineasImprimir(".", true));
+            if (!string.IsNullOrEmpty(infoTemp))
+            {
+
+                var facturaElectronica = infoTemp.Split(' ');
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false, $"https://catalogo-vpfe.dian.gov.co/User/SearchDocument?DocumentKey={facturaElectronica[4]}"));
+            }
 
         }
 
@@ -471,8 +479,16 @@ namespace EnviadorInformacionService
                 }
                 foreach (var linea in lineasImprimir)
                 {
+                    if (!string.IsNullOrEmpty(linea.qr))
+                    {
 
-                    count = printLine(linea.linea, ev, count, leftMargin, topMargin, linea.centrada);
+                        count = printLine(linea.qr, ev, count, leftMargin, topMargin, false, isQr: true);
+                    }
+                    else
+                    {
+
+                        count = printLine(linea.linea, ev, count, leftMargin, topMargin, linea.centrada);
+                    }
                 }
                 count = printLine(" ", ev, count, leftMargin, topMargin, false);
                 count = printLine(" ", ev, count, leftMargin, topMargin, false);
@@ -610,7 +626,7 @@ namespace EnviadorInformacionService
             }
         }
 
-        private int printLine(string text, PrintPageEventArgs ev, int count, float leftMargin, float topMargin, bool center = false)
+        private int printLine(string text, PrintPageEventArgs ev, int count, float leftMargin, float topMargin, bool center = false, bool isQr = false)
         {
             if (center)
             {
@@ -620,10 +636,42 @@ namespace EnviadorInformacionService
                 tabs.Append(' ', whitespaces);
                 text = tabs.ToString() + text;
             }
-            float yPos = topMargin + (count * printFont.GetHeight(ev.Graphics));
-            ev.Graphics.DrawString(text, printFont, Brushes.Black, leftMargin, yPos, new StringFormat());
+            float yPos = topMargin + (count * printFont.GetHeight(ev.Graphics)); 
+            if (isQr)
+            {
+                GenerateQRCode(text, 160);
+                Image newImage = Image.FromFile($"{AppContext.BaseDirectory}/file.bmp");
+
+                RectangleF srcRect = new RectangleF(0, 0, 160F, 160F);
+                GraphicsUnit units = GraphicsUnit.Pixel;
+                ev.Graphics.DrawImage(newImage, leftMargin, yPos, srcRect, units);
+            }
+            else
+            {
+                ev.Graphics.DrawString(text, printFont, Brushes.Black, leftMargin, yPos, new StringFormat() { });
+            }
             count++;
             return count;
+        }
+
+        private void GenerateQRCode(string content, int size)
+        {
+            QrEncoder encoder = new QrEncoder(ErrorCorrectionLevel.H);
+            QrCode qrCode;
+            encoder.TryEncode(content, out qrCode);
+
+            GraphicsRenderer gRenderer = new GraphicsRenderer(new FixedModuleSize(4, QuietZoneModules.Two), System.Drawing.Brushes.Black, System.Drawing.Brushes.White);
+            //Graphics g = gRenderer.Draw(qrCode.Matrix);
+
+            MemoryStream ms = new MemoryStream();
+            gRenderer.WriteToStream(qrCode.Matrix, ImageFormat.Bmp, ms);
+
+            var imageTemp = new Bitmap(ms);
+
+            var image = new Bitmap(imageTemp, new System.Drawing.Size(new System.Drawing.Point(size, size)));
+
+            image.Save($"{AppContext.BaseDirectory}/file.bmp", ImageFormat.Bmp);
+
         }
     }
 }

@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FacturaCanastilla = FacturacionelectronicaCore.Repositorio.Entities.FacturaCanastilla;
 
 namespace FacturacionelectronicaCore.Web.Controllers
 {
@@ -23,7 +24,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
         }
 
         [HttpPost("GetFactura")]
-        public async Task<IEnumerable<FacturasCanastillaResponse>> BuscarFacturas(FiltroBusqueda filtroFactura)
+        public async Task<IEnumerable<FacturaCanastilla>> BuscarFacturas(FiltroBusqueda filtroFactura)
         => await _facturaNegocio.GetFacturas(filtroFactura.FechaInicial, filtroFactura.FechaFinal, filtroFactura.Identificacion, filtroFactura.NombreTercero, filtroFactura.Estacion);
        
         [HttpPost("GetFacturasReporte")]
@@ -32,12 +33,12 @@ namespace FacturacionelectronicaCore.Web.Controllers
 
 
         [HttpGet("{idFactura}")]
-        public async Task<FacturasCanastillaResponse> Get(string idFactura)
+        public async Task<FacturaCanastilla> Get(string idFactura)
             => await _facturaNegocio.GetFactura(idFactura);
 
 
         [HttpGet("detalle/{idFactura}")]
-        public async Task<IEnumerable<FacturaCanastillaDetalleResponse>> GetDEtalle(string idFactura)
+        public async Task<IEnumerable<FacturaCanastilla>> GetDEtalle(string idFactura)
             => await _facturaNegocio.GetDetalleFactura(idFactura);
 
 

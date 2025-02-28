@@ -79,9 +79,9 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         public async Task<IEnumerable<CupoAutomotor>> GetCupoAutomotor(string estacion)
         {
             var CupoAutomotor = await _mongoHelper.GetAllDocuments<CupoAutomotor>(_repositorioConfig.Cliente, "CupoAutomotor");
-            if (CupoAutomotor.Any(x => x.EstacionGuid == estacion))
+            if (CupoAutomotor.Any(x => x.EstacionGuid.ToLower() == estacion.ToLower()))
             {
-                return CupoAutomotor.Where(x => x.EstacionGuid == estacion);
+                return CupoAutomotor.Where(x => x.EstacionGuid.ToLower() == estacion.ToLower());
 
             }
             else

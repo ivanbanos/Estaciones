@@ -390,7 +390,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
                     combustibles.Add(factura.Combustible);
                 }
             }
-            var items = combustibles.Select(x => _alegraFacade.GetItem(x).Result);
+            var items = combustibles.Select(x => _alegraFacade.GetItem(x,null).Result);
 
             try
             {

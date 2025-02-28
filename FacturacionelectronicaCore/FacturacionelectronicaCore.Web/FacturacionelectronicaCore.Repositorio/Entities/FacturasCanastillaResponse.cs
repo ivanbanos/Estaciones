@@ -4,7 +4,7 @@ using System.Text;
 
 namespace FacturacionelectronicaCore.Repositorio.Entities
 {
-   public class FacturasCanastillaResponse
+   public class FacturasCanastilla
     {
         public int FacturasCanastillaId { get; set; }
         public Guid Guid { get; set; }

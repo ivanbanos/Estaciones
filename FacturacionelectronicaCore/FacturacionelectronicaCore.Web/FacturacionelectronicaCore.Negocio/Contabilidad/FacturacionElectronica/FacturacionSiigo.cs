@@ -184,10 +184,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                             city_code = "11001"
                         }
                     },
-                    phones = new List<PhoneSiigoRequest> { new PhoneSiigoRequest { number = string.IsNullOrEmpty(tercero.Telefono) || tercero.Telefono == "no informado" ? "3000000000" : tercero.Telefono, } },
+                    phones = new List<PhoneSiigoRequest> { new PhoneSiigoRequest { number = string.IsNullOrEmpty(tercero.Telefono) || isAlphaNumeric(tercero.Telefono) ? "3000000000" : tercero.Telefono, } },
                     contacts = new List<ContactSiigoRequest> { new ContactSiigoRequest {
                         first_name = nombre,
-                        last_name = apellido, email = string.IsNullOrEmpty(tercero.Correo) || tercero.Correo == "no informado" ? alegraOptions.Correo : tercero.Correo, } }
+                        last_name = apellido, email = string.IsNullOrEmpty(tercero.Correo) || tercero.Correo.ToLower() == "no informado" ? alegraOptions.Correo : tercero.Correo, } }
                 },
                 seller = alegraOptions.Seller,
                 payments = new List<PaymentSiigoRequest>
@@ -209,20 +209,24 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 cost_center = 85
             };
         }
-
+        public bool isAlphaNumeric(string strToCheck)
+        {
+            Regex rg = new Regex(@"^[a-zA-Z \s,]*$");
+            return rg.IsMatch(strToCheck);
+        }
         private string GetCodeCombustible(string combustible)
         {
-            if (combustible.ToLower().Contains("acpm"))
+            if (combustible.ToLower().Contains("acpm") || combustible.ToLower().Contains("die"))
             {
-                return "111";
+                return  alegraOptions.Acpm;
             }
             else if (combustible.ToLower().Contains("corri"))
             {
-                return "1";
+                return alegraOptions.Corriente;
             }
             else
             {
-                return "113";
+                return alegraOptions.Gas;
             }
         }
 
@@ -230,15 +234,15 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         {
             if (formaDePago.ToLower().Contains("de"))
             {
-                return 1659;
+                return alegraOptions.Debito;
             }
             else if (formaDePago.ToLower().Contains("cre"))
             {
-                return 1660;
+                return alegraOptions.Credito;
             }
             else 
             {
-                return 1657;
+                return alegraOptions.Efectivo;
             }
         }
 
@@ -262,16 +266,25 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             var nombreCompleto = tercero.Nombre.Trim();
             if (string.IsNullOrEmpty(tercero.Apellidos) || tercero.Apellidos.Contains("no informado"))
             {
-                if (nombreCompleto.Split(' ').Count() > 1)
+                if(tercero.DescripcionTipoIdentificacion == "Nit")
                 {
-                    nombre = nombreCompleto.Substring(0, nombreCompleto.LastIndexOf(" "));
-                    apellido = nombreCompleto.Split(' ').Last();
-                }
-                else
-                {
+
                     nombre = nombreCompleto;
                     apellido = "no informado";
                 }
+                else {
+                    if (nombreCompleto.Split(' ').Count() > 1)
+                    {
+                        nombre = nombreCompleto.Substring(0, nombreCompleto.LastIndexOf(" "));
+                        apellido = int.TryParse(nombreCompleto.Split(' ').Last(), out _) ? "no informado" : nombreCompleto.Split(' ').Last();
+                    }
+                    else
+                    {
+                        nombre = nombreCompleto;
+                        apellido = "no informado";
+                    }
+                }
+                
             }
             else
             {
@@ -280,8 +293,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
             return new FacturaSiigo()
             {
-
-                stamp = new StampSiigoRequest { send = false },
+                mail = new MailSiigoRequest { send = true },
+                stamp = new StampSiigoRequest { send = true },
                 document = new DocumentSiigoRequest { id = int.Parse(numero.idNumeracion) },
                 date = x.Fecha.ToString("yyyy-MM-dd"),
                 
@@ -302,10 +315,11 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                             city_code = "11001"
                         }
                     },
-                    phones = new List<PhoneSiigoRequest> { new PhoneSiigoRequest { number = string.IsNullOrEmpty(tercero.Telefono) || tercero.Telefono == "no informado" ? "3000000000" : tercero.Telefono, } },
+                    phones = new List<PhoneSiigoRequest> { new PhoneSiigoRequest { number = string.IsNullOrEmpty(tercero.Telefono) || tercero.Telefono.ToLower() == "no informado" || isAlphaNumeric(tercero.Telefono) ? "3000000000" : tercero.Telefono, } },
                     contacts = new List<ContactSiigoRequest> { new ContactSiigoRequest {
                         first_name = nombre,
-                        last_name = apellido, email = string.IsNullOrEmpty(tercero.Correo) || tercero.Correo == "no informado" ? alegraOptions.Correo : tercero.Correo, } }
+                        last_name = apellido,
+                        email = string.IsNullOrEmpty(tercero.Correo) || tercero.Correo.ToLower() == "no informado" ? alegraOptions.Correo : tercero.Correo, } }
                 },
                 seller = alegraOptions.Seller,
                 
@@ -430,7 +444,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         {
                             Console.WriteLine("Ok:" + orden.IdVentaLocal + ":" + respuestaSiigo.stamp?.cufe);
                             //await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), invoice.document.id + 1);
-                            return "Ok:" + respuestaSiigo.prefix + respuestaSiigo.number + ":" + (respuestaSiigo.stamp?.cufe ?? respuestaSiigo.prefix + respuestaSiigo.number);
+                            return "Ok:" + respuestaSiigo.prefix + respuestaSiigo.number + ":" + (respuestaSiigo.stamp?.cufe ?? respuestaSiigo.prefix + respuestaSiigo.number + ":" + respuestaSiigo.id);
 
                         }
                     }
@@ -548,6 +562,61 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
 
         public Task<string> GenerarFacturaElectronica(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<string> GetFacturaElectronica(string id, Guid estacionGuid)
+        {
+            var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
+            try
+            {
+
+                using (var client = new HttpClient())
+                {
+                    try
+                    {
+                        var token = await GetToken(numero);
+                        client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
+                        client.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue("Bearer", token);
+                        client.DefaultRequestHeaders.Add("Partner-Id", "SIGES");
+                        var response = await client.GetAsync($"{alegraOptions.Url}v1/invoices/{id.Split(":").Last()}");
+                        string responseBody = await response.Content.ReadAsStringAsync();
+
+                        Console.WriteLine(responseBody);
+                        response.EnsureSuccessStatusCode();
+
+                        var respuestaSiigo = JsonConvert.DeserializeObject<FacturaSiigoResponse>(responseBody);
+                        if (responseBody.ToLower().Contains("error"))
+                        {
+
+                            return null;
+                        }
+                        else
+                        {
+                            return $"Factura electrónica\n\r{respuestaSiigo.prefix + respuestaSiigo.number}\n\rCUFE:\n\r{respuestaSiigo?.stamp?.cufe}";
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+
+                        Console.WriteLine(ex);
+                        Console.WriteLine(ex.StackTrace);
+                        return null;
+
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                Console.WriteLine(ex.StackTrace);
+                return null;
+            }
+        }
+
+        public Task<Item> GetItem(string name, Alegra options)
         {
             throw new NotImplementedException();
         }

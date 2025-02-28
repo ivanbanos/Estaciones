@@ -496,5 +496,15 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         {
             throw new NotImplementedException();
         }
+
+        public Task<string> GetFacturaElectronica(string id, Guid estacionGuid)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Item> GetItem(string name, Alegra options)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

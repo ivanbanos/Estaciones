@@ -1,29 +1,21 @@
-﻿// See https://aka.ms/new-console-template for more information
-using FactoradorEstacionesModelo;
-using ManejadorSurtidor.Messages;
+﻿using RabbitMQ.Client;
+using System.Text;
 
-Console.WriteLine("Hello, World!");
-var _messageProducer = new RabbitMQProducer();
-var still = true;
-while (still)
-{
-    Console.WriteLine("Escribe mensaje");
-    Console.WriteLine("Surtidor:");
-    var SurtidorId = Console.ReadLine();
-    Console.WriteLine("Estado:");
-    var Estado = Console.ReadLine();
-    Console.WriteLine("Ubicacion:");
-    var Ubicacion = Console.ReadLine();
-    Console.WriteLine("Turno:");
-    var Turno = Console.ReadLine();
-    Console.WriteLine("Empleado:");
-    var Empleado = Console.ReadLine();
-    await _messageProducer.SendMessage(new Mensaje()
-    {
-        SurtidorId = Int32.Parse(SurtidorId),
-        Estado = Estado,
-        Ubicacion = Ubicacion,
-        Turno = Turno,
-        Empleado = Empleado
-    });
-}
+Console.WriteLine("Escribe el host");
+var host = Console.ReadLine();
+
+var factory = new ConnectionFactory { HostName = "localhost" };
+using var connection = await factory.CreateConnectionAsync();
+using var channel = await connection.CreateChannelAsync();
+
+await channel.QueueDeclareAsync(queue: "hello", durable: false, exclusive: false, autoDelete: false,
+    arguments: null);
+
+const string message = "Hello World!";
+var body = Encoding.UTF8.GetBytes(message);
+
+await channel.BasicPublishAsync(exchange: string.Empty, routingKey: "hello", body: body);
+Console.WriteLine($" [x] Sent {message}");
+
+Console.WriteLine(" Press [enter] to exit.");
+Console.ReadLine();

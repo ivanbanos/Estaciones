@@ -41,10 +41,12 @@ namespace ManejadorSurtidor
             await base.StopAsync(cancellationToken);
             _logger.Log(NLog.LogLevel.Info, "Cerrando");
         }
-        public Worker(ILogger<Worker> logger, IEstacionesRepositorio estacionesRepositorio, IOptions<Sicom> options, ISicomConection sicomConection, IMessageProducer messageProducer, IFidelizacion fidelizacion, IMessagesReceiver messageReceiver, Islas islas)
+        public Worker(ILogger<Worker> logger, IEstacionesRepositorio estacionesRepositorio, IOptions<Sicom> options, ISicomConection sicomConection, IMessageProducer messageProducer, IFidelizacion fidelizacion,
+            //IMessagesReceiver messageReceiver, 
+            Islas islas)
         {
 
-            ((IObservable<string>)messageReceiver).Subscribe(this);
+           // ((IObservable<string>)messageReceiver).Subscribe(this);
             _estacionesRepositorio = estacionesRepositorio;
             _options = options;
             _sicomConection = sicomConection;

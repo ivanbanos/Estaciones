@@ -34,6 +34,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 case "SIIGO":
                     services.AddScoped<IFacturacionElectronicaFacade, FacturacionSiigo>();
                     break;
+                case "FACTURA1":
+                    services.AddScoped<IFacturacionElectronicaFacade, FacturacionFactura1>();
+                    break;
 
             }
 
@@ -75,6 +78,15 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             IConfiguration configuration)
         {
             services.AddScoped<IFacturacionElectronicaFacade, FacturacionTitan>();
+
+            services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
+            return services;
+        }
+        public static IServiceCollection AddFactura1(
+            this IServiceCollection services,
+            IConfiguration configuration)
+        {
+            services.AddScoped<IFacturacionElectronicaFacade, FacturacionFactura1>();
 
             services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
             return services;

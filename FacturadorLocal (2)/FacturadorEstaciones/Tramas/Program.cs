@@ -1,10 +1,20 @@
-﻿using NLog;
+﻿using Gma.QrCodeNet.Encoding;
+using Gma.QrCodeNet.Encoding.Windows.Render;
+using NLog;
+using QRCoder;
 using System;
 using System.Configuration;
+using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
+using System.Drawing.Printing;
+using System.IO;
 using System.IO.Ports;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using static System.Net.Mime.MediaTypeNames;
+using Image = System.Drawing.Image;
 
 namespace Tramas
 {
@@ -15,22 +25,117 @@ namespace Tramas
 
         public static void Main()
         {
-            Console.WriteLine("Colocar puerto\n");
-            var puerto = Console.ReadLine();
-            Console.WriteLine("Colocar ip\n");
-            var ip = Console.ReadLine();
-            _continue = true;
-            while (_continue)
+            //Console.WriteLine("Colocar puerto\n");
+            //var puerto = Console.ReadLine();
+            //Console.WriteLine("Colocar ip\n");
+            //var ip = Console.ReadLine();
+            //_continue = true;
+            //while (_continue)
+            //{
+            //    Console.WriteLine("Colocar trama\n");
+            //    var trama = Console.ReadLine();
+            //    var respuesta = send_cmd(trama, puerto, ip);
+            //    Console.WriteLine(respuesta);
+            //}
+
+            try
             {
-                Console.WriteLine("Colocar trama\n");
-                var trama = Console.ReadLine();
-                var respuesta = send_cmd(trama, puerto, ip);
-                Console.WriteLine(respuesta);
+
+                try
+                {
+                    var printFont = new Font("Console", 9);
+                    PrintDocument pd = new PrintDocument();
+                    pd.PrintPage += new PrintPageEventHandler(pd_PrintPageOnly);
+                    pd.DefaultPageSettings.Margins.Bottom = 20;
+                    
+                    pd.Print();
+
+                }
+                catch (Exception ex)
+                {
+
+
+                }
             }
-            
+            catch (Exception ex)
+            {
+            }
+
         }
 
 
+        private static void pd_PrintPageOnly(object sender, PrintPageEventArgs ev)
+        {
+            try
+            {
+                float yPos = 0;
+                int count = 0;
+                float leftMargin = 5;
+                float topMargin = 10;
+                String line = null;
+                int sizePaper = ev.PageSettings.PaperSize.Width;
+                int fonSizeInches = 72 / 9;
+                var _charactersPerPage = 40;
+                if (_charactersPerPage == 0)
+                {
+                    _charactersPerPage = fonSizeInches * sizePaper / 100;
+                }
+
+                count = printLine("www.sigessoluciones.com", ev, count, leftMargin, topMargin, false, isQr: true);
+                if (line != null)
+                    ev.HasMorePages = true;
+                else
+                    ev.HasMorePages = false;
+
+
+                if (line != null)
+                    ev.HasMorePages = true;
+                else
+                    ev.HasMorePages = false;
+            }
+            catch (Exception ex)
+            {
+            }
+
+        }
+
+        private static int printLine(string text, PrintPageEventArgs ev, int count, float leftMargin, float topMargin, bool v2, bool isQr)
+        {
+
+
+            float yPos = topMargin + (count * 10);
+
+            GenerateQRCode(text, 120);
+            Image newImage = Image.FromFile("C:\\Users\\ivana\\Documents\\file.bmp");
+            RectangleF srcRect = new RectangleF(0, 0, 120F, 120F);
+            GraphicsUnit units = GraphicsUnit.Pixel;
+            ev.Graphics.DrawImage(newImage, leftMargin, yPos, srcRect, units);
+            count++;
+            return count;
+        }
+
+
+
+        private static Image GenerateQRCode(string content, int size)
+        {
+            QrEncoder encoder = new QrEncoder(ErrorCorrectionLevel.H);
+            QrCode qrCode;
+            encoder.TryEncode(content, out qrCode);
+
+            GraphicsRenderer gRenderer = new GraphicsRenderer(new FixedModuleSize(4, QuietZoneModules.Two), System.Drawing.Brushes.Black, System.Drawing.Brushes.White);
+            //Graphics g = gRenderer.Draw(qrCode.Matrix);
+
+            MemoryStream ms = new MemoryStream();
+            gRenderer.WriteToStream(qrCode.Matrix, ImageFormat.Bmp, ms);
+
+            var imageTemp = new Bitmap(ms);
+
+            var image = new Bitmap(imageTemp, new System.Drawing.Size(new System.Drawing.Point(size, size)));
+
+            image.Save("C:\\Users\\ivana\\Documents\\file.bmp", ImageFormat.Bmp);
+
+            return image;
+        }
         public static string send_cmd(string szData , string puerto, string ip)
         {
             Socket m_socClient = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);

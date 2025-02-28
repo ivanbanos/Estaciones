@@ -11,5 +11,6 @@ namespace ManejadorSurtidor.SICOM
         public string Contrasena { get; set; }
         public string PuertoBoton { get; set; }
         public string APIKey { get; set; }
+        public bool ValidarOnline { get; set; }
     }
 }

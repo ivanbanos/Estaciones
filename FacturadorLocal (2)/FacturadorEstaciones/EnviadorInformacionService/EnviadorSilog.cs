@@ -1,5 +1,6 @@
 ﻿using FacturacionelectronicaCore.Negocio.Contabilidad;
 using FacturadorEstacionesRepositorio;
+using Newtonsoft.Json;
 using OfficeOpenXml;
 using System;
 using System.Collections.Generic;
@@ -64,10 +65,10 @@ namespace EnviadorInformacionService
                                 continue;
                             }
                         }
-                        var facturasEnviar = facturas.Select(x => new Factura(x, formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).Single()));
+                        var facturasEnviar = facturas.Select(x => new Factura(x, formas.Where(y => y.Id == x.Venta.COD_FOR_PAG).Select(y => y.Descripcion).Single()));
 
 
-                        Logger.Info($"{facturasEnviar.Count()} facturas encontradas");
+                        Logger.Info($"{facturasEnviar.Count()} facturas encontradas. {JsonConvert.SerializeObject(facturasEnviar)}");
                         var idsenviados = _apiContabilidad.EnviarFacturas(facturasEnviar);
 
                         _estacionesRepositorio.ActuralizarFacturasEnviadosFacturacion(idsenviados);

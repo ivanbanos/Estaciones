@@ -126,6 +126,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 nombre = nombreCompleto;
                 apellido = tercero.Apellidos;
             }
+
+            var subtotal = x.SubTotal + x.Descuento;
+            var total = subtotal;
             return new FacturaSilog()
             {
                 Guid = Guid.Parse(estacionGuid),
@@ -133,7 +136,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 Combustible = x.Combustible,
                 Cantidad = x.Cantidad,
                 Precio = x.Precio,
-                Total = x.Total,
+                Total = total,
                 Placa = x.Placa,
                 Kilometraje = x.Kilometraje,
                 Surtidor = x.Surtidor + "",
@@ -156,7 +159,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 IdVentaLocal = x.IdVentaLocal,
                 IdTerceroLocal = x.Tercero.IdLocal,
                 FechaProximoMantenimiento = x.FechaProximoMantenimiento,
-                SubTotal = x.SubTotal,
+                SubTotal = subtotal,
                 Vendedor = x.Vendedor,
                 Identificacion = x.Tercero.Identificacion,
                 Prefijo = x.DescripcionResolucion + x.Consecutivo,
@@ -248,6 +251,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 apellido = tercero.Apellidos;
             }
 
+            var subtotal = x.SubTotal + x.Descuento;
+            var total = subtotal ;
             return new FacturaSilog()
             {
                 Guid = Guid.Parse(estacionGuid),
@@ -255,7 +260,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 Combustible = x.Combustible,
                 Cantidad = (decimal)x.Cantidad,
                 Precio = (decimal)x.Precio,
-                Total = (decimal)x.Total,
+                Total = (decimal)total,
                 Placa = x.Placa,
                 Kilometraje = x.Kilometraje,
                 Surtidor = x.Surtidor + "",
@@ -263,6 +268,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 Manguera = x.Manguera + "",
                 FormaDePago = x.FormaDePago,
                 Fecha = x.Fecha,
+                numeroTransaccion = x.numeroTransaccion,
                 Tercero = new TerceroSilog()
                 {
                     Nombre = string.IsNullOrEmpty(tercero.Nombre) ? "No informado" : tercero.Nombre,
@@ -278,7 +284,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 IdVentaLocal = x.IdVentaLocal,
                 IdTerceroLocal = x.Tercero.IdLocal,
                 FechaProximoMantenimiento = x.FechaProximoMantenimiento,
-                SubTotal = x.SubTotal,
+                SubTotal = (decimal)subtotal,
                 Vendedor = x.Vendedor,
                 Identificacion = x.Tercero.Identificacion,
                 Prefijo = alegraOptions.Prefix,
@@ -442,6 +448,16 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         }
 
         public Task<string> GenerarFacturaElectronica(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<string> GetFacturaElectronica(string id, Guid estacionGuid)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Item> GetItem(string name, Alegra options)
         {
             throw new NotImplementedException();
         }
