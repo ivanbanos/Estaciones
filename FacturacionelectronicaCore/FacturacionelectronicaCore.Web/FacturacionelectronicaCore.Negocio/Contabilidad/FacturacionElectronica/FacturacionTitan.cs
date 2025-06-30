@@ -506,5 +506,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         {
             throw new NotImplementedException();
         }
+
+        public Task<string> ReenviarFactura(Repositorio.Entities.OrdenDeDespacho orden, Guid estacion)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

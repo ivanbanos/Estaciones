@@ -20,6 +20,13 @@ const _nav = [
   },
   {
     component: CNavItem,
+    name: 'Items de Canastilla',
+    to: '/CanastillaItem',
+    icon: <CIcon icon={cilPlus} customClassName="nav-icon" />,
+    level: 2,
+  },
+  {
+    component: CNavItem,
     name: 'Turnos',
     to: '/Turnos',
     icon: <CIcon icon={cilCalculator} customClassName="nav-icon" />,

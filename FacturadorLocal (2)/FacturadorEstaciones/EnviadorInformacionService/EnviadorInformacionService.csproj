@@ -52,6 +52,9 @@
     <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.8.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Bcl.TimeProvider, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Bcl.TimeProvider.8.0.0\lib\net462\Microsoft.Bcl.TimeProvider.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions, Version=8.0.0.1, Culture=neutral, PublicKeyToken=adb9793829ddae60, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Extensions.DependencyInjection.Abstractions.8.0.1\lib\net462\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
     </Reference>
@@ -66,6 +69,12 @@
     </Reference>
     <Reference Include="NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
       <HintPath>..\packages\NLog.5.3.2\lib\net46\NLog.dll</HintPath>
+    </Reference>
+    <Reference Include="Polly, Version=8.0.0.0, Culture=neutral, PublicKeyToken=c8a3ffc3f8f825cc, processorArchitecture=MSIL">
+      <HintPath>..\packages\Polly.8.6.1\lib\net472\Polly.dll</HintPath>
+    </Reference>
+    <Reference Include="Polly.Core, Version=8.0.0.0, Culture=neutral, PublicKeyToken=c8a3ffc3f8f825cc, processorArchitecture=MSIL">
+      <HintPath>..\packages\Polly.Core.8.6.1\lib\net472\Polly.Core.dll</HintPath>
     </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="System" />
@@ -113,6 +122,9 @@
       <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
     </Reference>
     <Reference Include="System.Transactions" />
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -127,11 +139,14 @@
     <Compile Include="ConexionEstacionRemota.cs" />
     <Compile Include="ConnectionStrings.cs" />
     <Compile Include="Contabilidad\ApiContabilidad.cs" />
+    <Compile Include="Contabilidad\ApiSiesa.cs" />
     <Compile Include="Contabilidad\DatosFactura.cs" />
     <Compile Include="Contabilidad\DatosTercero.cs" />
     <Compile Include="Contabilidad\Factura.cs" />
     <Compile Include="Contabilidad\IApiContabilidad.cs" />
+    <Compile Include="Contabilidad\MoviminetoContable.cs" />
     <Compile Include="Contabilidad\RequestContabilidad.cs" />
+    <Compile Include="Contabilidad\TerceroSiesa.cs" />
     <Compile Include="Convertidor\Convertidor.cs" />
     <Compile Include="EnviadorDeInformacion.cs" />
     <Compile Include="EnviadorProsoft.cs" />
@@ -181,6 +196,7 @@
     <Compile Include="Models\TipoIdentificacion.cs" />
     <Compile Include="Models\Turno.cs" />
     <Compile Include="Models\Venta.cs" />
+    <Compile Include="ProtocoloSiesa.cs" />
     <Compile Include="RequestEnviarFacturasCanastilla.cs" />
     <Compile Include="Service1.cs">
       <SubType>Component</SubType>

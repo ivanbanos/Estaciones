@@ -72,5 +72,9 @@ namespace FacturadorEstacionesRepositorio
         IEnumerable<FacturaSiges> GetFacturasPorFechas(DateTime desde, DateTime hasta);
         IEnumerable<TurnoSiges> GetTurnosByFechas(DateTime desde, DateTime hasta);
         IEnumerable<TurnoSurtidor> ObtenerTurnoInfo(int id);
+        IEnumerable<FacturaSiges> BuscarFacturasNoEnviadasSiesa();
+        void MarcarTercerosEnviadosASiesa(IEnumerable<int> ids);
+        string ObtenerAuxiliarContable(int codigoFormaPago, string combustible, bool v1, bool v2);
+        void ActuralizarFacturasEnviadosSiesa(List<int> facturasEnviadas);
     }
 }

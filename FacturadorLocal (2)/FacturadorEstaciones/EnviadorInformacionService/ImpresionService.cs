@@ -673,12 +673,12 @@ namespace EnviadorInformacionService
                     {
                         infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, estacionFuente, _conexionEstacionRemota.getToken());
                         Thread.Sleep(100);
-                    } while (infoTemp == null || intentos++<3);
+                    } while (infoTemp == null || intentos++ < 3);
 
                     Console.WriteLine("info fac elec " + infoTemp);
                     Logger.Info("info fac elec " + infoTemp);
                 }
-                catch (Exception ex )
+                catch (Exception ex)
                 {
                     Logger.Info("info fac elec " + ex.Message);
                     Logger.Info("info fac elec " + ex.StackTrace);
@@ -694,9 +694,9 @@ namespace EnviadorInformacionService
 
                 lineasImprimir.Add(new LineasImprimir("Factura Electrónica de Venta " + facturaElectronica[2], true));
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[3], true));
-                lineasImprimir.Add(new LineasImprimir(facturaElectronica[4].Substring(0,facturaElectronica[4].Length / 3), true));
+                lineasImprimir.Add(new LineasImprimir(facturaElectronica[4].Substring(0, facturaElectronica[4].Length / 3), true));
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[4].Substring(facturaElectronica[4].Length / 3, facturaElectronica[4].Length * 2 / 3), true));
-                lineasImprimir.Add(new LineasImprimir(facturaElectronica[4].Substring(facturaElectronica[4].Length*2 / 3), true));
+                lineasImprimir.Add(new LineasImprimir(facturaElectronica[4].Substring(facturaElectronica[4].Length * 2 / 3), true));
                 lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
                 lineasImprimir.Add(new LineasImprimir("Venta: " + _venta.CONSECUTIVO, false));
 
@@ -826,7 +826,7 @@ namespace EnviadorInformacionService
                     lineasImprimir.Add(new LineasImprimir(formatoTotales("Método de pago :", " Efectivo"), false));
 
                 }
-                if (!string.IsNullOrEmpty( _factura.numeroTransaccion)&&_factura.numeroTransaccion != "NA")
+                if (!string.IsNullOrEmpty(_factura.numeroTransaccion) && _factura.numeroTransaccion != "NA")
                 {
                     lineasImprimir.Add(new LineasImprimir(formatoTotales("N Tran :", _factura.numeroTransaccion), false));
                 }
@@ -861,7 +861,6 @@ namespace EnviadorInformacionService
                 }
 
             }
-
             if (!String.IsNullOrEmpty(_infoEstacion.Linea1))
             {
                 lineasImprimir.Add(new LineasImprimir(_infoEstacion.Linea1, false));
@@ -878,10 +877,41 @@ namespace EnviadorInformacionService
             {
                 lineasImprimir.Add(new LineasImprimir(_infoEstacion.Linea4, false));
             }
+
+
+
             lineasImprimir.Add(new LineasImprimir("Fabricado por:" + " SIGES SOLUCIONES SAS ", true));
             lineasImprimir.Add(new LineasImprimir("Nit:" + " 901430393-2 ", true));
             lineasImprimir.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress), false));
+
+
+            if (_venta.TOTAL >= 10000)
+            {
+                lineasImprimir.Add(new LineasImprimir(" ", false));
+                lineasImprimir.Add(new LineasImprimir(" ", false));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+
+                lineasImprimir.Add(new LineasImprimir(" ", false));
+                lineasImprimir.Add(new LineasImprimir("NOMBRE ", false));
+
+                lineasImprimir.Add(new LineasImprimir(" ", false));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                lineasImprimir.Add(new LineasImprimir("CÉDULA", false));
+
+                lineasImprimir.Add(new LineasImprimir(" ", false));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                lineasImprimir.Add(new LineasImprimir("CEL/TEL", false));
+
+                lineasImprimir.Add(new LineasImprimir(" ", false));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                lineasImprimir.Add(new LineasImprimir("NRO RECIBO DE TANQUEO ", false));
+
+                lineasImprimir.Add(new LineasImprimir(" ", false));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                lineasImprimir.Add(new LineasImprimir($"FECHA DE TANQUEO {DateTime.Now} ", false));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+            }
             lineasImprimir.Add(new LineasImprimir(".", true));
             if (!string.IsNullOrEmpty(infoTemp))
             {

@@ -16,7 +16,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         /// <param name="nombreTercero">fechaFinal</param>
         /// <param name="estacion">Estacion</param>
         /// <returns>Coleccion de Ordenes de desapacho con Identificacion y Nombre de tercero</returns>
-        Task<IEnumerable<OrdenDeDespacho>> GetOrdenesDeDespacho(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid estacion);
+        Task<IEnumerable<OrdenDeDespacho>> GetOrdenesDeDespacho(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid? estacion);
         Task AddRange(IEnumerable<OrdenDeDespacho> lists, Guid estacion);
 
         Task<int> AddOrdenesImprimir(IEnumerable<FacturasEntity> lists);

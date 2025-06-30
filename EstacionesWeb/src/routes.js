@@ -54,11 +54,13 @@ const Turnos = React.lazy(() => import('./views/Reportes/Turnos'))
 const VentasClientes = React.lazy(() => import('./views/Reportes/VentasClientes'))
 const ReporteFiscal = React.lazy(() => import('./views/Reportes/ReporteFiscal'))
 const CanastillaNormal = React.lazy(() => import('./views/Canastilla/Canastilla'))
+const CanastillaItem = React.lazy(() => import('./views/Canastilla/CanastillaItem'))
 
 const routes = [
   { path: '/', exact: true, name: 'Home' },
   { path: '/dashboard', name: 'Estaciones', element: Dashboard },
   { path: '/CanastillaNormal', name: 'Canastilla', element: CanastillaNormal },
+  { path: '/CanastillaItem', name: 'Items de Canastilla', element: CanastillaItem },
   { path: '/VentasClientes', name: 'VentasClientes', element: VentasClientes },
   { path: '/PorAutomotores', name: 'Reporte Supos Por Automotores', element: PorAutomotores },
   { path: '/PorCliente', name: 'Reporte Cupos Por Cliente', element: PorCliente },

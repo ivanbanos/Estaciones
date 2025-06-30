@@ -1,4 +1,5 @@
 using EnviadorInformacionService;
+using EnviadorInformacionService.Contabilidad;
 using FactoradorEstacionesModelo;
 using FacturadorEstacionesPOSWinForm.Repo;
 using FacturadorEstacionesRepositorio;
@@ -36,6 +37,7 @@ try
     .ConfigureServices((hostContext, services) =>
     {
         services.Configure<InfoEstacion>(options => hostContext.Configuration.GetSection("InfoEstacion").Bind(options));
+        services.Configure<Siesa>(options => hostContext.Configuration.GetSection("Siesa").Bind(options));
         services.AddSingleton<IEstacionesRepositorio, EstacionesRepositorioSqlServer>();
         services.Configure<ConnectionStrings>(options => hostContext.Configuration.GetSection("ConnectionStrings").Bind(options));
         services.Configure<List<ServicioSIGES.CaraImpresora>>(options => hostContext.Configuration.GetSection("CarasImpresoras").Bind(options));
@@ -46,11 +48,12 @@ try
         services.Configure<InformacionCuenta>(options => hostContext.Configuration.GetSection("InformacionCuenta").Bind(options));
 
         services.AddSingleton<IConexionEstacionRemota, ConexionEstacionRemota>();
-        services.AddHostedService<SubirVentasWorker>();
-        services.AddHostedService<ObtenerVehiculosWorker>();
-        services.AddHostedService<WorkerImpresion>();
-        services.AddHostedService<CanastillaWorker>();
-        services.AddHostedService<FacturasWorker>();
+        //services.AddHostedService<SubirVentasWorker>();
+        //services.AddHostedService<ObtenerVehiculosWorker>();
+        //services.AddHostedService<WorkerImpresion>();
+        //services.AddHostedService<CanastillaWorker>();
+        //services.AddHostedService<FacturasWorker>();
+        services.AddHostedService<SiesaWorker>();
 
     })
 

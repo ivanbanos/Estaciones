@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,6 +10,8 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
 {
     public class FacturaCanastilla
     {
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string Id { get; set; }
         public string idFacturaElectronica { get; set; }
 
         public int FacturasCanastillaId { get; set; }
@@ -25,6 +29,6 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
 		public float iva { get; set; }
 		public float total { get; set; }
 		public string Guid { get; set; }
-		public Guid IdEstacion { get; set; }
+		public string IdEstacion { get; set; }
 	}
 }

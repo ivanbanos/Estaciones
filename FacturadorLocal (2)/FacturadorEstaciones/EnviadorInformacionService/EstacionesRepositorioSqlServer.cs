@@ -867,5 +867,96 @@ DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetFidel
                             });
             return _convertidor.ConvertirFidelizado(dt).FirstOrDefault();
     }
+
+        public List<FactoradorEstacionesModelo.Objetos.Tercero> BuscarTercerosNoEnviadosASiesa()
+        {
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "BuscarTercerosNoEnviadosSiesa",
+                      new Dictionary<string, object>
+                      {
+                      });
+
+            return _convertidor.ConvertirTercero(dt)?.ToList();
+        }
+
+        internal void MarcarTercerosEnviadosASiesa(IEnumerable<int> terceros)
+        {
+            var ventasIds = new DataTable();
+            ventasIds.Columns.Add(new DataColumn("ventaId", typeof(long))
+            {
+                AllowDBNull = false
+            });
+            foreach (var t in terceros)
+            {
+                var row = ventasIds.NewRow();
+                row["ventaId"] = t;
+                ventasIds.Rows.Add(row);
+            }
+            var parameters = new Dictionary<string, object>
+            {
+                {"@terceros",ventasIds }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "CambiarEstadoTerceroEnviadoSiesa",
+                         parameters);
+        }
+
+        public IEnumerable<FactoradorEstacionesModelo.Objetos.Factura> BuscarFacturasNoEnviadasSiesa()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSinEnviarSiesa",
+                         parameters);
+            var facturas = _convertidor.ConvertirFactura(dt2);
+            foreach (var factura in facturas)
+            {
+                DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "getVentaPorId",
+                           new Dictionary<string, object>{
+                {"@CONSECUTIVO",factura.ventaId }
+                           });
+
+                var ventas = _convertidor.ConvertirVenta(dt);
+                var manguera = _convertidor.ConvertirManguera(dt).FirstOrDefault();
+                factura.Venta = ventas.FirstOrDefault();
+                factura.Manguera = manguera;
+            }
+            return facturas.ToList();
+        }
+
+        public void ActuralizarFacturasEnviadosSiesa(IEnumerable<int> facturas)
+        {
+            var ventasIds = new DataTable();
+            ventasIds.Columns.Add(new DataColumn("ventaId", typeof(long))
+            {
+                AllowDBNull = false
+            });
+            foreach (var t in facturas)
+            {
+                var row = ventasIds.NewRow();
+                row["ventaId"] = t;
+                ventasIds.Rows.Add(row);
+            }
+            var parameters = new Dictionary<string, object>
+            {
+                {"@facturas",ventasIds }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ActuralizarEnviadasSiesa",
+                         parameters);
+        }
+
+        public string ObtenerAuxiliarContable(int codigoFormaPago, string combustible, bool factura, bool cruce)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@codigoformapago",codigoFormaPago },
+                {"@combustible",combustible },
+                {"@factura",factura },
+                {"@cruce",cruce }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "BuscarAuxiliar",
+                         parameters);
+
+            return dt2.AsEnumerable().FirstOrDefault()?.Field<string>("auxiliar");
+
+        }
     }
 }

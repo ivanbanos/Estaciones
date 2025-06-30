@@ -130,7 +130,7 @@ namespace EnviadorInformacionService
                         if (_estacionesRepositorio.HayFacturasCanastillaPorImprimir())
                         {
                             var factura = _estacionesRepositorio.getFacturasCanastillaImprimir(); if (imprimiendo == 0 && factura != null
-                             && ((factura.impresa == 0 && ImpresionAutomatica) || factura.impresa <= -1))
+                             && ((factura.impresa == 0 && ImpresionAutomatica) || factura.impresa <= -1 || factura.enviada))
                             {
 
 
@@ -207,7 +207,7 @@ namespace EnviadorInformacionService
                         }
                     }
 
-                    var consecutivo = _conexionEstacionRemota.ObtenerParaImprimir(estacionFuente, token);
+                    var consecutivo = 0;// _conexionEstacionRemota.ObtenerParaImprimir(estacionFuente, token);
 
                     Logger.Error("Factura Encontrada" + consecutivo);
                     if (consecutivo != 0)
@@ -225,7 +225,7 @@ namespace EnviadorInformacionService
                             }
                             else
                             {
-                                Thread.Sleep(2000);
+                                Thread.Sleep(200);
                             }
                         }
                     }
@@ -236,7 +236,7 @@ namespace EnviadorInformacionService
 
                     Logger.Error($"Error en proceso {ex.Message}. {ex.StackTrace} ");
                 }
-                Thread.Sleep(300000);
+                Thread.Sleep(3000);
             }
 
         }
@@ -310,12 +310,13 @@ namespace EnviadorInformacionService
                     var intentos = 0;
                     do
                     {
-                        infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronicaCanastilla(_factura.consecutivo, estacionFuente, _conexionEstacionRemota.getToken());
+                        infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronicaCanastilla(_factura.FacturasCanastillaId, estacionFuente, _conexionEstacionRemota.getToken());
                         Thread.Sleep(100);
                     } while (infoTemp == null || intentos++ < 3);
 
                     Console.WriteLine("info fac elec " + infoTemp);
                     Logger.Info("info fac elec " + infoTemp);
+                    Logger.Info("id " + _factura.FacturasCanastillaId);
                 }
                 catch (Exception ex)
                 {
@@ -340,7 +341,7 @@ namespace EnviadorInformacionService
             }
             else
             {
-                lineasImprimir.Add(new LineasImprimir("Orden de Servicio Temporal: " + _factura.consecutivo, true));
+                lineasImprimir.Add(new LineasImprimir("Orden de Servicio Temporal: " + _factura.FacturasCanastillaId, true));
             }
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
@@ -351,6 +352,9 @@ namespace EnviadorInformacionService
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Fecha : ", _factura.fecha.ToString("dd/MM/yyyy HH:mm:ss")), false));
+
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Isla : ", _factura.Isla + ""), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendedor : ", _factura.Empleado.Trim() + ""), false));
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             if (_infoEstacion.ImpresionPDA)
             {

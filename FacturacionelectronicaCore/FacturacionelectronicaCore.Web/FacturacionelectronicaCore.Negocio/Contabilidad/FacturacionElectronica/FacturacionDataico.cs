@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -195,7 +196,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     numbering = new NumberingDataico()
                     {
                         resolution_number = resolucion.resolucion,
-                        flexible = false,
+                        flexible = true,
                         prefix = resolucion.prefijo
                     },
                     customer = new CustomerDataico()
@@ -334,7 +335,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     numbering = new NumberingDataico()
                     {
                         resolution_number = resolucion.resolucion,
-                        flexible = false,
+                        flexible = true,
                         prefix = resolucion.prefijo
                     },
                     customer = new CustomerDataico()
@@ -413,7 +414,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     numbering = new NumberingDataico()
                     {
                         resolution_number = resolucion.resolucion,
-                        flexible = false,
+                        flexible = true,
                         prefix = resolucion.prefijo
                     },
                     customer = new CustomerDataicoWithoutAdress()
@@ -936,10 +937,6 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                                     else if (error.error.ToLower().Contains("ciudad"))
                                     {
 
-                                        invoice.invoice.customer.city = null;
-                                        invoice.invoice.customer.department = null;
-                                        invoice.invoice.customer.address_line = null;
-                                        invoice.invoice.customer.country_code = null;
                                     }
                                     else
                                     {
@@ -1020,7 +1017,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
         }
 
-        private async Task<FacturaDataico> GetFacturaDataico(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, string v, ResolucionFacturaElectronica resolucion)
+        
+
+
+        private async Task<FacturaDataicoWithoutAddress> GetFacturaDataico(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, string v, ResolucionFacturaElectronica resolucion)
         {
             var numero = resolucion.numeroActual;
 
@@ -1045,23 +1045,32 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 nombre = nombreCompleto;
                 apellido = tercero.Apellidos;
             }
-
-            var items = factura.canastillas.Select(x => new ItemDataico()
+            var items = new List<ItemDataico>();
+            foreach (var articulo in factura.canastillas)
             {
-                sku = x.Canastilla.CanastillaId.ToString(),
-                price = (double)x.precio,
-                description = x.Canastilla.descripcion,
-                quantity = (double)x.cantidad,
-                taxes = new List<TaxisDataico>() { },
-                measuring_unit = x.Canastilla.unidad,
-                retentions = new List<RetentionDataico>() { },
-            });
-            return new FacturaDataico()
+                var taxes = new List<TaxisDataico>();
+                if( articulo.iva>0)
+                {
+                    taxes.Add(new TaxisDataico() { tax_rate="19"});
+                }
+                var item = new ItemDataico()
+                {
+                    sku = "C"+articulo.Canastilla.CanastillaId.ToString(),
+                    price = (double)articulo.precio,
+                    description = articulo.Canastilla.descripcion,
+                    quantity = (double)articulo.cantidad,
+                    taxes = taxes,
+                    measuring_unit = "GL",
+                    retentions = new List<RetentionDataico>() { },
+                };
+                items.Add(item);
+            }
+                return new FacturaDataicoWithoutAddress()
             {
                 actions = new ActionsDataico() { send_dian = true, send_email = true },
-                invoice = new InvoiceDataico()
+                invoice = new InvoiceDataicoWithoutAddress()
                 {
-                    notes = new List<string>(),
+                    notes = new List<string>() { $"Placa: , Kilometraje : , Nro Transaccion : " },
                     env = "PRODUCCION",
                     dataico_account_id = resolucion.idNumeracion,
                     issue_date = DateTime.Now.ToString("dd/MM/yyyy"),
@@ -1074,10 +1083,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     numbering = new NumberingDataico()
                     {
                         resolution_number = resolucion.resolucion,
-                        flexible = false,
+                        flexible = true,
                         prefix = resolucion.prefijo
                     },
-                    customer = new CustomerDataico()
+                    customer = new CustomerDataicoWithoutAdress()
                     {
                         email = string.IsNullOrEmpty(tercero.Correo) || tercero.Correo.ToLower().Contains("no informado") ? alegraOptions.Correo : tercero.Correo,
                         phone = string.IsNullOrEmpty(tercero.Celular) ? "0" : tercero.Celular,
@@ -1086,17 +1095,26 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         party_type = GetKindOfPErson(tercero.DescripcionTipoIdentificacion),
                         tax_level_code = GetNivelTributario(tercero.ResponsabilidadTributaria),
                         regimen = GetRegime(tercero.ResponsabilidadTributaria),
-                        address_line = string.IsNullOrEmpty(tercero.Direccion) ? "0" : tercero.Direccion,
-                        country_code = "CO",
                         first_name = nombre,
                         family_name = apellido,
                         company_name = tercero.Nombre,
-                        department = alegraOptions.Department ?? "73",
-                        city = alegraOptions.City ?? "001",
                     },
-                    items = items.ToList(),
+
+                    items =items
                 }
             };
+        }
+
+        private float GetTasa(Modelo.CanastillaFactura articulo)
+        {
+            return articulo.iva > 0 ? 19 : 0;
+        }
+
+
+
+        public Task<Item> GetItem(string name, Alegra options)
+        {
+            throw new NotImplementedException();
         }
 
         public Task<string> GetFacturaElectronica(string id, Guid estacionGuid)
@@ -1104,7 +1122,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             throw new NotImplementedException();
         }
 
-        public Task<Item> GetItem(string name, Alegra options)
+        public Task<string> ReenviarFactura(Repositorio.Entities.OrdenDeDespacho orden, Guid estacion)
         {
             throw new NotImplementedException();
         }

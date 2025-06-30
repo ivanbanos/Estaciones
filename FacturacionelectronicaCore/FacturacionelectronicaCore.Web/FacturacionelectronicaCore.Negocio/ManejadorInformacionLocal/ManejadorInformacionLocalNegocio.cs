@@ -332,13 +332,17 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         {
             try
             {
+
+                await EnviarTerceros(facturas.Select(x => x.terceroId));
                 foreach (var factura in facturas)
                 {
                     try
                     {
-                        var isGenerada = await _facturaCanastillaRepository.FacturaGenerada(factura.FacturasCanastillaId, estacion);
+                        var facturaCanastilla = await _facturaCanastillaRepository.GetFacturaPorIdCanastilla(factura.FacturasCanastillaId, estacion);
                         var idFactruraElectronica = "";
-                        if (!isGenerada)
+                if (facturaCanastilla == null
+                    || facturaCanastilla.idFacturaElectronica == null
+                    || facturaCanastilla.idFacturaElectronica.StartsWith("error"))
                         {
                             var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.terceroId.Identificacion)).FirstOrDefault();
                             if (terceroEntity != null)
@@ -356,11 +360,17 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                             }
                             else
                             {
+                                var response = await _alegraFacade.GenerarFacturaElectronica(factura, factura.terceroId, estacion);
 
-                                idFactruraElectronica = $"error:Tercero {factura.terceroId.Identificacion} no encontrado";
+                                idFactruraElectronica = response;
                                 factura.idFacturaElectronica = idFactruraElectronica;
                             }
                         }
+
+
+                        var facturaRepo = _mapper.Map<Modelo.FacturaCanastilla, Repositorio.Entities.FacturaCanastilla>(factura);
+
+                        await _facturaCanastillaRepository.Add(facturaRepo, facturaRepo.canastillas, estacion);
                     }
 
                     catch (Exception ex)
@@ -369,10 +379,6 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                         Console.WriteLine(ex.StackTrace);
                         factura.idFacturaElectronica = ex.Message+ex.StackTrace; 
                     }
-
-                    var facturaRepo = _mapper.Map<Modelo.FacturaCanastilla, Repositorio.Entities.FacturaCanastilla>(factura);
-
-                    await _facturaCanastillaRepository.Add(facturaRepo, facturaRepo.canastillas, estacion);
                 }
                 return 1;
             }
@@ -405,6 +411,29 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             }
             ordenesDeDespacho.Tercero = tercero;
             return await _alegraFacade.getJson(ordenesDeDespacho, estacion)+" respuesta "+(ordenDeDespachoEntity.idFacturaElectronica??"No generada");
+        }
+
+        public  async Task<string> GetInfoFacturaElectronicaCanastilla(int consecutivo, Guid estacion)
+        {
+            var ordenDeDespachoEntity = (await _facturaCanastillaRepository.GetFacturaPorIdCanastilla(consecutivo, estacion));
+            if (ordenDeDespachoEntity != null)
+            {
+                if (ordenDeDespachoEntity.idFacturaElectronica != null)
+                {
+
+                    if (ordenDeDespachoEntity.idFacturaElectronica.Split(':')[0] != "error")
+                    {
+                        if (_alegra.Proveedor == "SIIGO")
+                        {
+                            return await _alegraFacade.GetFacturaElectronica(ordenDeDespachoEntity.idFacturaElectronica, estacion);
+                        }
+                        var info = ordenDeDespachoEntity.idFacturaElectronica.Split(':');
+                        return $"Factura electrónica\n\r{info[1]}\n\rCUFE:\n\r{info[2]}";
+                    }
+                }
+                return null;
+            }
+            return null;
         }
     }
 }

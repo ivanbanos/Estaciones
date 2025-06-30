@@ -14,5 +14,6 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public bool deleted { get; set; }
         public Guid guid { get; set; }
         public int iva { get; set; }
+        public string campoextra { get; set; }
     }
 }

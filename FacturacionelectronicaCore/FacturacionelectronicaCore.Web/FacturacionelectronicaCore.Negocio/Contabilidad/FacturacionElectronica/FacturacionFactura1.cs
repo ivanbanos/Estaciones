@@ -17,8 +17,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
     public class FacturacionFactura1 : IFacturacionElectronicaFacade
     {
-        private string facturaString = "<Factura xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n         xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\r\n\t<Encabezado>\r\n\t\t<ordenCompra/>\r\n\t\t<nitemisor>{nit}</nitemisor>\r\n\t\t<tipoOpera>10</tipoOpera>\r\n\t\t<tipocomprobante>01</tipocomprobante>\r\n\t\t<noresolucion>{resolucion}</noresolucion>\r\n\t\t<prefijo>{prefijo}</prefijo>\r\n\t\t<folio>{numero}</folio>\r\n\t\t<fecha>{fecha}</fecha>\r\n\t\t<hora>{hora}</hora>\r\n\t\t<fechavencimiento>{fecha}</fechavencimiento>\r\n\t\t<moneda>COP</moneda>\r\n\t\t<xslt>1</xslt>\r\n\t\t<montoletra>{montoletra}</montoletra>\r\n\t\t<terminospago>30</terminospago>\r\n\t\t<mediospago>\r\n\t\t\t<Mp>\r\n\t\t\t\t<mediopago>{formapago}</mediopago>\r\n\t\t\t\t<fechapago>{fecha}</fechapago>\r\n\t\t\t</Mp>\r\n\t\t</mediospago>\r\n\t\t<tipoDocRec>{tipoDocumento}</tipoDocRec>\r\n\t\t<tiporeceptor>{tiporeceptor}</tiporeceptor>\r\n\t\t<nitreceptor>{nitreceptor}</nitreceptor>\r\n\t\t{digitoverificacion}\r\n\t\t<nombrereceptor>{nombre}</nombrereceptor>\r\n\t\t<paisreceptor>CO</paisreceptor>\r\n\t\t<obligacionesfiscalesreceptor>{obligacionfiscal}</obligacionesfiscalesreceptor>\r\n\t\t<tributoreceptor>{tributoreceptor}</tributoreceptor>\r\n\t\t<regimenreceptor>{regimen}</regimenreceptor>\r\n\t\t<mailreceptor>{mail}</mailreceptor>\r\n\t\t<metodopago>{metodopago}</metodopago>\r\n\t\t<subtotal>{subtotal}</subtotal>\r\n\t\t<baseimpuesto>{subtotal}</baseimpuesto>\r\n\t\t<totalsindescuento>{subtotal}</totalsindescuento>\r\n\t\t<totaldescuentos>{descuento}</totaldescuentos>\r\n\t\t<totalimpuestos>0.00</totalimpuestos>\r\n\t\t<totalimpuestosretenidos>0.00</totalimpuestosretenidos>\r\n\t\t<total>{total}</total>\r\n\t\t<codigodepartamento>11</codigodepartamento>\r\n\t\t<codigociudadreceptor>11001</codigociudadreceptor>\r\n\t\t<direccionreceptor>CALLE 1 # 1-2</direccionreceptor>\r\n\t\t<extra1>{vendedor}</extra1>\r\n\t\t<extra2>{venta}</extra2>\r\n\t\t<extra3>{placa}</extra3>\r\n\t\t<extra4>{kilometraje}</extra4>\r\n\t\t<extra5>{codigointerno}</extra5>\r\n\t\t<extra6>{surtidor}</extra6>\r\n\t\t<extra7>{cara}</extra7>\r\n\t\t<extra8>{manguera}</extra8>\r\n\t</Encabezado>\r\n\t<Detalle>\r\n\t\t<Det>\r\n\t\t\t<idConcepto>1</idConcepto>\r\n\t\t\t<cantidad>{cantidad}</cantidad>\r\n\t\t\t<unidadmedida>{unidadmedida}</unidadmedida>\r\n\t\t\t<importe>{subtotal}</importe>\r\n\t\t\t<descripcion>{combustible}</descripcion>\r\n\t\t\t<precioUnitario>{precio}</precioUnitario>\r\n\t\t\t<identificacionproductos>{producto}</identificacionproductos>\r\n\t\t\t<SubIdentiproductos>0</SubIdentiproductos>\r\n\t\t\t<extra1>Exento</extra1>\r\n\t\t\t<ImpRet>\r\n\t\t\t\t<ImpRetDet>\r\n\t\t\t\t\t<baseimpuestos>{subtotal}</baseimpuestos>\r\n\t\t\t\t\t<ImporteImpRet>0.00</ImporteImpRet>\r\n\t\t\t\t\t<tasaImpRet>0.00</tasaImpRet>\r\n\t\t\t\t\t<tipoImpRet>01</tipoImpRet>\r\n\t\t\t\t</ImpRetDet>\r\n\t\t\t</ImpRet>\r\n\t\t</Det>\r\n\t</Detalle>\r\n\t<Impuestos>\r\n\t\t<Imp>\r\n\t\t\t<idImpuesto>1</idImpuesto>\r\n\t\t\t<baseimpuestos>{subtotal}</baseimpuestos>\r\n\t\t\t<tasa>0.00</tasa>\r\n\t\t\t<tipoImpuesto>01</tipoImpuesto>\r\n\t\t\t<importe>0.00</importe>\r\n\t\t</Imp>\r\n\t</Impuestos>\r\n{descuentoCuerpo}</Factura>";
-        private string facturaCanastillaString = "<Factura xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n         xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\r\n\t<Encabezado>\r\n\t\t<ordenCompra/>\r\n\t\t<nitemisor>{nit}</nitemisor>\r\n\t\t<tipoOpera>10</tipoOpera>\r\n\t\t<tipocomprobante>01</tipocomprobante>\r\n\t\t<noresolucion>{resolucion}</noresolucion>\r\n\t\t<prefijo>{prefijo}</prefijo>\r\n\t\t<folio>{numero}</folio>\r\n\t\t<fecha>{fecha}</fecha>\r\n\t\t<hora>{hora}</hora>\r\n\t\t<fechavencimiento>{fecha}</fechavencimiento>\r\n\t\t<moneda>COP</moneda>\r\n\t\t<xslt>1</xslt>\r\n\t\t<montoletra>{montoletra}</montoletra>\r\n\t\t<terminospago>30</terminospago>\r\n\t\t<mediospago>\r\n\t\t\t<Mp>\r\n\t\t\t\t<mediopago>{formapago}</mediopago>\r\n\t\t\t\t<fechapago>{fecha}</fechapago>\r\n\t\t\t</Mp>\r\n\t\t</mediospago>\r\n\t\t<tipoDocRec>{tipoDocumento}</tipoDocRec>\r\n\t\t<tiporeceptor>{tiporeceptor}</tiporeceptor>\r\n\t\t<nitreceptor>{nitreceptor}</nitreceptor>\r\n\t\t{digitoverificacion}\r\n\t\t<nombrereceptor>{nombre}</nombrereceptor>\r\n\t\t<paisreceptor>CO</paisreceptor>\r\n\t\t<obligacionesfiscalesreceptor>{obligacionfiscal}</obligacionesfiscalesreceptor>\r\n\t\t<tributoreceptor>{tributoreceptor}</tributoreceptor>\r\n\t\t<regimenreceptor>{regimen}</regimenreceptor>\r\n\t\t<mailreceptor>{mail}</mailreceptor>\r\n\t\t<metodopago>{metodopago}</metodopago>\r\n\t\t<subtotal>{subtotal}</subtotal>\r\n\t\t<baseimpuesto>{subtotal}</baseimpuesto>\r\n\t\t<totalsindescuento>{subtotal}</totalsindescuento>\r\n\t\t<totaldescuentos>{descuento}</totaldescuentos>\r\n\t\t<totalimpuestos>{totalimpuesto}</totalimpuestos>\r\n\t\t<totalimpuestosretenidos>{totalimpuesto}</totalimpuestosretenidos>\r\n\t\t<total>{total}</total>\r\n\t\t<codigodepartamento>11</codigodepartamento>\r\n\t\t<codigociudadreceptor>11001</codigociudadreceptor>\r\n\t\t<direccionreceptor>CALLE 1 # 1-2</direccionreceptor>\r\n\t\t<extra1>{vendedor}</extra1>\r\n\t\t<extra2>{venta}</extra2>\r\n\t\t<extra3>{placa}</extra3>\r\n\t\t<extra4>{kilometraje}</extra4>\r\n\t\t<extra5>{codigointerno}</extra5>\r\n\t\t<extra6>{surtidor}</extra6>\r\n\t\t<extra7>{cara}</extra7>\r\n\t\t<extra8>{manguera}</extra8>\r\n\t</Encabezado>\r\n\t<Detalle>\r\n\t\t{detalle}\r\n\t</Detalle>\r\n\t<Impuestos>\r\n\t\t{impuestos}\r\n\t</Impuestos>\r\n{descuentoCuerpo}</Factura>";
+        private string facturaString = "<Factura xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n         xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\r\n\t<Encabezado>\r\n\t\t<ordenCompra/>\r\n\t\t<nitemisor>{nit}</nitemisor>\r\n\t\t<tipoOpera>10</tipoOpera>\r\n\t\t<tipocomprobante>01</tipocomprobante>\r\n\t\t<noresolucion>{resolucion}</noresolucion>\r\n\t\t<prefijo>{prefijo}</prefijo>\r\n\t\t<folio>{numero}</folio>\r\n\t\t<fecha>{fecha}</fecha>\r\n\t\t<hora>{hora}</hora>\r\n\t\t<fechavencimiento>{fecha}</fechavencimiento>\r\n\t\t<moneda>COP</moneda>\r\n\t\t<xslt>1</xslt>\r\n\t\t<montoletra>{montoletra}</montoletra>\r\n\t\t<terminospago>30</terminospago>\r\n\t\t<mediospago>\r\n\t\t\t<Mp>\r\n\t\t\t\t<mediopago>{formapago}</mediopago>\r\n\t\t\t\t<fechapago>{fecha}</fechapago>\r\n\t\t\t</Mp>\r\n\t\t</mediospago>\r\n\t\t<tipoDocRec>{tipoDocumento}</tipoDocRec>\r\n\t\t<tiporeceptor>{tiporeceptor}</tiporeceptor>\r\n\t\t<nitreceptor>{nitreceptor}</nitreceptor>\r\n\t\t{digitoverificacion}\r\n\t\t<nombrereceptor>{nombre}</nombrereceptor>\r\n\t\t<paisreceptor>CO</paisreceptor>\r\n\t\t<obligacionesfiscalesreceptor>{obligacionfiscal}</obligacionesfiscalesreceptor>\r\n\t\t<tributoreceptor>{tributoreceptor}</tributoreceptor>\r\n\t\t<regimenreceptor>{regimen}</regimenreceptor>\r\n\t\t<mailreceptor>{mail}</mailreceptor>\r\n\t\t<metodopago>{metodopago}</metodopago>\r\n\t\t<subtotal>{subtotal}</subtotal>\r\n\t\t<baseimpuesto>{subtotal}</baseimpuesto>\r\n\t\t<totalsindescuento>{totalmenosdescuento}</totalsindescuento>\r\n\t\t<totaldescuentos>{descuento}</totaldescuentos>\r\n\t\t<totalimpuestos>0.00</totalimpuestos>\r\n\t\t<totalimpuestosretenidos>0.00</totalimpuestosretenidos>\r\n\t\t<total>{total}</total>\r\n\t\t<codigodepartamento>11</codigodepartamento>\r\n\t\t<codigociudadreceptor>11001</codigociudadreceptor>\r\n\t\t<direccionreceptor>CALLE 1 # 1-2</direccionreceptor>\r\n\t\t<extra1>{vendedor}</extra1>\r\n\t\t<extra2>{venta}</extra2>\r\n\t\t<extra3>{placa}</extra3>\r\n\t\t<extra4>{kilometraje}</extra4>\r\n\t\t<extra5>{codigointerno}</extra5>\r\n\t\t<extra6>{surtidor}</extra6>\r\n\t\t<extra7>{cara}</extra7>\r\n\t\t<extra8>{manguera}</extra8>\r\n\t</Encabezado>\r\n\t<Detalle>\r\n\t\t<Det>\r\n\t\t\t<idConcepto>1</idConcepto>\r\n\t\t\t<cantidad>{cantidad}</cantidad>\r\n\t\t\t<unidadmedida>{unidadmedida}</unidadmedida>\r\n\t\t\t<importe>{subtotal}</importe>\r\n\t\t\t<descripcion>{combustible}</descripcion>\r\n\t\t\t<precioUnitario>{precio}</precioUnitario>\r\n\t\t\t<identificacionproductos>{producto}</identificacionproductos>\r\n\t\t\t<SubIdentiproductos>0</SubIdentiproductos>\r\n\t\t\t<extra1>Exento</extra1>\r\n\t\t\t<ImpRet>\r\n\t\t\t\t<ImpRetDet>\r\n\t\t\t\t\t<baseimpuestos>{subtotal}</baseimpuestos>\r\n\t\t\t\t\t<ImporteImpRet>0.00</ImporteImpRet>\r\n\t\t\t\t\t<tasaImpRet>0.00</tasaImpRet>\r\n\t\t\t\t\t<tipoImpRet>01</tipoImpRet>\r\n\t\t\t\t</ImpRetDet>\r\n\t\t\t</ImpRet>\r\n\t\t</Det>\r\n\t</Detalle>\r\n\t<Impuestos>\r\n\t\t<Imp>\r\n\t\t\t<idImpuesto>1</idImpuesto>\r\n\t\t\t<baseimpuestos>{subtotal}</baseimpuestos>\r\n\t\t\t<tasa>0.00</tasa>\r\n\t\t\t<tipoImpuesto>01</tipoImpuesto>\r\n\t\t\t<importe>0.00</importe>\r\n\t\t</Imp>\r\n\t</Impuestos>\r\n{descuentoCuerpo}</Factura>";
+        private string facturaCanastillaString = "<Factura xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n         xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\r\n\t<Encabezado>\r\n\t\t<ordenCompra/>\r\n\t\t<nitemisor>{nit}</nitemisor>\r\n\t\t<tipoOpera>10</tipoOpera>\r\n\t\t<tipocomprobante>01</tipocomprobante>\r\n\t\t<noresolucion>{resolucion}</noresolucion>\r\n\t\t<prefijo>{prefijo}</prefijo>\r\n\t\t<folio>{numero}</folio>\r\n\t\t<fecha>{fecha}</fecha>\r\n\t\t<hora>{hora}</hora>\r\n\t\t<fechavencimiento>{fecha}</fechavencimiento>\r\n\t\t<moneda>COP</moneda>\r\n\t\t<xslt>1</xslt>\r\n\t\t<montoletra>{montoletra}</montoletra>\r\n\t\t<terminospago>30</terminospago>\r\n\t\t<mediospago>\r\n\t\t\t<Mp>\r\n\t\t\t\t<mediopago>{formapago}</mediopago>\r\n\t\t\t\t<fechapago>{fecha}</fechapago>\r\n\t\t\t</Mp>\r\n\t\t</mediospago>\r\n\t\t<tipoDocRec>{tipoDocumento}</tipoDocRec>\r\n\t\t<tiporeceptor>{tiporeceptor}</tiporeceptor>\r\n\t\t<nitreceptor>{nitreceptor}</nitreceptor>\r\n\t\t{digitoverificacion}\r\n\t\t<nombrereceptor>{nombre}</nombrereceptor>\r\n\t\t<paisreceptor>CO</paisreceptor>\r\n\t\t<obligacionesfiscalesreceptor>{obligacionfiscal}</obligacionesfiscalesreceptor>\r\n\t\t<tributoreceptor>{tributoreceptor}</tributoreceptor>\r\n\t\t<regimenreceptor>{regimen}</regimenreceptor>\r\n\t\t<mailreceptor>{mail}</mailreceptor>\r\n\t\t<metodopago>{metodopago}</metodopago>\r\n\t\t<subtotal>{subtotal}</subtotal>\r\n\t\t<baseimpuesto>{subtotal}</baseimpuesto>\r\n\t\t<totalsindescuento>{totalmenosdescuento}</totalsindescuento>\r\n\t\t<totaldescuentos>{descuento}</totaldescuentos>\r\n\t\t<totalimpuestos>{totalimpuesto}</totalimpuestos>\r\n\t\t<totalimpuestosretenidos>{totalimpuesto}</totalimpuestosretenidos>\r\n\t\t<total>{total}</total>\r\n\t\t<codigodepartamento>11</codigodepartamento>\r\n\t\t<codigociudadreceptor>11001</codigociudadreceptor>\r\n\t\t<direccionreceptor>CALLE 1 # 1-2</direccionreceptor>\r\n\t\t<extra1>{vendedor}</extra1>\r\n\t\t<extra2>{venta}</extra2>\r\n\t\t<extra3>{placa}</extra3>\r\n\t\t<extra4>{kilometraje}</extra4>\r\n\t\t<extra5>{codigointerno}</extra5>\r\n\t\t<extra6>{surtidor}</extra6>\r\n\t\t<extra7>{cara}</extra7>\r\n\t\t<extra8>{manguera}</extra8>\r\n\t</Encabezado>\r\n\t<Detalle>\r\n\t\t{detalle}\r\n\t</Detalle>\r\n\t<Impuestos>\r\n\t\t{impuestos}\r\n\t</Impuestos>\r\n{descuentoCuerpo}</Factura>";
         private string detalle = "<Det>\r\n\t\t\t<idConcepto>{idarticulo}</idConcepto>\r\n\t\t\t<cantidad>{cantidad}</cantidad>\r\n\t\t\t<unidadmedida>{unidadmedida}</unidadmedida>\r\n\t\t\t<importe>{subtotal}</importe>\r\n\t\t\t<descripcion>{articulo}</descripcion>\r\n\t\t\t<precioUnitario>{precio}</precioUnitario>\r\n\t\t\t<identificacionproductos>{producto}</identificacionproductos>\r\n\t\t\t<SubIdentiproductos>0</SubIdentiproductos>\r\n\t\t\t<extra1>{Exento}</extra1>\r\n\t\t\t<ImpRet>\r\n\t\t\t\t<ImpRetDet>\r\n\t\t\t\t\t<baseimpuestos>{subtotal}</baseimpuestos>\r\n\t\t\t\t\t<ImporteImpRet>{impuesto}</ImporteImpRet>\r\n\t\t\t\t\t<tasaImpRet>{tasa}</tasaImpRet>\r\n\t\t\t\t\t<tipoImpRet>01</tipoImpRet>\r\n\t\t\t\t</ImpRetDet>\r\n\t\t\t</ImpRet>\r\n\t\t</Det>";
         private string impuesto = "<Imp>\r\n\t\t\t<idImpuesto>1</idImpuesto>\r\n\t\t\t<baseimpuestos>{subtotal}</baseimpuestos>\r\n\t\t\t<tasa>{tasa}</tasa>\r\n\t\t\t<tipoImpuesto>01</tipoImpuesto>\r\n\t\t\t<importe>{totalimpuesto}</importe>\r\n\t\t</Imp>";
         private string descuentoCuerpo = "<DesCargFac>\r\n\t\t<DesCarg>\r\n\t\t\t<id>FV</id>\r\n\t\t\t<CodDesCar>01</CodDesCar>\r\n\t\t\t<indicador>2</indicador>\r\n\t\t\t<razon>Descuento cliente frecuente</razon>\r\n\t\t\t<porcentaje>{porcentaje}</porcentaje>\r\n\t\t\t<base>{subtotal}</base>\r\n\t\t\t<importe>{descuento}</importe>\r\n\t\t</DesCarg>\r\n\t</DesCargFac>";
@@ -54,18 +54,28 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
             var nombre = "";
             var apellido = "";
-            var nombreCompleto = tercero.Nombre.Trim();
-            if (string.IsNullOrEmpty(tercero.Apellidos) || tercero.Apellidos.ToLower().Contains("no informado"))
+            var nombreCompleto = tercero?.Nombre?.Trim();
+            if (tercero == null || string.IsNullOrEmpty(tercero.Apellidos) || tercero.Apellidos.ToLower().Contains("no informado"))
             {
-                if (nombreCompleto.Split(' ').Count() > 1)
+                if(string.IsNullOrEmpty(nombreCompleto))
                 {
-                    nombre = nombreCompleto.Substring(0, nombreCompleto.LastIndexOf(" "));
-                    apellido = nombreCompleto.Split(' ').Last();
+
+                    nombre = "no informado";
+                    apellido = "no informado";
                 }
                 else
                 {
-                    nombre = nombreCompleto;
-                    apellido = "no informado";
+
+                    if (nombreCompleto.Split(' ').Count() > 1)
+                    {
+                        nombre = nombreCompleto.Substring(0, nombreCompleto.LastIndexOf(" "));
+                        apellido = nombreCompleto.Split(' ').Last();
+                    }
+                    else
+                    {
+                        nombre = nombreCompleto;
+                        apellido = "no informado";
+                    }
                 }
             }
             else
@@ -75,6 +85,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
             var subtotal = factura.Cantidad * factura.Precio;
             var total = subtotal-double.Parse(factura.Descuento.ToString());
+
             var facturaParticular = facturaString.Replace("{nit}", alegraOptions.Nit).Replace("{nitreceptor}", factura.Identificacion)
                 .Replace("{resolucion}", resolucion.resolucion)
                 .Replace("{prefijo}", resolucion.prefijo)
@@ -87,6 +98,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             facturaParticular = facturaParticular.Replace("{descuento}", factura.Descuento.ToString("F2",
                   CultureInfo.InvariantCulture));
             facturaParticular = facturaParticular.Replace("{total}", total.ToString("F2",
+                  CultureInfo.InvariantCulture)); 
+            facturaParticular = facturaParticular.Replace("{totalmenosdescuento}", subtotal.ToString("F2",
                   CultureInfo.InvariantCulture));
             facturaParticular = facturaParticular.Replace("{vendedor}", factura.Vendedor?.ToString());
             facturaParticular = facturaParticular.Replace("{venta}", (factura.IdVentaLocal).ToString());
@@ -492,9 +505,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 nombre = nombreCompleto;
                 apellido = tercero.Apellidos;
             }
-            var subtotal = factura.subtotal;
-            double total = factura.total;
-            var facturaParticular = facturaString.Replace("{nit}", alegraOptions.Nit).Replace("{nitreceptor}", factura.terceroId.Identificacion)
+            var subtotal = Math.Round(factura.subtotal,2);
+            double total = Math.Round(factura.total, 2);
+            double totalmenosdescuento = Math.Round(factura.total-factura.descuento, 2);
+            var facturaParticular = facturaCanastillaString.Replace("{nit}", alegraOptions.Nit).Replace("{nitreceptor}", factura.terceroId.Identificacion)
                 .Replace("{resolucion}", resolucion.resolucion)
                 .Replace("{prefijo}", resolucion.prefijo)
                 .Replace("{numero}", resolucion.numeroActual.ToString())
@@ -506,6 +520,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             facturaParticular = facturaParticular.Replace("{descuento}", factura.descuento.ToString("F2",
                   CultureInfo.InvariantCulture));
             facturaParticular = facturaParticular.Replace("{total}", total.ToString("F2",
+                  CultureInfo.InvariantCulture));
+            facturaParticular = facturaParticular.Replace("{totalmenosdescuento}", totalmenosdescuento.ToString("F2",
                   CultureInfo.InvariantCulture));
             facturaParticular = facturaParticular.Replace("{vendedor}", "Vendedor");
             facturaParticular = facturaParticular.Replace("{venta}", (factura.FacturasCanastillaId).ToString());
@@ -527,42 +543,66 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             facturaParticular = facturaParticular.Replace("{montoletra}", total.ConvertNumeroALetras());
             facturaParticular = facturaParticular.Replace("{digitoverificacion}", GetDigitoVerificaicon(tercero, factura.terceroId.Identificacion));
 
-            var totalImpuestos = 0;
-            var tasa =16;
             var detalles = "";
             var cant = 1;
+            var sinImpuesto = false;
+            var conImpuesto = true;
+            var subtotalsinimpuesto = 0f;
+            var subtotalconimpuesto = 0f;
+            var ivatotal = 0f;
             foreach(var articulo in factura.canastillas)
             {
+                var ivaArticulo = (float)Math.Round(articulo.iva, 2);
+                var subTotalArticulo = (float)Math.Round(articulo.subtotal, 2);
                 var det = detalle;
                 det = det.Replace("{idarticulo}", cant.ToString());
                 det = det.Replace("{cantidad}", articulo.cantidad.ToString("F3",
                       CultureInfo.InvariantCulture));
-                det = det.Replace("{unidadmedida}", GetUnidadMedida(articulo.Canastilla.descripcion));
-                det = det.Replace("{subtotal}", articulo.subtotal.ToString("F3",
+                det = det.Replace("{unidadmedida}", "LTR");
+                det = det.Replace("{subtotal}", subTotalArticulo.ToString("F2",
                       CultureInfo.InvariantCulture));
                 det = det.Replace("{articulo}", articulo.Canastilla.descripcion);
                 det = det.Replace("{precio}", articulo.Canastilla.precio.ToString("F2",
                       CultureInfo.InvariantCulture));
                 det = det.Replace("{product}", articulo.Canastilla.CanastillaId.ToString());
-                det = det.Replace("{Exento}", articulo.Canastilla.iva==0?"":"EXENTO");
-                det = det.Replace("{impuesto}", articulo.iva.ToString("F3",
+                det = det.Replace("{Exento}", ivaArticulo > 0?"":"EXENTO");
+                det = det.Replace("{impuesto}", ivaArticulo.ToString("F2",
                       CultureInfo.InvariantCulture));
-                det = det.Replace("{tasa}", articulo.Canastilla.iva.ToString("F2",
+                det = det.Replace("{tasa}", GetTasa(articulo).ToString("F2",
                       CultureInfo.InvariantCulture));
                 cant++;
                 detalles += det;
+                if( articulo.iva > 0) {
+                    conImpuesto = true;
+                    subtotalconimpuesto = subTotalArticulo;
+                    ivatotal = ivaArticulo;
+                } else
+                {
+                    sinImpuesto = true;
+                    subtotalsinimpuesto = subTotalArticulo;
+                }
             }
+            var impuestos = "";
+            if (conImpuesto)
+            {
 
-            impuesto = impuesto.Replace("{subtotal}", subtotal.ToString("F3",
-                  CultureInfo.InvariantCulture));
-            impuesto = impuesto.Replace("{tasa}", tasa.ToString("F3",
-                  CultureInfo.InvariantCulture));
-            impuesto = impuesto.Replace("{totalimpuesto}", totalImpuestos.ToString("F3",
-                  CultureInfo.InvariantCulture));
+                var impuestoParticular = impuesto.Replace("{subtotal}", subtotalconimpuesto.ToString("F2",
+                      CultureInfo.InvariantCulture));
+                impuestoParticular = impuestoParticular.Replace("{tasa}", "19.00");
+                impuestos += impuestoParticular.Replace("{totalimpuesto}", ivatotal.ToString("F2",
+                      CultureInfo.InvariantCulture));
+            }
+            if (sinImpuesto)
+            {
 
-            facturaParticular = facturaParticular.Replace("{impuestos}", impuesto);
+                var impuestoParticular = impuesto.Replace("{subtotal}", subtotalsinimpuesto.ToString("F2",
+                      CultureInfo.InvariantCulture));
+                impuestoParticular = impuestoParticular.Replace("{tasa}", "0");
+                impuestos += impuestoParticular.Replace("{totalimpuesto}", "0.00");
+            }
+            facturaParticular = facturaParticular.Replace("{impuestos}", impuestos);
             facturaParticular = facturaParticular.Replace("{detalle}", detalles);
-            facturaParticular = facturaParticular.Replace("{totalimpuesto}", totalImpuestos.ToString("F3",
+            facturaParticular = facturaParticular.Replace("{totalimpuesto}", ivatotal.ToString("F2",
                   CultureInfo.InvariantCulture));
 
             if (factura.descuento > 0)
@@ -588,6 +628,11 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 sucursal = "",
                 base64doc = facturaBase64
             };
+        }
+
+        private float GetTasa(Modelo.CanastillaFactura articulo)
+        {
+            return articulo.iva > 0 ? 19:0;
         }
 
         public Task<string> GenerarFacturaElectronica(List<Modelo.OrdenDeDespacho> ordenes, Modelo.Tercero tercero, IEnumerable<Item> items)
@@ -643,6 +688,58 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public Task<Item> GetItem(string name, Alegra options)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<string> ReenviarFactura(Repositorio.Entities.OrdenDeDespacho orden, Guid estacion)
+        {
+           
+                string responseBody = "";
+                var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacion.ToString());
+                var invoice = orden.idFacturaElectronica.Split(":")[4];
+                _semaphore.WaitOne();
+                try
+                {
+
+
+                    var token = await GetToken(resolucion);
+
+                    using (var client = new HttpClient())
+                    {
+                        try
+                        {
+
+                            client.Timeout = new TimeSpan(0, 0, 2, 0, 0);
+                            client.DefaultRequestHeaders.Add("Authorization", token);
+                            var content = new StringContent(invoice);
+                            content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+                            var response = await client.PostAsync($"{alegraOptions.Url}v3/factura", content);
+                            responseBody = await response.Content.ReadAsStringAsync();
+
+
+                            var respuesta = JsonConvert.DeserializeObject<RespuestaFactura1>(responseBody);
+                            return "Ok:" + resolucion.prefijo + resolucion.numeroActual + ":" + respuesta?.cufe + ":" + responseBody + ":" + invoice;
+
+                        }
+                        catch (Exception ex)
+                        {
+
+                            Console.WriteLine(ex);
+                            Console.WriteLine(ex.StackTrace);
+                            return "error:" + ex.Message + ex.StackTrace + responseBody + invoice;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                    Console.WriteLine(ex.StackTrace);
+                    return "error:" + ex.Message + ex.StackTrace + responseBody + invoice;
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            
         }
     }
 }

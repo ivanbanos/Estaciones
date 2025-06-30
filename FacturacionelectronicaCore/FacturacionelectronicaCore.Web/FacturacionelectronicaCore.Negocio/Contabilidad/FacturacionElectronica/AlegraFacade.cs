@@ -205,5 +205,10 @@ new AuthenticationHeaderValue("Basic", alegraOptions.Auth);
         {
             throw new NotImplementedException();
         }
+
+        public Task<string> ReenviarFactura(Repositorio.Entities.OrdenDeDespacho orden, Guid estacion)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

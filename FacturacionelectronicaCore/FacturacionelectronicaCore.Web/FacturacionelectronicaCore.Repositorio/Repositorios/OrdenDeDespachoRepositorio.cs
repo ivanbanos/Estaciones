@@ -67,7 +67,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         /// <inheritdoc />
         public async Task<IEnumerable<OrdenDeDespacho>> GetOrdenesDeDespacho(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, 
-                                                                       string nombreTercero, Guid estacion)
+                                                                       string nombreTercero, Guid? estacion)
         {
             List<FilterDefinition<OrdenesMongo>> filters = new List<FilterDefinition<OrdenesMongo>>();
 
@@ -98,7 +98,14 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "ordenes", filters);
             //if (facturasMongo.Any(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower()))
             //{
+            if (estacion != null)
+            {
                 return facturasMongo.Where(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower());
+            }
+            else
+            {
+                return facturasMongo;
+            }
             //}
             //else
             //{

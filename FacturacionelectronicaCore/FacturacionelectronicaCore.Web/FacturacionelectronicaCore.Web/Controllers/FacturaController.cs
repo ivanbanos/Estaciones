@@ -115,5 +115,13 @@ namespace FacturacionelectronicaCore.Web.Controllers
 
             return Ok();
         }
+
+        [HttpPost("ReenviarFacturasAFacturador/{fechaInicial}/{fechaFinal}/estacion")]
+        public async Task<ActionResult<Guid>> AgregarTurnoAFactura(DateTime fechaInicial, DateTime fechaFinal, Guid estacion)
+        {
+            await _facturaNegocio.ReenviarFacturas(fechaInicial, fechaFinal, estacion);
+
+            return Ok();
+        }
     }
 }

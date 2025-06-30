@@ -17,5 +17,6 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         Task SetIdFacturaElectronicaFactura(string idFacturaElectronica, string guid);
 Task<bool> FacturaGenerada(int facturasCanastillaId, Guid estacion);
+        Task<FacturaCanastilla> GetFacturaPorIdCanastilla(int consecutivo, Guid estacion);
     }
 }

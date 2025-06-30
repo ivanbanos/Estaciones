@@ -88,6 +88,10 @@ namespace FacturacionelectronicaCore.Web.Controllers
         public async Task<ActionResult<string>> GetInfoFacturaElectronica(int idVentaLocal, Guid estacion)
         => Ok(await _manejadorInformacionLocalNegocio.GetInfoFacturaElectronica(idVentaLocal, estacion));
 
+        [HttpGet("GetInfoFacturaElectronicaCanastilla/{consecutivo}/estacion/{estacion}")]
+        public async Task<ActionResult<string>> GetInfoFacturaElectronicaCanastilla(int consecutivo, Guid estacion)
+        => Ok(await _manejadorInformacionLocalNegocio.GetInfoFacturaElectronicaCanastilla(consecutivo, estacion));
+
         [HttpGet("JsonFacturaElectronica/{idVentaLocal}/estacion/{estacion}")]
         public async Task<ActionResult<string>> JsonFacturaElectronica(int idVentaLocal, Guid estacion)
         => Ok(await _manejadorInformacionLocalNegocio.JsonFacturaElectronica(idVentaLocal, estacion));

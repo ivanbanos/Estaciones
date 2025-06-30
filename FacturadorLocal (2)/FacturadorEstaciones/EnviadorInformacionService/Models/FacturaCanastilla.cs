@@ -25,5 +25,7 @@ namespace EnviadorInformacionService.Models
 		public float total { get; set; }
 		public Guid Guid { get; set; }
 		public Guid IdEstacion { get; set; }
-	}
+        public string Isla { get; set; }
+        public string Empleado { get; set; }
+    }
 }

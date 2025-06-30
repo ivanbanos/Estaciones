@@ -971,111 +971,48 @@ namespace FacturadorEstacionesRepositorio
             var parameters = new Dictionary<string, object>
             {
             };
-            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSinEnviar",
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSinEnviarSiesa",
                          parameters);
             return _convertidor.ConvertirFacturasSiges(dt2);
         }
 
-
-        public TurnoSiges ObtenerTurnoIsla(int idIsla)
+        public void MarcarTercerosEnviadosASiesa(IEnumerable<int> ids)
         {
-            DataTable dt = LoadDataTableFromStoredProc(_connectionString.EstacionSiges, "ObtenerTurnoIsla",
-                            new Dictionary<string, object>{
-
-                    {"@idIsla", idIsla }
-                            });
-            return _convertidor.ConvertirTurnoSiges(dt).FirstOrDefault();
-        }
-
-        public void AddFidelizado(string documento, float? puntos)
-        {
-            var parameters2 = new Dictionary<string, object>
+            var table = new DataTable();
+            table.Columns.Add(new DataColumn("terceroId", typeof(int)));
+            foreach (var id in ids)
             {
-                {"@documento",documento },
-                {"@puntos",puntos }
-            };
-            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "AddFidelizado",
-                         parameters2);
-        }
-
-        public Puntos GetVentaFidelizarAutomatica(int id)
-        {
-            DataTable dt = LoadDataTableFromStoredProc(_connectionString.EstacionSiges, "GetVentaFidelizarAutomatica",
-                            new Dictionary<string, object>{
-
-                    {"@idManguera", id }
-                            });
-            return _convertidor.ConvertirPuntos(dt).FirstOrDefault();
-        }
-
-        public Fidelizado getFidelizado(int ventaId)
-        {
-            DataTable dt = LoadDataTableFromStoredProc(_connectionString.EstacionSiges, "GetFidelizado",
-                            new Dictionary<string, object>{
-
-                    {"@ventaId", ventaId }
-                            });
-            return _convertidor.ConvertirFidelizado(dt).FirstOrDefault();
-        }
-
-        public List<FacturaSiges> GetReporteCierrePorTotal(int id)
-        {
-            var parameters = new Dictionary<string, object>
-            {{"@idTurno", id }
-            };
-            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetReporteCierrePorTotal",
-                         parameters);
-            return _convertidor.ConvertirFacturasSiges(dt2);
-        }
-
-        public IEnumerable<FacturaSiges> GetFacturasPorFechas(DateTime desde, DateTime hasta)
-        {
-            var parameters = new Dictionary<string, object>
-            {
-                    {"@fechaInicio", desde },
-                    {"@fechaFin", hasta }
-            };
-            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetFacturasPorFechas",
-                         parameters);
-            return _convertidor.ConvertirFacturasSiges(dt2);
-        }
-
-        public IEnumerable<TurnoSiges> GetTurnosByFechas(DateTime desde, DateTime hasta)
-        {
-            var parameters = new Dictionary<string, object>
-            {
-                    {"@fechaInicio", desde },
-                    {"@fechaFin", hasta }
-            };
-            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnosPorFecha",
-                         parameters);
-
-
-
-            var turnos = _convertidor.ConvertirTurnoSiges(dt2);
-
-            foreach (var turno in turnos)
-            {
-                var parameters2 = new Dictionary<string, object>
-                {
-                 {"@Id",turno.Id },
-                };
-                DataTable dt3 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnoSurtidorInfo",
-                             parameters2);
-                turno.turnoSurtidores = _convertidor.ConvertirTurnoSurtidoresSiges(dt3);
+                var row = table.NewRow();
+                row["terceroId"] = id;
+                table.Rows.Add(row);
             }
-            return turnos;
+            var parameters = new Dictionary<string, object>
+            {
+                {"@terceros", table }
+            };
+            LoadDataTableFromStoredProc(_connectionString.Facturacion, "MarcarTercerosEnviadosASiesa", parameters);
         }
 
-        public IEnumerable<TurnoSurtidor> ObtenerTurnoInfo(int id)
+        public string ObtenerAuxiliarContable(int codigoFormaPago, string combustible, bool contable, bool cruce)
         {
-            var parameters2 = new Dictionary<string, object>
-                {
-                 {"@Id",id },
-                };
-            DataTable dt3 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnoSurtidorInfo",
-                         parameters2);
-            return _convertidor.ConvertirTurnoSurtidoresSiges(dt3);
+            var parameters = new Dictionary<string, object>
+            {
+                {"@codigoFormaPago", codigoFormaPago },
+                {"@combustible", combustible },
+                {"@contable", contable },
+                {"@cruce", cruce }
+            };
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ObtenerAuxiliarContable", parameters);
+            return dt.AsEnumerable().Select(dr => dr.Field<string>("Auxiliar")).FirstOrDefault();
+        }
+
+        public void ActualizarFacturaSiesa(int ventaId)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@ventaId", ventaId }
+            };
+            LoadDataTableFromStoredProc(_connectionString.Facturacion, "ActualizarFacturaSiesa", parameters);
         }
     }
 }

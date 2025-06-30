@@ -29,5 +29,6 @@ namespace FactoradorEstacionesModelo.Objetos
         public string identificacion { get; set; }
         public string Correo { get; set; }
         public int? tipoIdentificacion { get; set; }
+        public bool? EnviadoSiesa { get; set; }
     }
 }

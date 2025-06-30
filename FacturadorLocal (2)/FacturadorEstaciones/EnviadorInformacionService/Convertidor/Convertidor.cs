@@ -170,6 +170,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                         terceroId = dr.Field<int>("terceroId"),
                         tipoIdentificacion = dr.Field<int?>("tipoIdentificacion"),
                         tipoIdentificacionS = dr.Field<string>("descripcion"),
+                        //EnviadoSiesa = dr.Field<bool?>("enviadoSiesa"),
                     },
                 })
             ) ;
@@ -303,6 +304,8 @@ namespace FactoradorEstacionesModelo.Convertidor
                     fc.terceroId.terceroId = dr.Field<int>("terceroId");
                     fc.terceroId.tipoIdentificacion = dr.Field<int?>("tipoIdentificacion");
                     fc.terceroId.tipoIdentificacionS = dr.Field<string>("descripcion");
+                    fc.Empleado = dr.Field<string>("Vendedor");
+                    fc.Isla = dr.Field<string>("isla");
 
 
                     return fc;

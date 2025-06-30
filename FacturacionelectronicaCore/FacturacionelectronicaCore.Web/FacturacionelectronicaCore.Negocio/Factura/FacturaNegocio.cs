@@ -19,12 +19,13 @@ namespace FacturacionelectronicaCore.Negocio.Factura
         private readonly IFacturasRepository _facturasRepository;
         private readonly ITurnoRepositorio _turnoRepositorio;
         private readonly IOrdenDeDespachoRepositorio _ordenDeDespachoRepositorio;
+        private readonly IFacturaCanastillaRepository _facturaCanastillaRepository;
         private readonly ITerceroRepositorio _terceroRepositorio;
         private readonly IMapper _mapper;
         private readonly IFacturacionElectronicaFacade _alegraFacade;
         private readonly Alegra _alegra;
         private readonly IValidadorGuidAFacturaElectronica _validadorGuidAFacturaElectronica;
-        public FacturaNegocio(IFacturasRepository facturasRepository, IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio, IMapper mapper, IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, ITerceroRepositorio terceroRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica, ITurnoRepositorio turnoRepositorio)
+        public FacturaNegocio(IFacturasRepository facturasRepository, IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio, IMapper mapper, IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, ITerceroRepositorio terceroRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica, ITurnoRepositorio turnoRepositorio, IFacturaCanastillaRepository facturaCanastillaRepository)
         {
             _facturasRepository = facturasRepository;
             _ordenDeDespachoRepositorio = ordenDeDespachoRepositorio;
@@ -34,6 +35,7 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             _terceroRepositorio = terceroRepositorio;
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
             _turnoRepositorio = turnoRepositorio;
+            _facturaCanastillaRepository = facturaCanastillaRepository;
         }
 
         public async Task<Modelo.Factura> CrearFacturaOrdenesDeDespacho(IEnumerable<OrdenesDeDespachoGuids> ordenesDeDespacho)
@@ -512,6 +514,79 @@ namespace FacturacionelectronicaCore.Negocio.Factura
             {
                 _validadorGuidAFacturaElectronica.SacarFactura(facturaEntity.Guid);
                 return $"Fallo al crear factura electrónica Razón: {e.Message}";
+            }
+        }
+
+        public async Task ReenviarFacturas(DateTime fechaInicial, DateTime fechaFinal, Guid estacion)
+        {
+            var ordenes = await _ordenDeDespachoRepositorio.GetOrdenesDeDespacho(fechaInicial, fechaFinal,null, null, estacion);
+
+            if (ordenes != null)
+            {
+                foreach(var orden in ordenes)
+                {
+                    if (orden.idFacturaElectronica == null) continue;
+                    if (orden.idFacturaElectronica.StartsWith("error")||orden.idFacturaElectronica.Contains("Bad Request"))
+                    {
+                        var ordenModelo = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(orden);
+                        var terceroModelo = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(
+                            (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(orden.Identificacion)).FirstOrDefault());
+
+                        orden.idFacturaElectronica = await _alegraFacade.GenerarFacturaElectronica(ordenModelo, terceroModelo, estacion);
+                    }
+                    else
+                    {
+                        var ordenModelo = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(orden);
+                        var terceroModelo = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(
+                            (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(orden.Identificacion)).FirstOrDefault());
+
+                        orden.idFacturaElectronica = await _alegraFacade.GenerarFacturaElectronica(ordenModelo, terceroModelo, estacion);
+                        //orden.idFacturaElectronica = await _alegraFacade.ReenviarFactura(orden, estacion);
+                    }
+
+                    if (true)
+                    {
+
+                        var ordenesentity = new List<Repositorio.Entities.OrdenDeDespacho>
+                    {
+                        new Repositorio.Entities.OrdenDeDespacho()
+                        {
+                        guid = orden.guid.ToString(),
+                        Cantidad = orden.Cantidad,
+                        Cara = orden.Cara,
+                        Combustible = orden.Combustible,
+                        Descuento = orden.Descuento,
+                        Estado = orden.Estado,
+                        Fecha = orden.Fecha,
+                        FechaReporte = orden.FechaReporte,
+                        FechaProximoMantenimiento = orden.FechaProximoMantenimiento,
+                        FormaDePago = orden.FormaDePago,
+                        Identificacion = orden.Identificacion,
+                        IdentificacionTercero = orden.IdentificacionTercero,
+                        IdEstacion = orden.IdEstacion,
+                        IdEstadoActual = orden.IdEstadoActual,
+                        IdFactura = orden.IdFactura,
+                        IdInterno = orden.IdInterno,
+                        IdLocal = orden.IdLocal,
+                        IdTerceroLocal = orden.IdTerceroLocal,
+                        IdVentaLocal = orden.IdVentaLocal,
+                        Kilometraje = orden.Kilometraje,
+                        Manguera = orden.Manguera,
+                        NombreTercero = orden.NombreTercero,
+                        Placa = orden.Placa,
+                        Precio = orden.Precio,
+                        SubTotal = orden.SubTotal,
+                        Surtidor = orden.Surtidor,
+                        Total = orden.Total,
+                        idFacturaElectronica = orden.idFacturaElectronica ?? orden?.idFacturaElectronica,
+                        Vendedor = orden.Vendedor,
+                        }
+                    };
+                        await _ordenDeDespachoRepositorio.AddRange(ordenesentity, estacion);
+                    }
+
+
+                }
             }
         }
     }
