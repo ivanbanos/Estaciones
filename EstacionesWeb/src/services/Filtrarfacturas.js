@@ -1,39 +1,36 @@
+import HttpService from './HttpService.js'
+
 const FiltrarFacturas = async (fechaInicial, fechaFinal, identificacion) => {
   try {
+    const httpService = new HttpService()
+    const estacionGuid = localStorage.getItem('estacionGuid')
+
     const token = localStorage.getItem('token')
-    const estacion = localStorage.getItem('estacion')
-    let body = {
+    if (!token) {
+      console.error('No token found in localStorage')
+      return 'fail'
+    }
+
+    const body = {
       fechaInicial,
       fechaFinal,
       identificacion,
-      estacion,
+      estacion: estacionGuid,
     }
-    if (!token) {
+
+    // Use the correct API endpoint
+    const url = `${window.SERVER_URL}/Factura/GetFactura`
+    const response = await httpService.post(url, body)
+
+    // HttpService returns 'fail' for 401/403 errors
+    if (response === 'fail') {
+      console.error('Authentication failed for FiltrarFacturas')
       return 'fail'
     }
-    const response = await fetch(window.SERVER_URL + '/api/Factura/GetFactura', {
-      method: 'POST',
-      mode: 'cors',
-      body: JSON.stringify(body),
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        accept: 'text/plain',
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + token,
-        'sec-fetch-mode': 'cors',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',
-      },
-    })
-    if (response.status == 200) {
-      let reporte = await response.json()
-      return reporte
-    }
-    if (response.status == 403) {
-      return 'fail'
-    }
-    return 'fail'
+
+    return response
   } catch (error) {
+    console.error('FiltrarFacturas error:', error)
     return 'fail'
   }
 }

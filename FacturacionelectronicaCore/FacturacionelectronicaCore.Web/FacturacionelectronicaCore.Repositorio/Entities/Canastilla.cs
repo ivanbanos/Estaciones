@@ -14,6 +14,7 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
 
         public bool deleted { get; set; }
         public int iva { get; set; }
-        public string campoextra { get; set; }
+        public string? campoextra { get; set; }
+        public Guid? estacion { get; set; }
     }
 }

@@ -46,7 +46,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
                 var invoice = await GetFacturaDataico(factura, tercero, estacionGuid.ToString());
                 Console.WriteLine(JsonConvert.SerializeObject(invoice));
-                while (true)
+                var triedAgain  = false;
+                while (!triedAgain)
                 {
 
                     using (var client = new HttpClient())
@@ -73,11 +74,12 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                                     if (error.error.Contains("Tiene que ser el siguiente"))
                                     {
                                         var numberpos = error.error.IndexOf('\'');
-                                        numberpos = error.error.IndexOf('\'', numberpos+1);
-                                        numberpos = error.error.IndexOf('\'', numberpos+1);
-                                        var fin = error.error.IndexOf('\'', numberpos+1);
+                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
+                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
+                                        var fin = error.error.IndexOf('\'', numberpos + 1);
                                         var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
                                         _resolucionNumber.number = Int32.Parse(number);
+                                        triedAgain = true;
                                     }
                                     else
                                     {
@@ -87,13 +89,13 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                                 }
                                 else
                                 {
-                                    throw new AlegraException(responseBody+ JsonConvert.SerializeObject(invoice));
+                                    throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
 
                                 }
                             }
                             catch (Exception ex)
                             {
-                                throw new AlegraException(responseBody+ex.Message+ JsonConvert.SerializeObject(invoice));
+                                throw new AlegraException(responseBody + ex.Message + JsonConvert.SerializeObject(invoice));
                             }
                         }
                         if (responseBody.Contains("error"))
@@ -119,6 +121,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                                         throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
                                     }
                                     invoice.invoice.number = _resolucionNumber.number;
+                                    triedAgain = true;
                                 }
                                 else
                                 {
@@ -128,7 +131,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                             }
                             catch (Exception ex)
                             {
-                                return "error:"+responseBody + JsonConvert.SerializeObject(invoice);
+                                return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
                             }
                         }
                         else
@@ -541,7 +544,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
                     var invoice = await GetFacturaDataicoWithoutAddress(orden, tercero, estacionGuid.ToString(), resolucion);
                     Console.WriteLine(JsonConvert.SerializeObject(invoice));
-                    while (true)
+                    var triedAgain  = false;
+                while (!triedAgain)
                     {
 
                         using (var client = new HttpClient())
@@ -574,12 +578,14 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                                             var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
                                             resolucion.numeroActual = Int32.Parse(number);
                                             invoice.invoice.number = resolucion.numeroActual;
+                                            triedAgain = true;
                                         }
                                         else if (error.error.Contains("modificar"))
                                         {
 
                                             resolucion.numeroActual++;
                                             invoice.invoice.number = resolucion.numeroActual;
+                                            triedAgain = true;
                                         }
                                         else
                                         {
@@ -659,7 +665,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
                     var invoice = await GetFacturaDataico(orden, tercero, estacionGuid.ToString(), resolucion);
                     Console.WriteLine(JsonConvert.SerializeObject(invoice));
-                    while (true)
+                    var triedAgain  = false;
+                while (!triedAgain)
                     {
 
                         using (var client = new HttpClient())
@@ -692,12 +699,14 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                                             var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
                                             resolucion.numeroActual = Int32.Parse(number);
                                             invoice.invoice.number = resolucion.numeroActual;
+                                            triedAgain = true;
                                         }
                                         else if (error.error.Contains("modificar"))
                                         {
 
                                             resolucion.numeroActual++;
                                             invoice.invoice.number = resolucion.numeroActual;
+                                            triedAgain = true;
                                         }
                                         else if (error.error.ToLower().Contains("ciudad"))
                                         {
@@ -706,6 +715,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                                             invoice.invoice.customer.department = null;
                                             invoice.invoice.customer.address_line = null;
                                             invoice.invoice.customer.country_code = null;
+                                            triedAgain = true;
                                         }
                                         else
                                         {
@@ -894,7 +904,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
                 var invoice = await GetFacturaDataico(factura, tercero, estacionGuid.ToString(), resolucion);
                 Console.WriteLine(JsonConvert.SerializeObject(invoice));
-                while (true)
+                var triedAgain  = false;
+                while (!triedAgain)
                 {
 
                     using (var client = new HttpClient())
@@ -927,16 +938,25 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                                         var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
                                         resolucion.numeroActual = Int32.Parse(number);
                                         invoice.invoice.number = resolucion.numeroActual;
+                                        triedAgain = true;
                                     }
                                     else if (error.error.Contains("modificar"))
                                     {
 
                                         resolucion.numeroActual++;
                                         invoice.invoice.number = resolucion.numeroActual;
+                                        triedAgain = true;
                                     }
                                     else if (error.error.ToLower().Contains("ciudad"))
                                     {
-
+                                        var numberpos = error.error.IndexOf('\'');
+                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
+                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
+                                        var fin = error.error.IndexOf('\'', numberpos + 1);
+                                        var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
+                                        resolucion.numeroActual = Int32.Parse(number);
+                                        invoice.invoice.number = resolucion.numeroActual;
+                                        triedAgain = true;
                                     }
                                     else
                                     {

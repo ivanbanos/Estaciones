@@ -10,6 +10,10 @@ using System.Net.NetworkInformation;
 using Modelo;
 using Newtonsoft.Json;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using FacturadorEstacionesPOSWinForm.Repo;
+using Gma.QrCodeNet.Encoding;
+using Gma.QrCodeNet.Encoding.Windows.Render;
+using System.Drawing.Imaging;
 
 namespace SigesServicio
 {
@@ -22,12 +26,13 @@ namespace SigesServicio
         private string firstMacAddress;
         private readonly Guid estacionFuente;
         private readonly IEstacionesRepositorio _estacionesRepositorio;
+        private readonly IConexionEstacionRemota _conexionEstacionRemota;
         private readonly IFidelizacion _fidelizacion;
 
         private readonly bool generaFacturaElectronica;
         private readonly InfoEstacion _infoEstacion;
         private readonly List<CaraImpresora> _caraImpresoras;
-        public WorkerImpresion(IEstacionesRepositorio estacionesRepositorio, IOptions<InfoEstacion> infoEstacion, IOptions<List<CaraImpresora>> caraImpresoras, IFidelizacion fidelizacion)
+        public WorkerImpresion(IEstacionesRepositorio estacionesRepositorio, IOptions<InfoEstacion> infoEstacion, IOptions<List<CaraImpresora>> caraImpresoras, IFidelizacion fidelizacion, IConexionEstacionRemota conexionEstacionRemota)
         {
             _estacionesRepositorio = estacionesRepositorio;
             _infoEstacion = infoEstacion.Value;
@@ -39,6 +44,7 @@ namespace SigesServicio
         .Select(nic => nic.GetPhysicalAddress().ToString())
         .FirstOrDefault();
             _fidelizacion = fidelizacion;
+            _conexionEstacionRemota = conexionEstacionRemota;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(async () =>
@@ -349,14 +355,32 @@ namespace SigesServicio
             lineasImprimir.Add(new LineasImprimir(_infoEstacion.Telefono, true));
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             var infoTemp = "";
+            try
+            {
+                var intentos = 0;
+                do
+                {
+                    infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, estacionFuente, _conexionEstacionRemota.getToken());
+                    Thread.Sleep(100);
+                } while (infoTemp == null || intentos++ < 3);
 
+                Console.WriteLine("info fac elec " + infoTemp);
+                Logger.Info("info fac elec " + infoTemp);
+            }
+            catch (Exception ex)
+            {
+                Logger.Info("info fac elec " + ex.Message);
+                Logger.Info("info fac elec " + ex.StackTrace);
+                Console.WriteLine("info fac elec " + ex.Message);
+                Console.WriteLine("info fac elec " + ex.StackTrace);
+            }
             if (!string.IsNullOrEmpty(infoTemp))
             {
                 infoTemp = infoTemp.Replace("\n\r", " ");
 
                 var facturaElectronica = infoTemp.Split(' ');
 
-                lineasImprimir.Add(new LineasImprimir("Factura Electrónica" + facturaElectronica[2], true));
+                lineasImprimir.Add(new LineasImprimir("Factura ElectrÃ³nica" + facturaElectronica[2], true));
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[3], true));
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[4], true));
             }
@@ -518,7 +542,12 @@ namespace SigesServicio
             lineasImprimir.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress ?? ""), false));
             lineasImprimir.Add(new LineasImprimir(".", true));
+if (!string.IsNullOrEmpty(infoTemp))
+            {
 
+                var facturaElectronica = infoTemp.Split(' ');
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false, $"https://catalogo-vpfe.dian.gov.co/User/SearchDocument?DocumentKey={facturaElectronica[4]}"));
+            }
         }
 
         private IEnumerable<LineasImprimir> getPuntos(int ventaId)
@@ -558,7 +587,15 @@ namespace SigesServicio
                 foreach (var linea in lineasImprimir)
                 {
 
-                    count = printLine(linea.linea, ev, count, leftMargin, topMargin, linea.centrada);
+                    if (!string.IsNullOrEmpty(linea.qr)){
+
+                        count = printLine(linea.qr, ev, count, leftMargin, topMargin, false, isQr:true);
+                    }
+                    else
+                    {
+
+                        count = printLine(linea.linea, ev, count, leftMargin, topMargin, linea.centrada);
+                    }
                 }
                 count = printLine(" ", ev, count, leftMargin, topMargin, false);
                 count = printLine(" ", ev, count, leftMargin, topMargin, false);
@@ -742,7 +779,27 @@ namespace SigesServicio
             }
         }
 
-        private int printLine(string text, PrintPageEventArgs ev, int count, float leftMargin, float topMargin, bool center = false)
+ private void GenerateQRCode(string content, int size)
+        {
+            QrEncoder encoder = new QrEncoder(ErrorCorrectionLevel.H);
+            QrCode qrCode;
+            encoder.TryEncode(content, out qrCode);
+
+            GraphicsRenderer gRenderer = new GraphicsRenderer(new FixedModuleSize(4, QuietZoneModules.Two), System.Drawing.Brushes.Black, System.Drawing.Brushes.White);
+            //Graphics g = gRenderer.Draw(qrCode.Matrix);
+
+            MemoryStream ms = new MemoryStream();
+            gRenderer.WriteToStream(qrCode.Matrix, ImageFormat.Bmp, ms);
+
+            var imageTemp = new Bitmap(ms);
+
+            var image = new Bitmap(imageTemp, new System.Drawing.Size(new System.Drawing.Point(size, size)));
+
+            image.Save($"{AppContext.BaseDirectory}/file.bmp", ImageFormat.Bmp);
+
+        }
+        
+        private int printLine(string text, PrintPageEventArgs ev, int count, float leftMargin, float topMargin, bool center = false, bool isQr = false)
         {
             if (center)
             {
@@ -753,22 +810,37 @@ namespace SigesServicio
                 text = tabs.ToString() + text;
             }
             float yPos = topMargin + (count * printFont.GetHeight(ev.Graphics));
-            ev.Graphics.DrawString(text, printFont, Brushes.Black, leftMargin, yPos, new StringFormat());
+
+            if (isQr)
+            {
+                GenerateQRCode(text, 160);
+                Image newImage = Image.FromFile($"{AppContext.BaseDirectory}/file.bmp");
+
+                RectangleF srcRect = new RectangleF(0, 0, 160F, 160F);
+                GraphicsUnit units = GraphicsUnit.Pixel;
+                ev.Graphics.DrawImage(newImage, leftMargin, yPos, srcRect, units);
+            }
+            else
+            {
+                ev.Graphics.DrawString(text, printFont, Brushes.Black, leftMargin, yPos, new StringFormat() { });
+            }
             count++;
             return count;
         }
+
     }
 
     public class LineasImprimir
     {
-        public LineasImprimir(string linea, bool centrada)
+        public LineasImprimir(string linea, bool centrada, string qr=null)
         {
             this.linea = linea;
             this.centrada = centrada;
+            this.qr = qr;
         }
 
         public string linea;
         public bool centrada;
-
+        public string qr;
     }
 }

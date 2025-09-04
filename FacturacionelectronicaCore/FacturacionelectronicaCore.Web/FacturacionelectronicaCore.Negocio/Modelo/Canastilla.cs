@@ -6,6 +6,8 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
 {
     public class Canastilla
     {
+        
+        
         public int CanastillaId { get; set; }
         public string descripcion { get; set; }
         public string unidad { get; set; }
@@ -15,5 +17,6 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public Guid guid { get; set; }
         public int iva { get; set; }
         public string campoextra { get; set; }
+        public Guid? estacion { get; set; }
     }
 }

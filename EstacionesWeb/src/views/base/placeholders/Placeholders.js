@@ -13,7 +13,7 @@ import {
 } from '@coreui/react'
 import { DocsExample } from 'src/components'
 
-import ReactImg from 'src/assets/images/react.jpg'
+import IconoImg from 'src/assets/images/Icono.png'
 
 const Placeholders = () => {
   return (
@@ -32,7 +32,7 @@ const Placeholders = () => {
             <DocsExample href="components/placeholder">
               <div className="d-flex justify-content-around p-3">
                 <CCard style={{ width: '18rem' }}>
-                  <CCardImage orientation="top" src={ReactImg} />
+                  <CCardImage orientation="top" src={IconoImg} />
                   <CCardBody>
                     <CCardTitle>Card title</CCardTitle>
                     <CCardText>

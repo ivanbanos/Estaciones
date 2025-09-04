@@ -34,8 +34,8 @@ namespace FacturacionelectronicaCore.Web.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Canastilla>>> Get()
-        => Ok(await _canastillaNegocio.GetCanastillas());
+        public async Task<ActionResult<IEnumerable<Canastilla>>> Get([FromQuery] Guid? estacion = null)
+        => Ok(await _canastillaNegocio.GetCanastillas(estacion));
 
         [HttpPost]
         public async Task<ActionResult<int>> AddOrUpdate(IEnumerable<Canastilla> canastillas)

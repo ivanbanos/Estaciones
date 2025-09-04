@@ -104,36 +104,13 @@ namespace EnviadorInformacionService
         public string CrearFacturaOrdenesDeDespacho(string guid, string token)
         {
             return "Ok";
-            //        List<FacturasEntity> guids = new List<FacturasEntity>() { new FacturasEntity() { Guid = Guid.Parse(guid) } };
-
-
-            //        using (var client = new HttpClient())
-            //        {
-            //            client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
-            //            client.DefaultRequestHeaders.Authorization =
-            //new AuthenticationHeaderValue("Bearer", token);
-            //            var path = $"/api/OrdenesDeDespacho/EnviarFacturacion/{guid}";
-            //            var response = client.GetAsync($"{url}{path}").Result;
-            //            string responseBody = response.Content.ReadAsStringAsync().Result;
-            //            return responseBody;
-            //        }
+            
         }
 
         public string CrearFacturaFacturas(string guid, string token)
         {
             return "Ok";
-            //        List<FacturasEntity> guids = new List<FacturasEntity>() { new FacturasEntity() { Guid = Guid.Parse(guid) } };
-
-            //        using (var client = new HttpClient())
-            //        {
-            //            client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
-            //            client.DefaultRequestHeaders.Authorization =
-            //new AuthenticationHeaderValue("Bearer", token);
-            //            var path = $"/api/Factura/EnviarFacturacion/{guid}";
-            //            var response = client.GetAsync($"{url}{path}").Result;
-            //            //string responseBody = response.Content.ReadAsStringAsync().Result;
-            //            return "Ok";
-            //        }
+          
         }
         public class FacturasEntity
         {
@@ -226,15 +203,7 @@ namespace EnviadorInformacionService
 
         internal string CrearFacturaFacturasyVenta(int ventaId, string token)
         {
-            //        using (var client = new HttpClient())
-            //        {
-            //            client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
-            //            client.DefaultRequestHeaders.Authorization =
-            //new AuthenticationHeaderValue("Bearer", token);
-            //            var path = $"/api/Factura/EnviarFacturacion/{ventaId}/{estacion}";
-            //            var response = client.GetAsync($"{url}{path}").Result;
-            //            return "Ok";
-            //        }
+          
 
             return "Ok";
         }
@@ -242,15 +211,6 @@ namespace EnviadorInformacionService
         internal string CrearFacturaOrdenesDeDespachoByVenta(int ventaId, string token)
         {
             return "Ok";
-            //        using (var client = new HttpClient())
-            //        {
-            //            client.Timeout = new TimeSpan(0, 0, 10, 0, 0);
-            //            client.DefaultRequestHeaders.Authorization =
-            //new AuthenticationHeaderValue("Bearer", token);
-            //            var path = $"/api/OrdenesDeDespacho/EnviarFacturacion/{ventaId}/{estacion}";
-            //            var response = client.GetAsync($"{url}{path}").Result;
-            //            return "Ok";
-            //        }
         }
     }
 }

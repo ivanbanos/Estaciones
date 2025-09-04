@@ -18,6 +18,7 @@ using System.Configuration;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Policy;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
 
@@ -432,6 +433,21 @@ namespace EnviadorInformacionService
                 response.EnsureSuccessStatusCode();
 
                 return JsonConvert.DeserializeObject<ResolucionElectronica>(response.Content.ReadAsStringAsync().Result);
+            }
+        }
+
+        public string GetInfoFacturaElectronicaCanastilla(int facturasCanastillaId, Guid estacionFuente, string token)
+        {
+            using (var client = new HttpClient())
+            {
+                var path = $"/api/ManejadorInformacionLocal/GetInfoFacturaElectronicaCanastilla/{facturasCanastillaId}/estacion/{estacionFuente}";
+
+                client.Timeout = new TimeSpan(0, 0, 0, 5, 0);
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", token);
+                var response = client.GetAsync($"{_infoEstacion.Url}{path}").Result;
+                response.EnsureSuccessStatusCode();
+                return response.Content.ReadAsStringAsync().Result;
             }
         }
     }

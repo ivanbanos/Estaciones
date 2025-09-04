@@ -1,14 +1,14 @@
---ALTER TABLE
+-- ALTER TABLE
 --  Terceros
---ADD
+-- ADD
 --  enviadoSiesa
 --    bit NULL;
-GO
+-- GO
 
- -- ALTER TABLE OrdenesDeDespacho
-	--ADD EnviadaSiesa bit default 1;
---END
-GO
+--  ALTER TABLE OrdenesDeDespacho
+-- 	ADD EnviadaSiesa bit default 0;
+-- END
+-- GO
 
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'CambiarEstadoTerceroEnviadoSiesa')
 	DROP PROCEDURE [dbo].[CambiarEstadoTerceroEnviadoSiesa]
@@ -110,8 +110,8 @@ begin catch
 end catch;
 GO
 
-  ALTER TABLE OrdenesDeDespacho
-	ADD EnviadaSiesa bit default 1;
+--   ALTER TABLE OrdenesDeDespacho
+-- 	ADD EnviadaSiesa bit default 1;
 	GO
 	GO
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'getFacturaSinEnviarSiesa')
@@ -127,12 +127,9 @@ begin try
 
 	insert into @facturasTemp (id)
 	select 
-	top(20)ventaId
+	top(10)ventaId
 	from OrdenesDeDespacho
-    where (EnviadaSiesa = 0 or EnviadaSiesa is null)
-	
-    and fecha < DATEADD(minute, -10, GETDATE())
-	order by ventaId desc
+     where (enviada =1 and (EnviadaSiesa = 0 OR EnviadaSiesa IS NULL)) ORDER BY ventaId desc
 
 	declare @terceroId int, @tipoIdentificacion int
 
@@ -217,7 +214,7 @@ BEGIN
  values('42950202', 4, 'corriente', 1);
 END
 GO
-alter table Auxiliares add cruce bit not null default 0
+-- alter table Auxiliares add cruce bit not null default 0
 GO
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'BuscarAuxiliar')
 	DROP PROCEDURE [dbo].[BuscarAuxiliar]

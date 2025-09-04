@@ -60,13 +60,16 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public int ProductId { get; set; }
         public decimal Quantity { get; set; }
         public decimal Discunt { get; set; }
+        public decimal Price { get; set; }
+        public decimal TotalPrice { get; set; }
+        public bool SkipAuditWarehouseValues { get; set; }
     }
 
     public class PaymentInformation
     {
         public int PaymentFormId { get; set; }
         public int PaymentMethodId { get; set; }
-        public int PaymentMeandId { get; set; }
+        public int PaymentMeanId { get; set; }
         public int CardId { get; set; }
         public int TransaccionNumber { get; set; }
     }

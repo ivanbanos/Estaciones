@@ -1,6 +1,15 @@
 import React from 'react'
 import CIcon from '@coreui/icons-react'
-import { cilCalculator, cilSpeedometer, cilUser, cilPlus, cilCog, cilContact } from '@coreui/icons'
+import {
+  cilCalculator,
+  cilSpeedometer,
+  cilUser,
+  cilPlus,
+  cilCog,
+  cilContact,
+  cilPeople,
+  cilSpreadsheet,
+} from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
 const _nav = [
@@ -13,10 +22,24 @@ const _nav = [
   },
   {
     component: CNavItem,
-    name: 'Canastilla',
-    to: '/CanastillaNormal',
-    icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
-    level: 2,
+    name: 'Terceros',
+    to: '/terceros',
+    icon: <CIcon icon={cilPeople} customClassName="nav-icon" />,
+    level: 1,
+  },
+  {
+    component: CNavItem,
+    name: 'Órdenes de Despacho',
+    to: '/OrdenesDespacho',
+    icon: <CIcon icon={cilCalculator} customClassName="nav-icon" />,
+    level: 1,
+  },
+  {
+    component: CNavItem,
+    name: 'Reporte Fiscal',
+    to: '/ReporteFiscal',
+    icon: <CIcon icon={cilCalculator} customClassName="nav-icon" />,
+    level: 1,
   },
   {
     component: CNavItem,
@@ -27,15 +50,22 @@ const _nav = [
   },
   {
     component: CNavItem,
-    name: 'Turnos',
-    to: '/Turnos',
+    name: 'Facturas de Canastilla',
+    to: '/FacturasCanastilla',
+    icon: <CIcon icon={cilContact} customClassName="nav-icon" />,
+    level: 2,
+  },
+  {
+    component: CNavItem,
+    name: 'Ventas por clientes',
+    to: '/VentasClientes',
     icon: <CIcon icon={cilCalculator} customClassName="nav-icon" />,
     level: 1,
   },
   {
     component: CNavItem,
-    name: 'Canastilla Reporte',
-    to: '/Canastilla',
+    name: 'Turnos',
+    to: '/Turnos',
     icon: <CIcon icon={cilCalculator} customClassName="nav-icon" />,
     level: 1,
   },
@@ -55,16 +85,9 @@ const _nav = [
   },
   {
     component: CNavItem,
-    name: 'Ventas por clientes',
-    to: '/VentasClientes',
-    icon: <CIcon icon={cilCalculator} customClassName="nav-icon" />,
-    level: 1,
-  },
-  {
-    component: CNavItem,
-    name: 'Reporte Fiscal',
-    to: '/ReporteFiscal',
-    icon: <CIcon icon={cilCalculator} customClassName="nav-icon" />,
+    name: 'Consolidado de Órdenes',
+    to: '/consolidado-ordenes',
+    icon: <CIcon icon={cilSpreadsheet} customClassName="nav-icon" />,
     level: 1,
   },
 ]

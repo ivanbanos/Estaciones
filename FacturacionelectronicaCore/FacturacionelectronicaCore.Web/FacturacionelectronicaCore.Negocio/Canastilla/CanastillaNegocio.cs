@@ -49,11 +49,11 @@ namespace FacturacionelectronicaCore.Negocio.Canastilla
             }
         }
 
-        public async Task<IEnumerable<Modelo.Canastilla>> GetCanastillas()
+        public async Task<IEnumerable<Modelo.Canastilla>> GetCanastillas(Guid? estacion = null)
         {
             try
             {
-                var terceros = await _canastillaRepositorio.GetCanastillas();
+                var terceros = await _canastillaRepositorio.GetCanastillas(estacion);
                 return _mapper.Map<IEnumerable<Repositorio.Entities.Canastilla>, IEnumerable<Modelo.Canastilla>>(terceros);
             }
             catch (Exception)

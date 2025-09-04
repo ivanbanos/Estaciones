@@ -9,6 +9,6 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
     public interface ICanastillaRepositorio
     {
         Task AddRange(IEnumerable<Canastilla> lists);
-        Task<IEnumerable<Canastilla>> GetCanastillas();
+        Task<IEnumerable<Canastilla>> GetCanastillas(Guid? estacion = null);
     }
 }

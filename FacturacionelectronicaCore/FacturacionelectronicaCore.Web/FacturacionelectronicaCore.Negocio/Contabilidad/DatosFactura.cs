@@ -94,19 +94,27 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad
 
             if (factura.Combustible.ToLower().Contains("corriente"))
             {
-                Combustible = options.Corriente;
+                Combustible = options.Estaciones?.ContainsKey(estacion) == true ? 
+                    options.Estaciones[estacion].Corriente ?? options.Corriente : 
+                    options.Corriente;
             }
             else if (factura.Combustible.ToLower().Contains("diesel") || factura.Combustible.ToLower().Contains("bioacem") || factura.Combustible.ToLower().Contains("acpm"))
             {
-                Combustible = options.Acpm;
+                Combustible = options.Estaciones?.ContainsKey(estacion) == true ? 
+                    options.Estaciones[estacion].Acpm ?? options.Acpm : 
+                    options.Acpm;
             }
             else if (factura.Combustible.ToLower().Contains("extra"))
             {
-                Combustible = options.Extra;
+                Combustible = options.Estaciones?.ContainsKey(estacion) == true ? 
+                    options.Estaciones[estacion].Extra ?? options.Extra : 
+                    options.Extra;
             }
             else if (factura.Combustible.ToLower().Contains("gas") || factura.Combustible.ToLower().Contains("gnvc"))
             {
-                Combustible = options.Gas;
+                Combustible = options.Estaciones?.ContainsKey(estacion) == true ? 
+                    options.Estaciones[estacion].Gas ?? options.Gas : 
+                    options.Gas;
             }
         }
 

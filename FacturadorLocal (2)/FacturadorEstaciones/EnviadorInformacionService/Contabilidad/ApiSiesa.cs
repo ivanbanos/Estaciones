@@ -2,8 +2,6 @@
 using Newtonsoft.Json;
 using OfficeOpenXml.Drawing.Slicer.Style;
 using OfficeOpenXml.Drawing.Vml;
-using Polly;
-using Polly.Retry;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -26,15 +24,6 @@ namespace EnviadorInformacionService.Contabilidad
         private readonly string idDocumento = ConfigurationManager.AppSettings["iddocumento"].ToString();
         private readonly string idDocumentoCliente = ConfigurationManager.AppSettings["iddocumentocliente"].ToString();
 
-private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy = Policy
-            .HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-            .Or<HttpRequestException>()
-            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)), 
-                (result, timeSpan, retryCount, context) =>
-                {
-                    Logger.Warn($"Retry {retryCount} for {context.PolicyKey} at {context.OperationKey}, due to: {result.Exception?.Message ?? result.Result.ReasonPhrase}");
-                });
-
         internal void EnviarRecibo(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce)
         {
             var requestContent = ConvertirAReciboSiesa(factura, facturaelectronica, consecutivo, auxiliarContable, cruce);
@@ -42,32 +31,50 @@ private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy = Policy
             try
             {
                 var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(20);
                 var request = new HttpRequestMessage(HttpMethod.Post, $"{urlSiesa}/api/siesa/v3.1/conectoresimportar?idCompania={idCompania}&idSistema={idsistema}&idDocumento={idDocumento}&nombreDocumento=Documento_Contablev2");
                 request.Headers.Add("ConniKey", ConfigurationManager.AppSettings["key"].ToString());
                 request.Headers.Add("ConniToken", ConfigurationManager.AppSettings["token"].ToString());
                 var content = new StringContent(JsonConvert.SerializeObject(requestContent), null, "application/json");
                 request.Content = content;
-                 var response = retryPolicy.ExecuteAsync(async () => await client.SendAsync(request)).Result;
+                var response = client.SendAsync(request).Result;
                 responseString = response.Content.ReadAsStringAsync().Result;
+                
+                // Si es Bad Request, verificar si el documento ya existe
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    if (responseString.Contains("El documento ya existe"))
+                    {
+                        Logger.Info($"Recibo ya existe en Siesa (marcado como exitoso) - {JsonConvert.SerializeObject(requestContent)}. Respuesta: {responseString}");
+                        return; // Salir sin lanzar excepción, se considera exitoso
+                    }
+                    else
+                    {
+                        Logger.Warn($"Recibo no enviado (Bad Request) - {JsonConvert.SerializeObject(requestContent)}. Respuesta: {responseString}");
+                        throw new HttpRequestException($"Bad Request: {responseString}");
+                    }
+                }
+                
                 response.EnsureSuccessStatusCode();
-
                 Logger.Info($"Recibo enviado {JsonConvert.SerializeObject(requestContent)}. Respuesta {responseString}");
             }
 
+            catch (HttpRequestException)
+            {
+                // Re-lanzar HttpRequestException (ya manejada arriba)
+                throw;
+            }
             catch (Exception ex)
             {
-
-                if(!responseString.Contains("El documento ya existe"))
+                if (responseString.Contains("El documento ya existe"))
                 {
-
-                    Logger.Info($"Recibo no enviado {JsonConvert.SerializeObject(requestContent)}. Respuesta {responseString}");
-                    throw;
+                    Logger.Info($"Recibo ya existe en Siesa (marcado como exitoso) - {JsonConvert.SerializeObject(requestContent)}. Respuesta: {responseString}");
+                    return; // Salir sin lanzar excepción, se considera exitoso
                 }
                 else
                 {
-
-                    Logger.Info($"Recibo enviado {JsonConvert.SerializeObject(requestContent)}. Respuesta {responseString}");
-
+                    Logger.Warn($"Recibo no enviado - {JsonConvert.SerializeObject(requestContent)}. Respuesta: {responseString}. Error: {ex.Message}");
+                    throw;
                 }
             }
         }
@@ -155,121 +162,129 @@ private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy = Policy
             var responseString = "";
             if (factura.codigoFormaPago == 4)
             {
+                // Pago en efectivo - usar formato con Caja
                 var requestContent = ConvertirAMovimientoSiesaCaja(factura, facturaelectronica, consecutivo, auxiliarContable, cruce);
                 contentString = JsonConvert.SerializeObject(requestContent);
             }
             else
             {
-
-                var requestContent = ConvertirAMovimientoSiesaCaja(factura, facturaelectronica, consecutivo, auxiliarContable, cruce);
+                // Otros métodos de pago - usar formato con MovimientoCxC
+                var requestContent = ConvertirAMovimientoSiesa(factura, facturaelectronica, consecutivo, auxiliarContable, cruce);
                 contentString = JsonConvert.SerializeObject(requestContent);
             }
 
             try
             {
                 var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(20);
                 var request = new HttpRequestMessage(HttpMethod.Post, $"{urlSiesa}/api/siesa/v3.1/conectoresimportar?idCompania={idCompania}&idSistema={idsistema}&idDocumento={idDocumento}&nombreDocumento=Documento_Contablev2");
                 request.Headers.Add("ConniKey", ConfigurationManager.AppSettings["key"].ToString());
                 request.Headers.Add("ConniToken", ConfigurationManager.AppSettings["token"].ToString());
 
                 var content = new StringContent(contentString, null, "application/json");
                 request.Content = content;
-                var response = retryPolicy.ExecuteAsync(async () => await client.SendAsync(request)).Result;
+                var response = client.SendAsync(request).Result;
+                responseString = response.Content.ReadAsStringAsync().Result;
+                
+                // Si es Bad Request, verificar si el documento ya existe
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    if (responseString.Contains("El documento ya existe"))
+                    {
+                        Logger.Info($"Factura ya existe en Siesa (marcada como exitosa) - {contentString}. Respuesta: {responseString}");
+                        return; // Salir sin lanzar excepción, se considera exitosa
+                    }
+                    else
+                    {
+                        Logger.Warn($"Factura no enviada (Bad Request) - {contentString}. Respuesta: {responseString}");
+                        throw new HttpRequestException($"Bad Request: {responseString}");
+                    }
+                }
+                
                 response.EnsureSuccessStatusCode();
-
                 Logger.Info($"Factura enviada {contentString}. Respuesta {responseString}");
             }
 
+            catch (HttpRequestException)
+            {
+                // Re-lanzar HttpRequestException (ya manejada arriba)
+                throw;
+            }
             catch (Exception ex)
             {
-                if (!responseString.Contains("El documento ya existe"))
+                if (responseString.Contains("El documento ya existe"))
                 {
-
-                    Logger.Info($"Factura no enviado {contentString}. Respuesta {responseString}");
-                    throw;
+                    Logger.Info($"Factura ya existe en Siesa (marcada como exitosa) - {contentString}. Respuesta: {responseString}");
+                    return; // Salir sin lanzar excepción, se considera exitosa
                 }
                 else
                 {
-
-                    Logger.Info($"factura enviado {contentString}. Respuesta {responseString}");
-
+                    Logger.Warn($"Factura no enviada - {contentString}. Respuesta: {responseString}. Error: {ex.Message}");
+                    throw;
                 }
             }
         }
 
-        private Movimientos ConvertirAMovimientoSiesa(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce)
+        private object ConvertirAMovimientoSiesa(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce)
         {
-            var requestContent = new Movimientos()
+            var requestContent = new
             {
-                Inicial = new List<Compania> { new Compania() { F_CIA = "1" } },
-                Final = new List<Compania> { new Compania() { F_CIA = "1" } },
-                MovimientoCxC = new List<MovimientoCxC> {
-                new MovimientoCxC {
-
-                        F_CIA = "1",
-                        F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescxc"].ToString(),
-                        F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
-                        F350_CONSEC_DOCTO = consecutivo,
-                        F351_NOTAS = "Venta combustible",
-                        F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
-                        F351_ID_AUXILIAR = cruce,
-                        F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocxc"].ToString(),
-                        F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocxc"].ToString(),
-                        F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocxc"].ToString(),
-                        F351_VALOR_CR = "0",
-                        F351_VALOR_DB = factura.Venta.TOTAL.ToString("0.00", CultureInfo.InvariantCulture),
-                        F353_ID_SUCURSAL = ConfigurationManager.AppSettings["sucursal"].ToString(),
-                        F353_CONSEC_DOCTO_CRUCE= ConfigurationManager.AppSettings["documentocruce"].ToString(),
-                        F353_ID_TIPO_DOCTO_CRUCE=ConfigurationManager.AppSettings["documentofactura"].ToString(),
-                        F353_NRO_CUOTA_CRUCE="11",
-                        F353_FECHA_DSCTO_PP=factura.fecha.ToString("yyyyMMdd"),
-                        F353_FECHA_VCTO=factura.fecha.ToString("yyyyMMdd"),
-                        F354_NOTAS=$"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}",
-                        F354_TERCERO_VEND=ConfigurationManager.AppSettings["vendedor"].ToString(),
-
-                }
-                },
-                Documentocontable = new List<Documentocontable> { new Documentocontable() {
-                F_CIA = "1",
-                F_CONSEC_AUTO_REG = ConfigurationManager.AppSettings["consecutivoautoregulado"].ToString(),
-                F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionesdocuemnto"].ToString(),
-                F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
-                F350_CONSEC_DOCTO = consecutivo,
-                F350_FECHA = factura.fecha.ToString("yyyyMMdd"),
-                F350_ID_TERCERO = factura.Tercero.identificacion.ToString(),
-                F350_IND_ESTADO = "1",
-                F350_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}",
-
-
-                }
-               },
-                Movimientocontable = new List<Movimientocontable>()
+                Inicial = new List<object> { new { F_CIA = "1" } },
+                Final = new List<object> { new { F_CIA = "1" } },
+                Documentocontable = new List<object> { new {
+                    F_CIA = "1",
+                    F_CONSEC_AUTO_REG = "0",
+                    F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionesdocuemnto"].ToString(),
+                    F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
+                    F350_CONSEC_DOCTO = consecutivo,
+                    F350_FECHA = factura.fecha.ToString("yyyyMMdd"),
+                    F350_ID_TERCERO = factura.Tercero.identificacion.ToString(),
+                    F350_IND_ESTADO = "1",
+                    F350_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}",
+                }},
+                Movimientocontable = new List<object>()
                 {
-                    new Movimientocontable()
+                    // Primer movimiento contable
+                    new
                     {
                         F_CIA = "1",
-                        F350_ID_CO = ConfigurationManager.AppSettings["centrooperaciones"].ToString(),
+                        F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescontableotros"].ToString(),
                         F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
                         F350_CONSEC_DOCTO = consecutivo,
-                        F351_BASE_GRAVABLE = "",
-                        F351_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}",
-                        F351_DOCTO_BANCO = "",
-                        F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
                         F351_ID_AUXILIAR = auxiliarContable,
-                        F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocosto"].ToString(),
-                        F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimiento"].ToString(),
-                        F351_ID_FE = ConfigurationManager.AppSettings["idfe"].ToString(),
-                        F351_NRO_DOCTO_BANCO="",
-                        F351_ID_UN = ConfigurationManager.AppSettings["unidadnegocio"].ToString(),
-                        F351_VALOR_CR = factura.Venta.TOTAL.ToString("0.00", CultureInfo.InvariantCulture),
+                        F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
+                        F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocontableotros"].ToString(),
+                        F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocontableotros"].ToString(),
+                        F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocontableotros"].ToString(),
+                        F351_ID_FE = "",
                         F351_VALOR_DB = "0",
-
-
-
+                        F351_VALOR_CR = factura.Venta.TOTAL.ToString("0.00", CultureInfo.InvariantCulture),
+                        F351_BASE_GRAVABLE = "",
+                        F351_DOCTO_BANCO = "",
+                        F351_NRO_DOCTO_BANCO = "",
+                        F351_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}"
+                    },
+                    // Segundo movimiento contable
+                    new
+                    {
+                        F_CIA = "1",
+                        F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionesotros"].ToString(),
+                        F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
+                        F350_CONSEC_DOCTO = consecutivo,
+                        F351_ID_AUXILIAR = cruce,
+                        F351_ID_TERCERO = "",
+                        F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientootros"].ToString(),
+                        F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociootros"].ToString(),
+                        F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostootros"].ToString(),
+                        F351_ID_FE = ConfigurationManager.AppSettings["idfeotros"].ToString(),
+                        F351_VALOR_DB = factura.Venta.TOTAL.ToString("0.00", CultureInfo.InvariantCulture),
+                        F351_VALOR_CR = "0",
+                        F351_BASE_GRAVABLE = "",
+                        F351_DOCTO_BANCO = "CG",
+                        F351_NRO_DOCTO_BANCO = factura.fecha.ToString("yyyyMMdd"),
+                        F351_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}"
                     }
-
-                },
-
+                }
             };
             return requestContent;
         }
@@ -303,8 +318,8 @@ private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy = Policy
                         F358_NRO_AUTORIZACION="",
                         F358_NRO_CUENTA=cruce,
                         F358_REFERENCIA_OTROS=""
-                        
-                        
+
+
 
                 }
                 },
@@ -353,7 +368,7 @@ private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy = Policy
             return requestContent;
         }
 
-        public void EnviarTercero(Tercero tercero)
+        public bool EnviarTercero(Tercero tercero)
         {
             var requestContent = ConvertirATercerosSiesa(tercero);
             var responseString = "";
@@ -363,21 +378,51 @@ private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy = Policy
 
 
                 var client = new HttpClient();
+                client.Timeout = TimeSpan.FromSeconds(20);
                 var request = new HttpRequestMessage(HttpMethod.Post, $"{urlSiesa}/api/siesa/v3.1/conectoresimportar?idCompania={idCompania}&idSistema={idsistema}&idDocumento={idDocumentoCliente}&nombreDocumento=TERCERO_CLIENTE_INTEGRADO");
                 request.Headers.Add("ConniKey", ConfigurationManager.AppSettings["key"].ToString());
                 request.Headers.Add("ConniToken", ConfigurationManager.AppSettings["token"].ToString());
                 var content = new StringContent(JsonConvert.SerializeObject(requestContent), null, "application/json");
                 request.Content = content;
-                var response = retryPolicy.ExecuteAsync(async () => await client.SendAsync(request)).Result;
+                var response = client.SendAsync(request).Result;
+                responseString = response.Content.ReadAsStringAsync().Result;
+                
+                // Si es Bad Request, verificar si ya existe o no tiene permisos
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    if (responseString.Contains("El documento ya existe") || responseString.Contains("No tiene acceso a modificar"))
+                    {
+                        Logger.Info($"Tercero ya existe o sin permisos (marcado como exitoso) - {JsonConvert.SerializeObject(requestContent)}. Respuesta: {responseString}");
+                        return true; // Tratarlo como exitoso
+                    }
+                    else
+                    {
+                        Logger.Warn($"Tercero no enviado (Bad Request) - {JsonConvert.SerializeObject(requestContent)}. Respuesta: {responseString}");
+                        return false;
+                    }
+                }
+                
                 response.EnsureSuccessStatusCode();
-
-                Logger.Info($"Tercero enviado {JsonConvert.SerializeObject(requestContent)}.Respuesta { responseString}");
+                Logger.Info($"Tercero enviado {JsonConvert.SerializeObject(requestContent)}.Respuesta {responseString}");
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                // HttpRequestException ya fue manejada arriba en Bad Request
+                Logger.Warn($"Tercero no enviado (HttpRequestException) - {JsonConvert.SerializeObject(requestContent)}. Respuesta: {responseString}. Error: {ex.Message}");
+                return false;
             }
             catch (Exception ex)
             {
-
-                Logger.Info($"Tercero no enviado {JsonConvert.SerializeObject(requestContent)}. Respuesta {responseString}");
-                throw;
+                // Verificar casos especiales en Exception general
+                if (responseString.Contains("El documento ya existe") || responseString.Contains("No tiene acceso a modificar"))
+                {
+                    Logger.Info($"Tercero ya existe o sin permisos (marcado como exitoso) - {JsonConvert.SerializeObject(requestContent)}. Respuesta: {responseString}");
+                    return true;
+                }
+                
+                Logger.Warn($"Tercero no enviado - {JsonConvert.SerializeObject(requestContent)}. Respuesta: {responseString}. Error: {ex.Message}");
+                return false;
             }
         }
 
@@ -430,7 +475,7 @@ private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy = Policy
                     new ClienteSiesa
                     {
                         F_CIA = "1",
-                        F201_ID_TERCERO = x.identificacion.Trim(), 
+                        F201_ID_TERCERO = x.identificacion.Trim(),
                         F201_ID_SUCURSAL = ConfigurationManager.AppSettings["sucursal"].ToString(),
                         F201_DESCRIPCION_SUCURSAL = "YAVEGAS",
                         F201_ID_VENDEDOR = "",
@@ -465,8 +510,8 @@ private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy = Policy
                         F200_ID = x.identificacion.Trim(),
                         F200_NIT = x.identificacion.Trim(),
                     F200_ID_TIPO_IDENT = x.tipoIdentificacionS == "Nit" ? "N" : "C",
-                    F200_IND_TIPO_TERCERO = "1",
-                    F200_RAZON_SOCIAL = nombreCompleto,
+                    F200_IND_TIPO_TERCERO = x.tipoIdentificacionS == "Nit" ? "2" :"1",
+                    F200_RAZON_SOCIAL = nombreCompleto.Length > 40 ? nombreCompleto.Substring(0, 40) : nombreCompleto,
                     F200_APELLIDO1 = apellido,
                     F200_APELLIDO2 = "NA",
                     F200_NOMBRES = nombre,

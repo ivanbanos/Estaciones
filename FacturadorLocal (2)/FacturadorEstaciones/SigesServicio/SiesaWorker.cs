@@ -1,5 +1,3 @@
-using Polly;
-using Polly.Retry;
 using FactoradorEstacionesModelo;
 using FactoradorEstacionesModelo.Fidelizacion;
 using FacturadorEstacionesPOSWinForm;
@@ -25,8 +23,6 @@ namespace EnviadorInformacionService.Contabilidad
     public class SiesaWorker : BackgroundService
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
-
-        private readonly AsyncRetryPolicy<HttpResponseMessage> retryPolicy;
 
         private readonly IEstacionesRepositorio _estacionesRepositorio;
         private readonly InfoEstacion _infoEstacion;
@@ -57,154 +53,291 @@ namespace EnviadorInformacionService.Contabilidad
             _informacionCuenta = informacionCuenta.Value;
             _conexionEstacionRemota = conexionEstacionRemota;
             _fidelizacon = fidelizacon;
-            retryPolicy = Policy
-                .HandleResult<HttpResponseMessage>(r => !r.IsSuccessStatusCode)
-                .Or<HttpRequestException>()
-                .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                    (result, timeSpan, retryCount, context) =>
-                    {
-                        Logger.Warn($"Retry {retryCount} for {context.PolicyKey} at {context.OperationKey}, due to: {result.Exception?.Message ?? result.Result.ReasonPhrase}");
-                    });
+            _siesa = siesa.Value;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(async () =>
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            Logger.Info("Iniciando interfaz Siesa");
-            Thread.CurrentThread.CurrentCulture = new CultureInfo("es-ES");
-            while (!stoppingToken.IsCancellationRequested)
+            await Task.Run(async () =>
             {
-                try
+                Logger.Info("Iniciando interfaz Siesa");
+                Thread.CurrentThread.CurrentCulture = new CultureInfo("es-ES");
+                while (!stoppingToken.IsCancellationRequested)
                 {
-
-                    var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadasSiesa();
-
-                    var terceros = facturas.Select(x => x.Tercero);
-                    if (terceros.Any(x => !x.EnviadoSiesa.HasValue || !x.EnviadoSiesa.Value))
+                    try
                     {
-                        foreach (var t in terceros.Where(x => !x.EnviadoSiesa.HasValue || !x.EnviadoSiesa.Value))
-                        {
 
-                            EnviarTercero(t);
-                            _estacionesRepositorio.MarcarTercerosEnviadosASiesa(terceros.Select(x => x.terceroId));
-                        }
-                    }
-                    var facturasEnviadas = new List<int>();
-                    foreach (var factura in facturas)
-                    {
-                        try
-                        {
-                            var infoTemp = "";
-                            var facelec = "";
-                            var consecutivo = "";
+                        var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadasSiesa();
 
-                            if (factura.codigoFormaPago != 6)
+                        var terceros = facturas.Select(x => x.Tercero).GroupBy(t => t.terceroId).Select(g => g.First()).ToList();
+
+                        if (terceros.Any(x => !x.EnviadoSiesa.HasValue || !x.EnviadoSiesa.Value))
+                        {
+                            var tercerosEnviados = new List<int>();
+                            var tercerosFallidos = new List<string>();
+
+                            foreach (var t in terceros.Where(x => !x.EnviadoSiesa.HasValue || !x.EnviadoSiesa.Value))
                             {
-                                try
+                                if (await EnviarTercero(t))
                                 {
-                                    var intentos = 0;
-                                    do
+                                    tercerosEnviados.Add(t.terceroId);
+                                    Logger.Info($"Tercero enviado exitosamente - ID: {t.terceroId}, Identificación: {t.identificacion}, Nombre: {t.Nombre}");
+                                }
+                                else
+                                {
+                                    tercerosFallidos.Add($"ID: {t.terceroId}, Identificación: {t.identificacion}, Nombre: {t.Nombre}");
+                                    Logger.Info($"Fallo al enviar tercero - ID: {t.terceroId}, Identificación: {t.identificacion}, Nombre: {t.Nombre}");
+                                }
+                            }
+
+                            if (tercerosEnviados.Any())
+                            {
+                                _estacionesRepositorio.MarcarTercerosEnviadosASiesa(tercerosEnviados);
+                                Logger.Info($"Total terceros enviados exitosamente: {tercerosEnviados.Count} - IDs: {string.Join(", ", tercerosEnviados)}");
+                            }
+
+                            if (tercerosFallidos.Any())
+                            {
+                                Logger.Info($"Total terceros que fallaron al enviar: {tercerosFallidos.Count} - {string.Join(" | ", tercerosFallidos)}");
+                            }
+                        }
+                        var facturasEnviadas = new List<int>();
+                        var facturasFallidas = new List<string>();
+
+                        foreach (var factura in facturas)
+                        {
+                            try
+                            {
+                                var infoTemp = "";
+                                var facelec = "";
+
+                                if (factura.codigoFormaPago != 6)
+                                {
+                                    try
                                     {
-                                        infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(factura.ventaId, Guid.Parse(_infoEstacion.EstacionFuente), _conexionEstacionRemota.getToken());
-                                        Thread.Sleep(100);
-                                    } while (infoTemp == null || intentos++ < 3);
-
-                                    if (!string.IsNullOrEmpty(infoTemp))
-                                    {
-                                        infoTemp = infoTemp.Replace("\n\r", " ");
-
-                                        var facturaElectronica = infoTemp.Split(' ');
-
-                                        Match match = Regex.Match(facturaElectronica[2], @"^([A-Za-z]+)(\d+)$");
-                                        facelec = facturaElectronica[4];
-                                        if (match.Success)
+                                        var intentos = 0;
+                                        do
                                         {
-                                            string letras = match.Groups[1].Value;
-                                            string numeros = match.Groups[2].Value;
-
-                                            string auxiliarContable = _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Combustible, true, true).Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
-                                            string auxiliarCruce = _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Combustible, true, false).Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
-                                            if (auxiliarContable == null)
+                                            try
                                             {
-
-                                                Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Combustible} no se envió no exite auxiliar contrable creado");
+                                                infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(factura.ventaId, Guid.Parse(_infoEstacion.EstacionFuente), _conexionEstacionRemota.getToken());
                                             }
-                                            if (auxiliarCruce == null)
+                                            catch (Exception ex)
                                             {
-
-                                                Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Combustible} no se envió no exite auxiliar cruce creado");
+                                                infoTemp = "";
+                                                Logger.Error($"Error al obtener información de la factura electrónica para la factura {factura.ventaId}: {ex.Message}");
                                             }
-                                            EnviarFactura(factura, facturaElectronica[2], numeros, auxiliarContable, auxiliarCruce);
-                                            //_apiContabilidad.EnviarRecibo(factura, facturaElectronica[2], numeros, _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, true), _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, false));
-                                            facturasEnviadas.Add(factura.ventaId);
+                                            Thread.Sleep(100);
+                                        } while (infoTemp == null || intentos++ < 3);
+
+                                        if (!string.IsNullOrEmpty(infoTemp))
+                                        {
+                                            infoTemp = infoTemp.Replace("\n\r", " ");
+
+                                            var facturaElectronica = infoTemp.Split(' ');
+
+                                            Match match = Regex.Match(facturaElectronica[2], @"^([A-Za-z]+)(\d+)$");
+                                            facelec = facturaElectronica[4];
+                                            if (match.Success)
+                                            {
+                                                string letras = match.Groups[1].Value;
+                                                string numeros = match.Groups[2].Value;
+
+                                                string auxiliarContable = _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Combustible, true, true).Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
+                                                string auxiliarCruce = _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Combustible, true, false).Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
+                                                if (auxiliarContable == null)
+                                                {
+
+                                                    Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Combustible} no se envió no exite auxiliar contrable creado");
+                                                }
+                                                if (auxiliarCruce == null)
+                                                {
+
+                                                    Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Combustible} no se envió no exite auxiliar cruce creado");
+                                                }
+                                                await EnviarFactura(factura, facturaElectronica[2], numeros, auxiliarContable, auxiliarCruce);
+                                                //_apiContabilidad.EnviarRecibo(factura, facturaElectronica[2], numeros, _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, true), _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, false));
+                                                facturasEnviadas.Add(factura.ventaId);
+                                                Logger.Info($"Factura enviada exitosamente - ID: {factura.ventaId}, Total: {factura.Total}, Forma Pago: {factura.codigoFormaPago}, Combustible: {factura.Combustible}");
+                                            }
                                         }
+                                        else
+                                        {
+                                            facturasEnviadas.Add(factura.ventaId);
+
+                                        }
+
                                     }
-
+                                    catch (Exception ex)
+                                    {
+                                        facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Total}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
+                                        Logger.Warn($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.Total}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
+                                    }
                                 }
-                                catch (Exception ex)
+                                else
                                 {
-
-                                    Logger.Info($"Factura {JsonConvert.SerializeObject(factura)} no se envió {ex.Message}");
+                                    facturasEnviadas.Add(factura.ventaId);
                                 }
                             }
-                            else
+                            catch (Exception ex)
                             {
-
-                                facturasEnviadas.Add(factura.ventaId);
+                                facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Total}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
+                                Logger.Warn($"Fallo al procesar factura - ID: {factura.ventaId}, Total: {factura.Total}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
                             }
                         }
-                        catch (Exception ex)
+                        if (facturasEnviadas.Any())
                         {
-                            Logger.Info($"Factura {JsonConvert.SerializeObject(factura)} no se envió {ex.Message}");
+                            Logger.Info($"Total facturas enviadas exitosamente: {facturasEnviadas.Count} - IDs: {string.Join(", ", facturasEnviadas)}");
+                            _estacionesRepositorio.ActuralizarFacturasEnviadosSiesa(facturasEnviadas);
                         }
+
+                        if (facturasFallidas.Any())
+                        {
+                            Logger.Warn($"Total facturas que fallaron al enviar: {facturasFallidas.Count} - {string.Join(" | ", facturasFallidas)}");
+                        }
+
+                        Thread.Sleep(1000);
                     }
-                    if (facturasEnviadas.Any())
+                    catch (Exception ex)
                     {
-                        Logger.Info($"Facturas {JsonConvert.SerializeObject(facturasEnviadas)} enviadas");
-                        _estacionesRepositorio.ActuralizarFacturasEnviadosSiesa(facturasEnviadas);
+
+                        Logger.Info("Ex" + ex.Message);
+                        Thread.Sleep(5000);
                     }
-                    Thread.Sleep(5000);
                 }
-                catch (Exception ex)
-                {
+            });
+        }
 
-                    Logger.Info("Ex" + ex.Message);
-                    Thread.Sleep(300000);
-                }
-            }
-        });
-
-        private async Task  EnviarFactura(FacturaSiges factura, string facturaelectronica, string consecutivo, string? auxiliarContable, string? auxiliarCruce)
+        private async Task EnviarFactura(FacturaSiges factura, string facturaelectronica, string consecutivo, string? auxiliarContable, string? auxiliarCruce)
         {
-            var requestContent = ConvertirAReciboSiesa(factura, facturaelectronica, consecutivo, auxiliarContable, auxiliarCruce);
+            var contentString = "";
             var responseString = "";
+
+            if (factura.codigoFormaPago == 1)
+            {
+                // Pago en efectivo - usar formato con Caja
+                var requestContent = ConvertirAMovimientoSiesaCaja(factura, facturaelectronica, consecutivo, auxiliarContable, auxiliarCruce);
+                contentString = JsonConvert.SerializeObject(requestContent);
+            }
+            else
+            {
+                // Otros métodos de pago - usar formato sin Caja
+                var requestContent = ConvertirAMovimientoSiesa(factura, facturaelectronica, consecutivo, auxiliarContable, auxiliarCruce);
+                contentString = JsonConvert.SerializeObject(requestContent);
+            }
 
             try
             {
                 using (var client = new HttpClient())
                 {
+                    client.Timeout = TimeSpan.FromSeconds(20);
                     var request = new HttpRequestMessage(HttpMethod.Post, $"{_siesa.UrlSiesa}/api/siesa/v3.1/conectoresimportar?idCompania={_siesa.IdCompania}&idSistema={_siesa.Idsistema}&idDocumento={_siesa.IdDocumento}&nombreDocumento=Documento_Contablev2");
                     request.Headers.Add("ConniKey", _siesa.KeySiesa);
                     request.Headers.Add("ConniToken", _siesa.Tokensiesa);
-                    request.Content = new StringContent(JsonConvert.SerializeObject(requestContent), Encoding.UTF8, "application/json");
+                    request.Content = new StringContent(contentString, Encoding.UTF8, "application/json");
 
-                    var response = await retryPolicy.ExecuteAsync(async () => await client.SendAsync(request));
+                    var response = await client.SendAsync(request);
                     responseString = await response.Content.ReadAsStringAsync();
-                    response.EnsureSuccessStatusCode();
 
-                    Logger.Info($"Recibo enviado {JsonConvert.SerializeObject(requestContent)}. Respuesta {responseString}");
+                    // Si es Bad Request, verificar si el documento ya existe
+                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                    {
+                        if (responseString.Contains("El documento ya existe"))
+                        {
+                            Logger.Info($"Factura ya existe en Siesa (marcada como exitosa) - {contentString}. Respuesta: {responseString}");
+                            return; // Salir sin lanzar excepción, se considera exitosa
+                        }
+                        else
+                        {
+                            Logger.Warn($"Factura no enviada (Bad Request) - {contentString}. Respuesta: {responseString}");
+                            throw new HttpRequestException($"Bad Request: {responseString}");
+                        }
+                    }
+
+                    response.EnsureSuccessStatusCode();
+                    Logger.Info($"Factura enviada {contentString}. Respuesta {responseString}");
                 }
             }
             catch (Exception ex)
             {
-                if (!responseString.Contains("El documento ya existe"))
+                if (responseString.Contains("El documento ya existe"))
                 {
-                    Logger.Info($"Recibo no enviado {JsonConvert.SerializeObject(requestContent)}. Respuesta {responseString}");
+                    Logger.Info($"Factura ya existe en Siesa (marcada como exitosa) - {contentString}. Respuesta: {responseString}");
+                    return; // Salir sin lanzar excepción, se considera exitosa
+                }
+                else
+                {
+                    Logger.Info($"Factura no enviada {contentString}. Respuesta {responseString}. Error: {ex.Message}");
                     throw;
                 }
             }
         }
 
-        private MovimientosCaja ConvertirAReciboSiesa(FacturaSiges factura, string facturaelectronica, string consecutivo, string? auxiliarContable, string? auxiliarCruce)
+        private object ConvertirAMovimientoSiesa(FacturaSiges factura, string facturaelectronica, string consecutivo, string? auxiliarContable, string? auxiliarCruce)
+        {
+            var requestContent = new
+            {
+                Inicial = new List<object> { new { F_CIA = "1" } },
+                Documentocontable = new List<object> { new {
+                    F_CIA = "1",
+                    F_CONSEC_AUTO_REG = _siesa.ConsecutivoAutoRegulado,
+                    F350_ID_CO = _siesa.CentroOperacionesDocumento,
+                    F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
+                    F350_CONSEC_DOCTO = consecutivo,
+                    F350_FECHA = factura.fecha.ToString("yyyyMMdd"),
+                    F350_ID_TERCERO = factura.Tercero.identificacion?.ToString() ?? "",
+                    F350_IND_ESTADO = "1",
+                    F350_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}",
+                }},
+                Movimientocontable = new List<object>()
+                {
+                    // Primer movimiento contable
+                    new
+                    {
+                        F_CIA = "1",
+                        F350_ID_CO = _siesa.CentroOperacionesContableOtros ?? "",
+                        F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
+                        F350_CONSEC_DOCTO = consecutivo,
+                        F351_ID_AUXILIAR = auxiliarContable ?? "",
+                        F351_ID_TERCERO = factura.Tercero.identificacion?.ToString() ?? "",
+                        F351_ID_CO_MOV = _siesa.MovimientoContableOtros ?? "",
+                        F351_ID_UN = _siesa.UnidadNegocioContableOtros ?? "",
+                        F351_ID_CCOSTO = _siesa.CentroCostoContableOtros ?? "",
+                        F351_ID_FE = "",
+                        F351_VALOR_DB = "0",
+                        F351_VALOR_CR = factura.Total.ToString("0", CultureInfo.InvariantCulture),
+                        F351_BASE_GRAVABLE = "",
+                        F351_DOCTO_BANCO = "",
+                        F351_NRO_DOCTO_BANCO = "",
+                        F351_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}"
+                    },
+                    // Segundo movimiento contable
+                    new
+                    {
+                        F_CIA = "1",
+                        F350_ID_CO = _siesa.CentroOperacionesOtros ?? "",
+                        F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
+                        F350_CONSEC_DOCTO = consecutivo,
+                        F351_ID_AUXILIAR = auxiliarCruce ?? "",
+                        F351_ID_TERCERO = "",
+                        F351_ID_CO_MOV = _siesa.MovimientoOtros ?? "",
+                        F351_ID_UN = _siesa.UnidadNegocioOtros ?? "",
+                        F351_ID_CCOSTO = _siesa.CentroCostoOtros ?? "",
+                        F351_ID_FE = _siesa.IdFeOtros ?? "",
+                        F351_VALOR_DB = factura.Total.ToString("0", CultureInfo.InvariantCulture),
+                        F351_VALOR_CR = "0",
+                        F351_BASE_GRAVABLE = "",
+                        F351_DOCTO_BANCO = "CG",
+                        F351_NRO_DOCTO_BANCO = factura.fecha.ToString("yyyyMMdd"),
+                        F351_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}"
+                    }
+                },
+                Final = new List<object> { new { F_CIA = "1" } }
+            };
+            return requestContent;
+        }
+
+        private MovimientosCaja ConvertirAMovimientoSiesaCaja(FacturaSiges factura, string facturaelectronica, string consecutivo, string? auxiliarContable, string? auxiliarCruce)
         {
             var requestContent = new MovimientosCaja()
             {
@@ -218,7 +351,7 @@ namespace EnviadorInformacionService.Contabilidad
                         F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
                         F350_CONSEC_DOCTO = consecutivo,
                         F351_NOTAS = "Venta combustible",
-                        F351_ID_AUXILIAR = auxiliarCruce,
+                        F351_ID_AUXILIAR = auxiliarCruce ?? "",
                         F351_ID_CCOSTO = _siesa.CentroCostoCaja,
                         F351_ID_CO_MOV = _siesa.MovimientoCaja,
                         F351_ID_UN = _siesa.UnidadNegocioCaja,
@@ -231,7 +364,7 @@ namespace EnviadorInformacionService.Contabilidad
                         F358_ID_MEDIOS_PAGO = "EFE",
                         F358_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}",
                         F358_NRO_AUTORIZACION="",
-                        F358_NRO_CUENTA=auxiliarCruce,
+                        F358_NRO_CUENTA=auxiliarCruce ?? "",
                         F358_REFERENCIA_OTROS=""
 
 
@@ -261,10 +394,10 @@ namespace EnviadorInformacionService.Contabilidad
                         F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
                         F350_CONSEC_DOCTO = consecutivo,
                         F351_BASE_GRAVABLE = "",
-                        F351_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {factura.ventaId}",
+                        F351_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}",
                         F351_DOCTO_BANCO = "",
                         F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
-                        F351_ID_AUXILIAR = auxiliarContable,
+                        F351_ID_AUXILIAR = auxiliarContable ?? "",
                         F351_ID_CCOSTO = _siesa.CentroCosto,
                         F351_ID_CO_MOV = _siesa.Movimiento,
                         F351_ID_FE = consecutivo,
@@ -283,7 +416,7 @@ namespace EnviadorInformacionService.Contabilidad
             return requestContent;
         }
 
-        private async Task EnviarTercero(Tercero t)
+        private async Task<bool> EnviarTercero(Tercero t)
         {
             var requestContent = ConvertirATercero(t);
             var responseString = "";
@@ -292,25 +425,31 @@ namespace EnviadorInformacionService.Contabilidad
             {
                 using (var client = new HttpClient())
                 {
-                    var request = new HttpRequestMessage(HttpMethod.Post, $"{_siesa.UrlSiesa}/api/siesa/v3.1/conectoresimportar?idCompania={_siesa.IdCompania}&idSistema={_siesa.Idsistema}&idDocumento={_siesa.IdDocumento}&nombreDocumento=Documento_Contablev2");
+                    client.Timeout = TimeSpan.FromSeconds(20);
+                    var request = new HttpRequestMessage(HttpMethod.Post, $"{_siesa.UrlSiesa}/api/siesa/v3.1/conectoresimportar?idCompania={_siesa.IdCompania}&idSistema={_siesa.Idsistema}&idDocumento={_siesa.IdDOcumentoCliente}&nombreDocumento=TERCERO_CLIENTE_INTEGRADO");
                     request.Headers.Add("ConniKey", _siesa.KeySiesa);
                     request.Headers.Add("ConniToken", _siesa.Tokensiesa);
                     request.Content = new StringContent(JsonConvert.SerializeObject(requestContent), Encoding.UTF8, "application/json");
 
-                    var response = await retryPolicy.ExecuteAsync(async () => await client.SendAsync(request));
+                    var response = await client.SendAsync(request);
                     responseString = await response.Content.ReadAsStringAsync();
                     response.EnsureSuccessStatusCode();
 
-                    Logger.Info($"Recibo enviado {JsonConvert.SerializeObject(requestContent)}. Respuesta {responseString}");
+                    Logger.Info($"Tercero enviado {JsonConvert.SerializeObject(requestContent)}. Respuesta {responseString}");
+                    return true;
                 }
             }
             catch (Exception ex)
             {
-                if (!responseString.Contains("El documento ya existe"))
+
+                if (ex is HttpRequestException && responseString.Contains("No tiene acceso a modificar"))
                 {
-                    Logger.Info($"Recibo no enviado {JsonConvert.SerializeObject(requestContent)}. Respuesta {responseString}");
-                    throw;
+                    Logger.Info($"Tercero enviado {JsonConvert.SerializeObject(requestContent)}. Respuesta {responseString}");
+                    return true;
                 }
+
+                Logger.Info($"Tercero no enviado {JsonConvert.SerializeObject(requestContent)}. Respuesta {responseString}");
+                return false;
             }
         }
 
@@ -318,7 +457,7 @@ namespace EnviadorInformacionService.Contabilidad
         {
             var nombre = "";
             var apellido = "";
-            var nombreCompleto = x?.Nombre?.Trim();
+            var nombreCompleto = x?.Nombre?.Trim() ?? "";
             if (nombreCompleto.Split(' ').Count() > 1)
             {
                 nombre = nombreCompleto.Substring(0, nombreCompleto.LastIndexOf(" "));
@@ -341,7 +480,7 @@ namespace EnviadorInformacionService.Contabilidad
                     {
                         F_TIPO_REG = "46",
                         F_CIA = "1",
-                        F_ID_TERCERO= x.identificacion.Trim(),
+                        F_ID_TERCERO= x.identificacion?.Trim() ?? "",
                         F_ID_SUCURSAL = _siesa.Sucursal,
                         F_ID_CLASE = "1",
                         F_ID_VALOR_TERCERO = "1"
@@ -351,7 +490,7 @@ namespace EnviadorInformacionService.Contabilidad
                     {
                         F_TIPO_REG = "46",
                         F_CIA = "1",
-                        F_ID_TERCERO= x.identificacion.Trim(),
+                        F_ID_TERCERO= x.identificacion?.Trim() ?? "",
                         F_ID_SUCURSAL = _siesa.Sucursal,
                         F_ID_CLASE = "2",
                         F_ID_VALOR_TERCERO = "1"
@@ -362,7 +501,7 @@ namespace EnviadorInformacionService.Contabilidad
                     new ClienteSiesa
                     {
                         F_CIA = "1",
-                        F201_ID_TERCERO = x.identificacion.Trim(),
+                        F201_ID_TERCERO = x.identificacion?.Trim() ?? "",
                         F201_ID_SUCURSAL =_siesa.Sucursal,
                         F201_DESCRIPCION_SUCURSAL = "YAVEGAS",
                         F201_ID_VENDEDOR = "",
@@ -394,11 +533,11 @@ namespace EnviadorInformacionService.Contabilidad
                     new TerceroSiesa
                     {
                         F_CIA = "1",
-                        F200_ID = x.identificacion.Trim(),
-                        F200_NIT = x.identificacion.Trim(),
+                        F200_ID = x.identificacion?.Trim() ?? "",
+                        F200_NIT = x.identificacion?.Trim() ?? "",
                     F200_ID_TIPO_IDENT = x.tipoIdentificacionS == "Nit" ? "N" : "C",
-                    F200_IND_TIPO_TERCERO = "1",
-                    F200_RAZON_SOCIAL = nombreCompleto,
+                    F200_IND_TIPO_TERCERO = x.tipoIdentificacionS == "Nit" ? "2" :"1",
+                    F200_RAZON_SOCIAL = nombreCompleto.Length > 40 ? nombreCompleto.Substring(0, 40) : nombreCompleto,
                     F200_APELLIDO1 = apellido,
                     F200_APELLIDO2 = "NA",
                     F200_NOMBRES = nombre,

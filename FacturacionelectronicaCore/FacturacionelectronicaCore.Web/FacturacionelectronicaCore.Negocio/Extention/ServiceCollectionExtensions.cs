@@ -3,7 +3,6 @@ using EstacionesServicio.Respositorio.Extention;
 using FacturacionelectronicaCore.Negocio.Canastilla;
 using FacturacionelectronicaCore.Negocio.Contabilidad;
 using FacturacionelectronicaCore.Negocio.Estacion;
-using FacturacionelectronicaCore.Negocio.Factura;
 using FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio;
 using FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal;
 using FacturacionelectronicaCore.Negocio.OrdenDeDespacho;
@@ -23,7 +22,6 @@ namespace EstacionesServicio.Negocio.Extention
         {
 
             services.AddScoped<IUsuarioNegocio, UsuarioNegocio>();
-            services.AddScoped<IFacturaNegocio, FacturaNegocio>();
             services.AddScoped<ITerceroNegocio, TerceroNegocio>();
             services.AddScoped<IManejadorInformacionLocalNegocio, ManejadorInformacionLocalNegocio>();
             services.AddScoped<IOrdenDeDespachoNegocio, OrdenDeDespachoNegocio>();

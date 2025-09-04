@@ -55,18 +55,53 @@ const VentasClientes = React.lazy(() => import('./views/Reportes/VentasClientes'
 const ReporteFiscal = React.lazy(() => import('./views/Reportes/ReporteFiscal'))
 const CanastillaNormal = React.lazy(() => import('./views/Canastilla/Canastilla'))
 const CanastillaItem = React.lazy(() => import('./views/Canastilla/CanastillaItem'))
+const FacturasCanastilla = React.lazy(() => import('./views/Canastilla/FacturasCanastilla'))
+const FacturaCanastillaDetalle = React.lazy(() =>
+  import('./views/Canastilla/FacturaCanastillaDetalle'),
+)
+const OrdenesDespacho = React.lazy(() => import('./views/Reportes/OrdenesDespacho'))
+const OrdenDespachoDetalle = React.lazy(() => import('./views/Reportes/OrdenDespachoDetalle'))
+const ConsolidadoOrdenes = React.lazy(() => import('./views/Reportes/ConsolidadoOrdenes'))
+
+// Terceros
+const Terceros = React.lazy(() => import('./views/terceros/Terceros'))
+const TerceroForm = React.lazy(() => import('./views/terceros/TerceroForm'))
+const TerceroDetalle = React.lazy(() => import('./views/terceros/TerceroDetalle'))
 
 const routes = [
   { path: '/', exact: true, name: 'Home' },
   { path: '/dashboard', name: 'Estaciones', element: Dashboard },
   { path: '/CanastillaNormal', name: 'Canastilla', element: CanastillaNormal },
   { path: '/CanastillaItem', name: 'Items de Canastilla', element: CanastillaItem },
+  { path: '/FacturasCanastilla', name: 'Facturas de Canastilla', element: FacturasCanastilla },
+  {
+    path: '/FacturaCanastillaDetalle/:idFactura',
+    name: 'Detalle de Factura',
+    element: FacturaCanastillaDetalle,
+  },
   { path: '/VentasClientes', name: 'VentasClientes', element: VentasClientes },
   { path: '/PorAutomotores', name: 'Reporte Supos Por Automotores', element: PorAutomotores },
   { path: '/PorCliente', name: 'Reporte Cupos Por Cliente', element: PorCliente },
   { path: '/Canastilla', name: 'Canastilla', element: Canastilla },
   { path: '/Turnos', name: 'Turnos', element: Turnos },
   { path: '/ReporteFiscal', name: 'Reporte Fiscal', element: ReporteFiscal },
+  { path: '/OrdenesDespacho', name: 'Órdenes de Despacho', element: OrdenesDespacho },
+  {
+    path: '/OrdenDespachoDetalle/:ordenId',
+    name: 'Detalle de Orden de Despacho',
+    element: OrdenDespachoDetalle,
+  },
+  {
+    path: '/consolidado-ordenes',
+    exact: true,
+    name: 'Consolidado de Órdenes',
+    element: ConsolidadoOrdenes,
+  },
+  // Rutas de Terceros
+  { path: '/terceros', name: 'Terceros', element: Terceros },
+  { path: '/terceros/nuevo', name: 'Nuevo Tercero', element: TerceroForm },
+  { path: '/terceros/editar/:guid', name: 'Editar Tercero', element: TerceroForm },
+  { path: '/terceros/ver/:guid', name: 'Detalle de Tercero', element: TerceroDetalle },
   { path: '/theme', name: 'Theme', element: Colors, exact: true },
   { path: '/theme/colors', name: 'Colors', element: Colors },
   { path: '/theme/typography', name: 'Typography', element: Typography },

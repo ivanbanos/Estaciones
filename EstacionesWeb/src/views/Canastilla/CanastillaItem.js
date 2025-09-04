@@ -26,15 +26,7 @@ import {
   CButtonGroup,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import {
-  cilPencil,
-  cilTrash,
-  cilPlus,
-  cilSave,
-  cilX,
-  cilReload,
-  cilSearch,
-} from '@coreui/icons'
+import { cilPencil, cilTrash, cilPlus, cilSave, cilX, cilReload, cilSearch } from '@coreui/icons'
 import CanastillasService from '../../services/CanastillasService'
 import GuidService from '../../services/GuidService'
 import Toast from '../toast/Toast'
@@ -62,7 +54,7 @@ const CanastillaItem = () => {
     iva: 0,
     campoextra: '',
     deleted: false,
-    guid: ''
+    guid: '',
   })
 
   // Form validation errors
@@ -76,7 +68,15 @@ const CanastillaItem = () => {
   const loadCanastillaItems = async () => {
     setLoading(true)
     try {
-      const response = await canastillasService.getCanastillas()
+      // Obtener el GUID de la estación desde localStorage
+      const estacionGuid = localStorage.getItem('estacionGuid')
+      if (!estacionGuid) {
+        toastRef.current?.addMessage('No se encontró información de la estación', 'error')
+        navigate('/Login', { replace: true })
+        return
+      }
+
+      const response = await canastillasService.getCanastillas(estacionGuid)
       if (response === 'fail') {
         navigate('/Login', { replace: true })
       } else {
@@ -91,23 +91,23 @@ const CanastillaItem = () => {
 
   const validateForm = () => {
     const newErrors = {}
-    
+
     if (!formData.canastillaId) {
       newErrors.canastillaId = 'ID de canastilla es requerido'
     }
-    
+
     if (!formData.descripcion.trim()) {
       newErrors.descripcion = 'Descripción es requerida'
     }
-    
+
     if (!formData.unidad.trim()) {
       newErrors.unidad = 'Unidad es requerida'
     }
-    
+
     if (formData.precio <= 0) {
       newErrors.precio = 'El precio debe ser mayor a 0'
     }
-    
+
     if (formData.iva < 0 || formData.iva > 100) {
       newErrors.iva = 'El IVA debe estar entre 0 y 100'
     }
@@ -117,22 +117,23 @@ const CanastillaItem = () => {
   }
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }))
-    
+
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: ''
+        [field]: '',
       }))
     }
   }
 
   const openAddModal = () => {
     setEditingItem(null)
+    const estacionGuid = localStorage.getItem('estacionGuid')
     setFormData({
       canastillaId: '',
       descripcion: '',
@@ -141,7 +142,8 @@ const CanastillaItem = () => {
       iva: 0,
       campoextra: '',
       deleted: false,
-      guid: guidService.generateGuid()
+      guid: guidService.generateGuid(),
+      estacion: estacionGuid,
     })
     setErrors({})
     setShowModal(true)
@@ -149,6 +151,7 @@ const CanastillaItem = () => {
 
   const openEditModal = (item) => {
     setEditingItem(item)
+    const estacionGuid = localStorage.getItem('estacionGuid')
     setFormData({
       canastillaId: item.canastillaId || item.id || '',
       descripcion: item.descripcion || '',
@@ -157,7 +160,8 @@ const CanastillaItem = () => {
       iva: item.iva || 0,
       campoextra: item.campoextra || '',
       deleted: item.deleted || false,
-      guid: item.guid || item.id || ''
+      guid: item.guid || item.id || '',
+      estacion: item.estacion || estacionGuid,
     })
     setErrors({})
     setShowModal(true)
@@ -170,19 +174,19 @@ const CanastillaItem = () => {
 
     setLoading(true)
     try {
-      if (editingItem) {
-        // Use the existing item ID for updates
-        const itemId = editingItem.guid || editingItem.id
-        await canastillasService.updateCanastilla(itemId, formData)
-        toastRef.current?.addMessage('Item actualizado exitosamente', 'success')
-      } else {
-        await canastillasService.addOrUpdate([formData])
-        toastRef.current?.addMessage('Item creado exitosamente', 'success')
-      }
-      
+      // Preparar el item usando el método del servicio
+      const preparedItem = canastillasService.prepareCanastillaForAPI(formData)
+
+      // Usar el nuevo método createOrUpdateCanastillas que espera un array
+      await canastillasService.createOrUpdateCanastillas([preparedItem])
+
+      const message = editingItem ? 'Item actualizado exitosamente' : 'Item creado exitosamente'
+      toastRef.current?.addMessage(message, 'success')
+
       setShowModal(false)
       loadCanastillaItems()
     } catch (error) {
+      console.error('Error saving item:', error)
       toastRef.current?.addMessage('Error al guardar el item', 'error')
     } finally {
       setLoading(false)
@@ -194,11 +198,12 @@ const CanastillaItem = () => {
       setLoading(true)
       try {
         // Soft delete by updating the item with deleted: true
-        const updatedItem = { ...item, deleted: true }
-        await canastillasService.addOrUpdate([updatedItem])
+        const updatedItem = canastillasService.prepareCanastillaForAPI({ ...item, deleted: true })
+        await canastillasService.createOrUpdateCanastillas([updatedItem])
         toastRef.current?.addMessage('Item eliminado exitosamente', 'success')
         loadCanastillaItems()
       } catch (error) {
+        console.error('Error deleting item:', error)
         toastRef.current?.addMessage('Error al eliminar el item', 'error')
       } finally {
         setLoading(false)
@@ -210,11 +215,12 @@ const CanastillaItem = () => {
     setLoading(true)
     try {
       // For restore functionality, we'll update the item with deleted: false
-      const updatedItem = { ...item, deleted: false }
-      await canastillasService.addOrUpdate([updatedItem])
+      const updatedItem = canastillasService.prepareCanastillaForAPI({ ...item, deleted: false })
+      await canastillasService.createOrUpdateCanastillas([updatedItem])
       toastRef.current?.addMessage('Item restaurado exitosamente', 'success')
       loadCanastillaItems()
     } catch (error) {
+      console.error('Error restoring item:', error)
       toastRef.current?.addMessage('Error al restaurar el item', 'error')
     } finally {
       setLoading(false)
@@ -222,20 +228,21 @@ const CanastillaItem = () => {
   }
 
   // Filter items based on search term and deleted status
-  const filteredItems = items.filter(item => {
+  const filteredItems = items.filter((item) => {
     // Handle cases where properties might be undefined
     const descripcion = item.descripcion || ''
     const unidad = item.unidad || ''
     const canastillaId = item.canastillaId || item.id || ''
     const campoextra = item.campoextra || ''
-    
-    const matchesSearch = descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         unidad.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         campoextra.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         canastillaId.toString().includes(searchTerm)
-    
+
+    const matchesSearch =
+      descripcion.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      unidad.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      campoextra.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      canastillaId.toString().includes(searchTerm)
+
     const matchesDeletedFilter = showDeleted ? item.deleted : !item.deleted
-    
+
     return matchesSearch && matchesDeletedFilter
   })
 
@@ -268,7 +275,7 @@ const CanastillaItem = () => {
             </CCol>
           </CRow>
         </CCardHeader>
-        
+
         <CCardBody>
           {/* Search and filters */}
           <CRow className="mb-3">
@@ -339,7 +346,9 @@ const CanastillaItem = () => {
                       <CTableDataCell>{item.unidad || '-'}</CTableDataCell>
                       <CTableDataCell>{formatPrice(item.precio || 0)}</CTableDataCell>
                       <CTableDataCell>{item.iva || 0}%</CTableDataCell>
-                      <CTableDataCell>{formatPrice(calculateTotal(item.precio || 0, item.iva || 0))}</CTableDataCell>
+                      <CTableDataCell>
+                        {formatPrice(calculateTotal(item.precio || 0, item.iva || 0))}
+                      </CTableDataCell>
                       <CTableDataCell>{item.campoextra || '-'}</CTableDataCell>
                       <CTableDataCell>
                         <CBadge color={item.deleted ? 'danger' : 'success'}>
@@ -404,7 +413,9 @@ const CanastillaItem = () => {
                 <CFormInput
                   type="number"
                   value={formData.canastillaId}
-                  onChange={(e) => handleInputChange('canastillaId', parseInt(e.target.value) || '')}
+                  onChange={(e) =>
+                    handleInputChange('canastillaId', parseInt(e.target.value) || '')
+                  }
                   invalid={!!errors.canastillaId}
                 />
                 {errors.canastillaId && (
@@ -421,13 +432,11 @@ const CanastillaItem = () => {
                   invalid={!!errors.unidad}
                   placeholder="Ej: Kg, Unidad, Litro"
                 />
-                {errors.unidad && (
-                  <div className="invalid-feedback">{errors.unidad}</div>
-                )}
+                {errors.unidad && <div className="invalid-feedback">{errors.unidad}</div>}
               </div>
             </CCol>
           </CRow>
-          
+
           <div className="mb-3">
             <label className="form-label">Descripción *</label>
             <CFormInput
@@ -436,9 +445,7 @@ const CanastillaItem = () => {
               invalid={!!errors.descripcion}
               placeholder="Descripción del item"
             />
-            {errors.descripcion && (
-              <div className="invalid-feedback">{errors.descripcion}</div>
-            )}
+            {errors.descripcion && <div className="invalid-feedback">{errors.descripcion}</div>}
           </div>
 
           <div className="mb-3">
@@ -461,9 +468,7 @@ const CanastillaItem = () => {
                   onChange={(e) => handleInputChange('precio', parseFloat(e.target.value) || 0)}
                   invalid={!!errors.precio}
                 />
-                {errors.precio && (
-                  <div className="invalid-feedback">{errors.precio}</div>
-                )}
+                {errors.precio && <div className="invalid-feedback">{errors.precio}</div>}
               </div>
             </CCol>
             <CCol md={6}>
@@ -477,9 +482,7 @@ const CanastillaItem = () => {
                   onChange={(e) => handleInputChange('iva', parseInt(e.target.value) || 0)}
                   invalid={!!errors.iva}
                 />
-                {errors.iva && (
-                  <div className="invalid-feedback">{errors.iva}</div>
-                )}
+                {errors.iva && <div className="invalid-feedback">{errors.iva}</div>}
               </div>
             </CCol>
           </CRow>

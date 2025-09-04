@@ -1,5 +1,4 @@
-
-use sigesso1_elparque
+use cootransmagdalena
 
 GO
 
@@ -29,6 +28,34 @@ ADD iva int not null default 0;
 END;
 
 GO
+IF NOT EXISTS (
+  SELECT
+    *
+  FROM
+    INFORMATION_SCHEMA.COLUMNS
+  WHERE
+    TABLE_NAME = 'Canastilla' AND COLUMN_NAME = 'campoextra')
+BEGIN
+  
+  ALTER TABLE Canastilla
+ADD campoextra varchar(50) NULL;
+END;
+
+GO
+IF NOT EXISTS (
+  SELECT
+    *
+  FROM
+    INFORMATION_SCHEMA.COLUMNS
+  WHERE
+    TABLE_NAME = 'Canastilla' AND COLUMN_NAME = 'estacion')
+BEGIN
+  
+  ALTER TABLE Canastilla
+ADD estacion uniqueidentifier NULL;
+END;
+
+GO
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='CanastillaType' and xtype='U')
 BEGIN
 --drop procedure UpdateOrCreateCanastilla
@@ -41,7 +68,9 @@ create TYPE [dbo].[CanastillaType] AS TABLE
 	unidad VARCHAR (50) NOT NULL,
 	precio float NOT NULL,
 	deleted bit not null default 0,
-	iva int not null default 0
+	iva int not null default 0,
+	campoextra varchar(50) NULL,
+	estacion uniqueidentifier NULL
 	);  
 	END
 GO
@@ -60,12 +89,14 @@ BEGIN
 	Canastilla.unidad =  c.unidad,
 	Canastilla.precio =  c.precio,
 	Canastilla.deleted =  c.deleted,
-	Canastilla.iva =  c.iva
+	Canastilla.iva =  c.iva,
+	Canastilla.campoextra =  c.campoextra,
+	Canastilla.estacion =  c.estacion
 		from @canastillas c
 		inner join Canastilla on  Canastilla.[Guid] = c.[Guid]
 
-	Insert into Canastilla([Guid],descripcion,unidad,precio,deleted,iva)
-	select NEWID(),c.descripcion,c.unidad,c.precio,0,c.iva
+	Insert into Canastilla([Guid],descripcion,unidad,precio,deleted,iva,campoextra,estacion)
+	select NEWID(),c.descripcion,c.unidad,c.precio,0,c.iva,c.campoextra,c.estacion
 	from @canastillas c
 	left join Canastilla on  Canastilla.[Guid] = c.[Guid]
 		where Canastilla.[Guid] is null
@@ -77,13 +108,15 @@ GO
 		
 GO
 create or alter PROCEDURE [dbo].[GetCanastilla]
+	@estacion UNIQUEIDENTIFIER = NULL
 AS
 BEGIN
 	
 
-	select [Guid],descripcion,unidad,precio,deleted, iva
+	select [Guid],descripcion,unidad,precio,deleted, iva, campoextra, estacion
 	from Canastilla
 	where deleted = 0
+	AND (@estacion IS NULL OR estacion = @estacion)
 
 END
 GO
@@ -161,6 +194,13 @@ BEGIN
     FOREIGN KEY (resolucionId) REFERENCES dbo.Resolucion (Id)
 );
 
+END
+
+GO
+-- Crear índice por consecutivo para mejorar rendimiento en búsquedas
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'IX_FacturasCanastilla_Consecutivo_IdEstacion')
+BEGIN
+    CREATE INDEX IX_FacturasCanastilla_Consecutivo_IdEstacion ON FacturasCanastilla (consecutivo, idEstacion);
 END
 
 GO
@@ -300,10 +340,20 @@ as
 begin try
     set nocount on;
 	declare @facturaId int
-	select @facturaId from FacturasCanastilla where @consecutivo = consecutivo
+	
+	-- Verificar si ya existe una factura con el mismo consecutivo y estación
+	select @facturaId = FacturasCanastillaId 
+	from FacturasCanastilla 
+	inner join Resolucion on FacturasCanastilla.resolucionId = Resolucion.Id
+	inner join Estaciones on Resolucion.IdEstacion = Estaciones.Id
+	where FacturasCanastilla.consecutivo = @consecutivo 
+	and Estaciones.Guid = @estacion
+	
 	if @facturaId is not null
 	Begin
-		select @facturaId
+		-- Ya existe una factura con este consecutivo para esta estación
+		--raiserror('Ya existe una factura con el consecutivo %d para esta estación', 16, 1, @consecutivo)
+		return @facturaId
 	END
 	else
 	begin
@@ -338,15 +388,15 @@ begin try
 
 	
 	insert into FacturasCanastillaDetalle(FacturasCanastillaId, canastillaId, cantidad, precio,subtotal,iva,total)
-
 	select @IdFacturaCanastilla, Canastilla.CanastillaId, d.cantidad, d.precio, d.subtotal, d.iva, d.total
 	from @detalle d
 	inner join Canastilla on Canastilla.guid = d.guid
+	WHERE Canastilla.estacion = @estacion OR Canastilla.estacion IS NULL
+	
 	declare @ConsecutivoActual int;
 	select @ConsecutivoActual = max(FacturasCanastilla.consecutivo)
 	from FacturasCanastilla
 	where FacturasCanastilla.resolucionId = @ResolucionId
-
 
 	update resolucion set ConsecutivoActual = @ConsecutivoActual
 	from resolucion
@@ -391,7 +441,8 @@ GO
 CREATE procedure [dbo].CrearFacturaDetalle
 ( 
 	@detalle CanastillaDetalleType readonly,
-	@idFactura int
+	@idFactura int,
+	@estacion uniqueidentifier
 )
 as
 begin try
@@ -406,6 +457,7 @@ begin try
 	select @idFactura, Canastilla.CanastillaId, d.cantidad, d.precio, d.subtotal, d.iva, d.total
 	from @detalle d
 	inner join Canastilla on Canastilla.guid = d.guid
+	WHERE Canastilla.estacion = @estacion OR Canastilla.estacion IS NULL
 	end
 end try
 begin catch
@@ -563,3 +615,11 @@ GO
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'CrearFacturaCanastilla')
 	DROP PROCEDURE [dbo].[CrearFacturaCanastilla]
 GO
+
+
+select * from Canastilla
+select * from Estaciones
+update canastilla set estacion='F426EA66-32ED-46FA-9B27-55B330D633F6'
+insert into Canastilla(Guid, descripcion, unidad, precio, deleted,iva, campoextra, estacion)
+select NEWID(), descripcion, unidad, precio, deleted,iva, campoextra, 'FC65DBD2-118A-43A7-AB7A-4F6AFE6FD94D'
+from Canastilla where estacion = 'B42F579A-06F5-4C7C-8C02-BF839CE7A84A'

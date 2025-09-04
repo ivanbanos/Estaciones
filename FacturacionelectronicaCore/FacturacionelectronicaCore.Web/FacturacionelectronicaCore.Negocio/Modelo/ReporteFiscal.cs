@@ -18,5 +18,9 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public int CantidadDeFacturasAnuladas { get; set; }
         public IEnumerable<ConsolidadoCombustible> ConsolidadoFacturasAnuladas { get; set; }
         public IEnumerable<ConsolidadoCombustible> ConsolidadoOrdenesAnuladas { get; set; }
+        
+        // Nuevos consolidados por forma de pago
+        public IEnumerable<ConsolidadoFormaPago> ConsolidadoFormaPagoFacturas { get; set; }
+        public IEnumerable<ConsolidadoFormaPago> ConsolidadoFormaPagoOrdenes { get; set; }
     }
 }

@@ -46,19 +46,20 @@ namespace EnviadorInformacionService
                     envioThread.Start();
                 }
 
-                //Logger.Info(ConfigurationManager.AppSettings["EnvioASilog"]);
-                //if (ConfigurationManager.AppSettings["EnvioASilog"] == "true")
-                //{
+                ////Logger.Info(ConfigurationManager.AppSettings["EnvioASilog"]);
+                ////if (ConfigurationManager.AppSettings["EnvioASilog"] == "true")
+                ////{
 
-                //    Logger.Info("Iniciando interfaz Silog");
-                //    enviadorProsoftThread = new Thread(new ThreadStart(enviadorFacturas.EnviarInformacion));
-                //    enviadorProsoftThread.Start();
-                //}
+                ////    Logger.Info("Iniciando interfaz Silog");
+                ////    enviadorProsoftThread = new Thread(new ThreadStart(enviadorFacturas.EnviarInformacion));
+                ////    enviadorProsoftThread.Start();
+                ////}
                 impresionThread = new Thread(new ThreadStart(impresionService.Execute));
                 impresionThread.Start();
                 //canastillaServiceThread = new Thread(new ThreadStart(canastillaService.ProcesoCanastilla));
                 //canastillaServiceThread.Start();
                 //canastillaWebServiceThread = new Thread(new ThreadStart(canastillaService.WebCanastilla));
+                //canastillaWebServiceThread.Start();
                 //siesaThread = new Thread(new ThreadStart(protocoloSiesa.Ejecutar));
                 //siesaThread.Start();
 

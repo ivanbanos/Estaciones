@@ -1,4 +1,5 @@
-use sigesso1_invertrac
+use cootranshuila
+ 
 
 IF NOT EXISTS (
   SELECT
@@ -6,7 +7,7 @@ IF NOT EXISTS (
   FROM
     INFORMATION_SCHEMA.COLUMNS
   WHERE
-    TABLE_NAME = 'Mangueeras' AND COLUMN_NAME = 'Manguera')
+    TABLE_NAME = 'Mangueras' AND COLUMN_NAME = 'Manguera')
 BEGIN
 CREATE TABLE [dbo].[Mangueras]
 (
@@ -33,7 +34,18 @@ CREATE TABLE [dbo].[Vendedor]
 )
 END
 GO
-
+IF NOT EXISTS (
+  SELECT
+    *
+  FROM
+    INFORMATION_SCHEMA.COLUMNS
+  WHERE
+    TABLE_NAME = 'Vendedor' AND COLUMN_NAME = 'Cedula')
+BEGIN
+ALTER TABLE [dbo].[Vendedor]
+Add [Cedula] NVARCHAR(50) NULL;
+END
+GO
 IF NOT EXISTS (
   SELECT
     *
@@ -441,13 +453,7 @@ BEGIN
 
 DECLARE @idTerceroTable as table (idTercero int)
 
-insert into @idTerceroTable(idTercero)
-select O.IdTerceroLocalActualizado from [IdTerceroActualizado] O
-inner join Estaciones on o.IdEstacion = Estaciones.Id
-where @estacion is null or Estaciones.Guid = @estacion 
 
-Delete [IdTerceroActualizado] from [IdTerceroActualizado] O
-inner join @idTerceroTable tt on tt.idTercero = O.IdTerceroLocalActualizado
 
 SELECT [Terceros].[Guid], Nombre, segundo, apellidos, tipoPersona, responsabilidadTributaria, Municipio, departamento,
 	Direccion, PAis, codigoPostal, celular, Telefono, Telefono2, correo2, vendedor, comentarios, Correo, 
@@ -511,10 +517,7 @@ BEGIN
 		left join TipoIdentificacion ON TipoIdentificacion.Texto = source.DescripcionTipoIdentificacion
 		where terceros.Id is null
 
-	Insert Into [IdTerceroActualizado] ([IdTerceroLocalActualizado], IdEstacion)
-	select terceros.Id,  e.Id from @Tercero t
-	inner join terceros on t.Identificacion = terceros.Identificacion
-	cross join estaciones  e
+	
 END
 
 GO
@@ -643,35 +646,7 @@ BEGIN
 
 
 declare @idLocales as table(id int, maxID int)
-declare @idEstacion int
 
-select @idEstacion = id from Estaciones where Guid = @Estacion
-
-insert into @idLocales(id, maxID)
-SELECT top(10)  idVentaLocal, max(id)
-FROM ORdenesDeDespacho
-GROUP BY idVentaLocal,IdEstacion
-HAVING COUNT(idVentaLocal) >1
-AND IdEstacion = @idEstacion
-ORDER BY idVentaLocal desc ;
-
-insert into @idLocales(id, maxID)
-SELECT top(10)  idVentaLocal, max(id)
-FROM Facturas
-GROUP BY idVentaLocal,IdEstacion
-HAVING COUNT(idVentaLocal) >1
-AND IdEstacion = @idEstacion
-ORDER BY idVentaLocal desc ;
-
---select count(id) from @idLocales
---select max(maxID) from @idLocales
-delete ORdenesDeDespacho from ORdenesDeDespacho 
-inner join @idLocales il on il.id = ORdenesDeDespacho.idVentaLocal
-where ORdenesDeDespacho.id != maxid
-
-delete Facturas from Facturas 
-inner join @idLocales il on il.id = Facturas.idVentaLocal
-where Facturas.id != maxid
 
 	DECLARE @NombreBuscar NVARCHAR(250), @IdentificacionTerceroBuscar NVARCHAR(250)
 
@@ -681,7 +656,7 @@ where Facturas.id != maxid
 	--SELECT @FechaInicial = DATEADD(HOUR,6,@FechaInicial), @FechaFinal = DATEADD(DAY,1,@FechaFinal);
 	--SELECT @FechaFinal = DATEADD(HOUR,6,@FechaFinal);
 
-	SELECT  Factura.[Guid], Factura.Consecutivo, Tercero.[Guid] AS IdTercero, Tercero.Identificacion, Tercero.Nombre AS NombreTercero, Combustible.Nombre as Combustible, Factura.Cantidad,
+	SELECT  convert(varchar(40),Factura.[Guid]) as Guid, Factura.Consecutivo, convert(varchar(40),Tercero.[Guid]) AS IdTercero, Tercero.Identificacion, Tercero.Nombre AS NombreTercero, Combustible.Nombre as Combustible, Factura.Cantidad,
 			Factura.Precio, Factura.Total,Factura.Descuento, Factura.IdInterno, Factura.Placa, Factura.Kilometraje,
 			Mangueras.Surtidor, Mangueras.Cara, Mangueras.Manguera, Factura.Fecha, Factura.IdLocal, Factura.IdVentaLocal,
 			Estado.Texto AS Estado, Factura.FechaProximoMantenimiento, Factura.SubTotal, Vendedor.Nombre AS  Vendedor,Resolucion.Descripcion AS [DescripcionResolucion],
@@ -701,8 +676,8 @@ where Facturas.id != maxid
 	LEFT JOIN Mangueras ON Mangueras.Id = Factura.IdMangueras
 	WHERE (@IdentificacionTercero IS NULL OR Tercero.Identificacion = @IdentificacionTerceroBuscar)
 		  AND (@NombreTercero IS NULL OR Tercero.Nombre LIKE @NombreBuscar)
-		  AND Factura.FechaReporte >= CONVERT(date, @FechaInicial) AND Factura.FechaReporte <=CONVERT(date, @FechaFinal) 
-		  AND (@Estacion IS NULL OR Estaciones.[Guid] = @Estacion)
+		  AND ((Factura.FechaReporte is not null and ( Factura.FechaReporte >= CONVERT(date, @FechaInicial) AND Factura.FechaReporte <=CONVERT(date, @FechaFinal)) )
+		  or (Factura.FechaReporte is null and ( Factura.Fecha >= CONVERT(date, @FechaInicial) AND Factura.Fecha <=CONVERT(date, @FechaFinal)) ))AND (@Estacion IS NULL OR Estaciones.[Guid] = @Estacion)
 	ORDER BY Consecutivo DESC
 END
 GO
@@ -803,7 +778,7 @@ where Facturas.id != maxid
 	--SELECT @FechaInicial = DATEADD(HOUR,6,@FechaInicial), @FechaFinal = DATEADD(DAY,1,@FechaFinal);
 	--SELECT @FechaFinal = DATEADD(HOUR,6,@FechaFinal);
 
-	SELECT OrdenDeDespacho.[Guid], Factura.Consecutivo, Tercero.Identificacion, Tercero.Nombre AS NombreTercero, Combustible.Nombre as Combustible, OrdenDeDespacho.Cantidad,
+	SELECT convert(varchar(40),OrdenDeDespacho.[Guid]), Factura.Consecutivo, Tercero.Identificacion, Tercero.Nombre AS NombreTercero, Combustible.Nombre as Combustible, OrdenDeDespacho.Cantidad,
 			OrdenDeDespacho.Precio, OrdenDeDespacho.Total,OrdenDeDespacho.Descuento, OrdenDeDespacho.IdInterno, OrdenDeDespacho.Placa, OrdenDeDespacho.Kilometraje,
 			Mangueras.Surtidor, Mangueras.Cara, Mangueras.Manguera, OrdenDeDespacho.Fecha,
 			Estado.Texto AS Estado, OrdenDeDespacho.IdLocal, OrdenDeDespacho.IdVentaLocal, OrdenDeDespacho.FechaProximoMantenimiento,
@@ -825,7 +800,7 @@ where Facturas.id != maxid
 	LEFT JOIN Mangueras ON Mangueras.Id = OrdenDeDespacho.IdMangueras
 	WHERE (@IdentificacionTercero IS NULL OR Tercero.Identificacion = @IdentificacionTerceroBuscar)
 		  AND (@NombreTercero IS NULL OR Tercero.Nombre LIKE @NombreBuscar)
-		  AND OrdenDeDespacho.FechaReporte >= CONVERT(date, @FechaInicial)  AND OrdenDeDespacho.FechaReporte <= CONVERT(date, @FechaFinal) 
+		  AND OrdenDeDespacho.Fecha >= CONVERT(date, @FechaInicial)  AND OrdenDeDespacho.Fecha <= CONVERT(date, @FechaFinal) 
 		  AND (@Estacion IS NULL OR Estaciones.[Guid] = @Estacion)
 	ORDER BY OrdenDeDespacho.IdVentaLocal DESC
 END
@@ -938,14 +913,21 @@ declare @estadoActivoId int
 			AND Estaciones.Guid = @estacion
 			AND Resolucion.Tipo=0
 	
-declare @IdTercero int, @idTipoIdentificacion int
+declare @IdTercero int, @idTipoIdentificacion int, @idTipoIdentificacioncc int
 	select @IdTercero = Id from terceros where Identificacion = '222222222222'
 	select @idTipoIdentificacion = Id from TipoIdentificacion where Texto ='No especificada'
+	select @idTipoIdentificacioncc = Id from TipoIdentificacion where Texto ='Cédula Ciudadanía'
 	if @idTipoIdentificacion is null
 	begin
 		INSERT INTO tipoTipoIdentificacion(Guid, Texto)
 		VALUES(NEWID(), 'No especificada');
 		select @idTipoIdentificacion = @@identity
+	end
+	if @idTipoIdentificacioncc is null
+	begin
+		INSERT INTO tipoTipoIdentificacion(Guid, Texto)
+		VALUES(NEWID(), 'Cédula Ciudadanía');
+		select @idTipoIdentificacioncc = @@identity
 	end
 	if @IdTercero is null
 	begin
@@ -953,6 +935,12 @@ declare @IdTercero int, @idTipoIdentificacion int
 		VALUES(NEWID(), 'CONSUMIDOR FINAL', 'no informado', 'no informado', 'no informado', @idTipoIdentificacion, '222222222222', 1);
 		select @IdTercero = @@identity
 	end
+
+	INSERT INTO Terceros ([Guid], Nombre, Direccion, Telefono, Correo, TipoIdentificacion, Identificacion, IdLocal)
+		select NEWID(), f.NombreTercero, 'no informado', 'no informado', 'no informado', @idTipoIdentificacioncc, f.Identificacion, 1
+		from @facturas f
+		left join Terceros t on t.Identificacion = f.Identificacion
+		where t.Id is null
 
 	insert into Vendedor(Nombre)
 select distinct Vendedor from @facturas f
@@ -989,7 +977,7 @@ AND  Facturas.Manguera is not null and Facturas.Manguera is not null and Factura
 	
 	from @facturas f
 	left join Terceros t on t.Identificacion = f.Identificacion
-	left join Facturas on f.IdVentalocal = Facturas.IdVentalocal and Facturas.IdEstacion = @idEstacion
+	left join Facturas on f.Consecutivo = Facturas.Consecutivo  and Facturas.IdEstacion = @idEstacion
 	
 	LEFT JOIN Vendedor ON Vendedor.Nombre = f.Vendedor
 	LEFT JOIN Combustible ON Combustible.Nombre = f.Combustible
@@ -997,7 +985,7 @@ AND  Facturas.Manguera is not null and Facturas.Manguera is not null and Factura
 	LEFT JOIN Mangueras ON Mangueras.Surtidor = f.Surtidor 
 and Mangueras.Cara = f.Cara
 and Mangueras.Manguera = f.Manguera
-	where Facturas.Id is null
+	where Facturas.Id is null or facturas.IdResolucion != @IdResolucion
 
 	update Facturas
 	set Facturas.IdTercero = isnull(t.Id,@IdTercero),
@@ -1005,16 +993,19 @@ and Mangueras.Manguera = f.Manguera
 	Facturas.Kilometraje = f.Kilometraje
 	from @facturas f
 	left join Terceros t on t.Identificacion = f.Identificacion
-	left join Facturas on f.IdLocal = Facturas.IdLocal and Facturas.IdEstacion = @idEstacion
+	left join Facturas on f.Consecutivo = Facturas.Consecutivo and Facturas.IdEstacion = @idEstacion
+	where facturas.IdResolucion = @IdResolucion
 	declare @ConsecutivoActual int;
 	select @ConsecutivoActual = max(consecutivo) from facturas where idresolucion = @IdResolucion;
-
-	update resolucion set ConsecutivoActual = @ConsecutivoActual
-	from resolucion
-	where  resolucion.Id = @IdResolucion;
+	if @ConsecutivoActual is not null
+	begin
+		update resolucion set ConsecutivoActual = @ConsecutivoActual
+		from resolucion
+		where  resolucion.Id = @IdResolucion;
+	end
 END
 GO
-CREATE PROCEDURE [dbo].[AgregarOrdenDespacho]
+create PROCEDURE [dbo].[AgregarOrdenDespacho]
 	@ordenes [dbo].[OrdenesDeDespachoType] readonly,
 	@estacion UNIQUEIDENTIFIER
 AS
@@ -1081,7 +1072,7 @@ AND  Facturas.Manguera is not null and Facturas.Surtidor is not null and Factura
 	FROM @ordenes o
 	left JOIN Terceros t 
 		ON t.Identificacion = o.Identificacion
-	left join OrdenesDeDespacho on o.IdLocal = OrdenesDeDespacho.IdLocal and OrdenesDeDespacho.IdEstacion = @idEstacion
+	left join OrdenesDeDespacho on o.IdVentaLocal = OrdenesDeDespacho.IdVentaLocal and OrdenesDeDespacho.IdEstacion = @idEstacion
 	LEFT JOIN Vendedor ON Vendedor.Nombre = o.Vendedor
 	LEFT JOIN Combustible ON Combustible.Nombre = o.Combustible
 	LEFT JOIN FormaDePago ON FormaDePago.Nombre = o.FormaDePAgo
@@ -1100,7 +1091,7 @@ and Mangueras.Manguera = o.Manguera
 	
 	from @ordenes f
 	left join Terceros t on t.Identificacion = f.Identificacion
-	left join OrdenesDeDespacho on f.IdLocal = OrdenesDeDespacho.IdLocal and OrdenesDeDespacho.IdEstacion = @idEstacion
+	left join OrdenesDeDespacho on f.IdVentaLocal = OrdenesDeDespacho.IdVentaLocal and OrdenesDeDespacho.IdEstacion = @idEstacion
 END
 GO
 drop procedure dbo.ObtenerOrdenDespachoPorGuid
@@ -1254,15 +1245,7 @@ BEGIN
 
 DECLARE @idTerceroTable as table (idTercero int)
 
-insert into @idTerceroTable(idTercero)
-select O.IdTerceroLocalActualizado from [IdTerceroActualizado] O
-inner join Estaciones on o.IdEstacion = Estaciones.Id
-where @estacion is null or Estaciones.Guid = @estacion 
 
-Delete [IdTerceroActualizado] from [IdTerceroActualizado] O
-inner join @idTerceroTable tt on tt.idTercero = O.IdTerceroLocalActualizado
-inner join Estaciones on o.IdEstacion = Estaciones.Id
-where @estacion is null or Estaciones.Guid = @estacion 
 
 SELECT [Terceros].[Guid], Nombre, segundo, apellidos, tipoPersona, responsabilidadTributaria, Municipio, departamento,
 	Direccion, PAis, codigoPostal, celular, Telefono, Telefono2, correo2, vendedor, comentarios, Correo, 
@@ -1409,3 +1392,74 @@ BEGIN
 	LEFT JOIN Mangueras ON Mangueras.Id = Factura.IdMangueras
 	WHERE Factura.IdEstadoActual = @estadoId AND Estaciones.[Guid] = @estacion
 END
+GO
+IF NOT EXISTS (
+  SELECT
+    *
+  FROM
+    INFORMATION_SCHEMA.COLUMNS
+  WHERE
+    TABLE_NAME = 'Resolucion' AND COLUMN_NAME = 'Razon')
+BEGIN
+ALTER TABLE [dbo].Resolucion
+Add Razon nvarchar(250) Null;
+END
+GO
+IF NOT EXISTS (
+  SELECT
+    *
+  FROM
+    INFORMATION_SCHEMA.COLUMNS
+  WHERE
+    TABLE_NAME = 'Resolucion' AND COLUMN_NAME = 'Nit')
+BEGIN
+ALTER TABLE [dbo].Resolucion
+Add Nit nvarchar(250) Null;
+END
+GO
+update resolucion set Razon = estaciones.razon, Nit = estaciones.Nit
+from resolucion
+inner join Estaciones on  Resolucion.IdEstacion = Estaciones.Id
+
+GO
+GO
+/****** Object:  StoredProcedure [dbo].[AddNuevaResolucion]    Script Date: 12/28/2022 3:29:17 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+ALTER PROCEDURE [dbo].[AddNuevaResolucion]
+	@Resoluciones [dbo].[ResolucionType] READONLY
+AS
+BEGIN
+	DECLARE @idEstadoAnulada INT, @idEstadoActivo INT, @idEstacion INT, @estacion UNIQUEIDENTIFIER
+	
+	SELECT @idEstadoAnulada = Estados.Id FROM Estados WHERE Texto = 'Anulada'
+	SELECT @idEstadoActivo = Estados.Id FROM Estados WHERE Texto = 'Activo'
+
+	UPDATE Resolucion SET IdEstado = @idEstadoAnulada
+	From Resolucion
+	JOIN Estaciones
+		ON Estaciones.Id = Resolucion.IdEstacion
+	JOIN @Resoluciones Resoluciones ON Estaciones.[Guid] = Resoluciones.IdEstacion and Resolucion.tipo = Resoluciones.tipo
+
+	INSERT INTO Resolucion([Guid],ConsecutivoInicial,ConsecutivoFinal,FechaInicial,FechaFinal,IdEstado,ConsecutivoActual,
+						   Fecha,[IdEstacion],[Autorizacion],[Habilitada],[Descripcion],tipo, Razon, Nit)
+	SELECT NEWID(),ConsecutivoInicial,ConsecutivoFinal,FechaInicial,FechaFinal,@idEstadoActivo,ConsecutivoInicial,
+		   GETDATE(),Estaciones.Id,[Autorizacion],[Habilitada],[Descripcion],tipo , Estaciones.Razon, Estaciones.Nit
+	FROM @Resoluciones Resoluciones
+	JOIN Estaciones
+		ON Estaciones.[Guid] = Resoluciones.IdEstacion
+END
+GO
+create or ALTER PROCEDURE [dbo].[GetEmpleadosByNombre]
+(@Nombre varchar(50))
+AS
+BEGIN
+declare @numeroActual int
+	Select Nombre, Cedula from Vendedor where Nombre like '%'+@Nombre+'%' and cedula is not null
+END
+Go--exec [GetEmpleadosByNombre] @Nombre = 'SERGIO  ANTONIO  SANABRIA V'
+
+CREATE INDEX tercerosidentificacion ON terceros (identificacion);
+go

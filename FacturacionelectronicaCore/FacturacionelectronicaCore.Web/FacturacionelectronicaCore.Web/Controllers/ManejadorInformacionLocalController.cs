@@ -22,8 +22,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
         [HttpGet("GetGuidsFacturasPendientes/{estacion}")]
         public async Task<ActionResult> GetGuidsFacturasPendientes(Guid estacion)
         {
-            var response = await _manejadorInformacionLocalNegocio.GetGuidsFacturasPendientes(estacion);
-            return Ok(response);
+            return Ok(null);
         }
 
 
@@ -31,7 +30,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
         public async Task<ActionResult> EnviarResolucion(RequestEnvioResolucion requestEnvioResolucion)
         {
 
-           // await _manejadorInformacionLocalNegocio.EnviarResolucion(requestEnvioResolucion);
+            // await _manejadorInformacionLocalNegocio.EnviarResolucion(requestEnvioResolucion);
 
             return Ok();
         }
@@ -49,7 +48,6 @@ namespace FacturacionelectronicaCore.Web.Controllers
         public async Task<ActionResult> EnviarFacturas(RequestEnviarFacturas requestEnviarFacturas)
         {
 
-            await _manejadorInformacionLocalNegocio.EnviarFacturas(requestEnviarFacturas.facturas, requestEnviarFacturas.Estacion);
             await _manejadorInformacionLocalNegocio.EnviarOrdenesDespacho(requestEnviarFacturas.ordenDeDespachos, requestEnviarFacturas.Estacion);
             return Ok();
         }
@@ -59,7 +57,6 @@ namespace FacturacionelectronicaCore.Web.Controllers
         public async Task<ActionResult> AgregarFechaReporteFactura(RequestCambiarFechasReporte requestCambiarFechasReporte)
         {
 
-            await _manejadorInformacionLocalNegocio.AgregarFechaReporteFactura(requestCambiarFechasReporte.facturas, requestCambiarFechasReporte.Estacion);
             return Ok();
         }
 
@@ -69,7 +66,10 @@ namespace FacturacionelectronicaCore.Web.Controllers
 
         [HttpGet("GetFacturasImprimir/{estacion}")]
         public async Task<IEnumerable<Factura>> GetFacturasImprimir(Guid estacion)
-        => await _manejadorInformacionLocalNegocio.GetFacturasImprimir(estacion);
+        {
+            
+            return new List<Factura>();
+        }
 
         [HttpGet("GetTercerosActualizados/{estacion}")]
         public async Task<ActionResult<IEnumerable<Negocio.Modelo.Tercero>>> GetTercerosActualizados(Guid estacion)

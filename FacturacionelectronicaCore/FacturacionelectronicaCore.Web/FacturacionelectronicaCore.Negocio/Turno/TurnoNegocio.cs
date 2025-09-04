@@ -37,20 +37,23 @@ namespace FacturacionelectronicaCore.Negocio.Turno
             var totalGeneral = 0d;
             foreach (var turno in turnos)
             {
-                var turnoDesc = $"{turno.FechaApertura.ToString("dd-MM-yyyy")}-{turno.Isla.Trim()}-{turno.Numero}";
+                var turnoDesc = $"{turno.FechaApertura.ToString("dd-MM-yyyy")}- Isla {turno.Isla.Trim()} - Número {turno.Numero}";
                 var diferenciaTotal = 0d;
                 var totalTotal = 0d;
                 foreach(var turnosur in turno.turnoSurtidores)
                 {
+                    // Si el cierre es 0, colocarlo igual a apertura
+                    var cierreAjustado = turnosur.Cierre.Value == 0 ? turnosur.Apertura : turnosur.Cierre.Value;
+                    
                     var totalReporte = new Modelo.TurnoReporte {
                         Apertura = turnosur.Apertura,
-                        Cierre = turnosur.Cierre.Value,
+                        Cierre = cierreAjustado,
                         Combustible = turnosur.Combustible,
-                        Diferencia = turnosur.Cierre.Value-turnosur.Apertura,
+                        Diferencia = cierreAjustado - turnosur.Apertura,
                         Manguera = turnosur.Manguera,
                         Precio = turnosur.precioCombustible,
                         Surtidor = turnosur.Surtidor,
-                        Total = (turnosur.Cierre.Value - turnosur.Apertura) * turnosur.precioCombustible,
+                        Total = (cierreAjustado - turnosur.Apertura) * turnosur.precioCombustible,
                         turno = turnoDesc 
                     };
                     diferenciaTotal += totalReporte.Diferencia;
@@ -60,12 +63,6 @@ namespace FacturacionelectronicaCore.Negocio.Turno
                 diferenciaGeneral += diferenciaTotal;
                 totalGeneral += totalTotal;
 
-                turnosreporte.Add(new TurnoReporte()
-                {
-                    Diferencia = diferenciaTotal,
-                    Total = totalTotal,
-                    turno = turnoDesc
-                 });
             }
 
             turnosreporte.Add(new TurnoReporte()

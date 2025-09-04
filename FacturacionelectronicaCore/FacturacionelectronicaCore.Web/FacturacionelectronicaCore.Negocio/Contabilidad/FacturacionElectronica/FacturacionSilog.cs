@@ -1,19 +1,15 @@
-﻿using FacturacionelectronicaCore.Negocio.Modelo;
-using FacturacionelectronicaCore.Repositorio.Repositorios;
-using Microsoft.Extensions.Options;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using System.Configuration;
-using System.Text.RegularExpressions;
-using System.Numerics;
+using FacturacionelectronicaCore.Negocio.Modelo;
 using FacturacionelectronicaCore.Repositorio.Entities;
-using Amazon.Runtime.Internal;
+using FacturacionelectronicaCore.Repositorio.Repositorios;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
@@ -47,46 +43,37 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         {
             try
             {
-
                 var invoice = await GetFacturaSilog(factura, tercero, estacionGuid.ToString());
-                Console.WriteLine(JsonConvert.SerializeObject(invoice));
-                Regex regex = new Regex(@"[ ]{2,}", RegexOptions.None);
-                var str = regex.Replace(factura.Tercero.Nombre, @" ");
-                Console.WriteLine(factura.Vendedor);
                 var cedula = await _empleadoRepositorio.GetEmpleadoByName(factura.Vendedor.Trim());
-                RequestContabilidad request = new RequestContabilidad(invoice, cedula?.Trim(), alegraOptions, estacionGuid.ToString());
+
+                var request = new RequestContabilidad(invoice, cedula?.Trim(), alegraOptions, estacionGuid.ToString());
 
                 Console.WriteLine(JsonConvert.SerializeObject(request));
+
                 using (var client = new HttpClient())
                 {
                     try
                     {
+                        var json = JsonConvert.SerializeObject(request);
+                        var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                        MultipartFormDataContent form = new MultipartFormDataContent();
-
-                        var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(request));
-                        var facturaBase64 = System.Convert.ToBase64String(plainTextBytes);
-                        form.Add(new StringContent("generar_factura"), "function_name");
-                        form.Add(new StringContent(facturaBase64), "parameter");
-                        var response = await client.PostAsync(alegraOptions.Url, form);
+                        var response = await client.PostAsync(alegraOptions.Url + "output", content);
                         response.EnsureSuccessStatusCode();
 
                         string responseBody = await response.Content.ReadAsStringAsync();
-                        var respuestaSilog = JsonConvert.DeserializeObject<REspuestaSilog>(responseBody);
+                        var respuestaSilog = JsonConvert.DeserializeObject<RespuestaSilog>(responseBody);
+
                         if (responseBody.ToLower().Contains("error"))
                         {
                             throw new AlegraException(responseBody + JsonConvert.SerializeObject(request));
-
                         }
                         else
                         {
-                            return "Ok:" + respuestaSilog.datos_factura.FirstOrDefault()?.arr_facturas.FirstOrDefault()?.prefijo_dian + respuestaSilog.datos_factura.FirstOrDefault()?.arr_facturas.FirstOrDefault()?.nro_dian + ":" + respuestaSilog.uuid_cufe;
-
+                            return "Ok:" + respuestaSilog.message.currentOutput.prefijoResolucion + respuestaSilog.message.currentOutput.numeroResolucion + ":" + respuestaSilog.cufe;
                         }
                     }
                     catch (Exception ex)
                     {
-
                         Console.WriteLine(ex);
                         Console.WriteLine(ex.StackTrace);
                         throw;
@@ -101,7 +88,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
         }
 
-        public async Task<FacturaSilog> GetFacturaSilog(Modelo.Factura x, Modelo.Tercero tercero, string estacionGuid)
+        public Task<FacturaSilog> GetFacturaSilog(Modelo.Factura x, Modelo.Tercero tercero, string estacionGuid)
         {
             //var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
 
@@ -129,7 +116,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
             var subtotal = x.SubTotal + x.Descuento;
             var total = subtotal;
-            return new FacturaSilog()
+            var result = new FacturaSilog()
             {
                 Guid = Guid.Parse(estacionGuid),
                 Consecutivo = x.Consecutivo,
@@ -165,6 +152,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 Prefijo = x.DescripcionResolucion + x.Consecutivo,
                 Cedula = tercero.Identificacion,
             };
+
+            return Task.FromResult(result);
         }
 
         private static string GetRegime(int responsabilidadTributaria)
@@ -226,129 +215,93 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     return "PERSONA_NATURAL";
             }
         }
-        public async Task<FacturaSilog> GetFacturaSilog(Modelo.OrdenDeDespacho x, Modelo.Tercero tercero, string estacionGuid)
+
+        private string GetCombustible(string combustible, string estacion)
         {
-            // var numero = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
-            var nombre = "";
-            var apellido = "";
-            var nombreCompleto = tercero.Nombre.Trim();
-            if (string.IsNullOrEmpty(tercero.Apellidos) || tercero.Apellidos.Contains("no informado"))
+            if (combustible.ToLower().Contains("corriente"))
             {
-                if (nombreCompleto.Split(' ').Count() > 1)
-                {
-                    nombre = nombreCompleto.Substring(0, nombreCompleto.LastIndexOf(" "));
-                    apellido = nombreCompleto.Split(' ').Last();
-                }
-                else
-                {
-                    nombre = nombreCompleto;
-                    apellido = "no informado";
-                }
+                return alegraOptions.Estaciones?.ContainsKey(estacion) == true ?
+                     alegraOptions.Estaciones[estacion].Corriente ?? alegraOptions.Corriente :
+                     alegraOptions.Corriente;
+            }
+            else if (combustible.ToLower().Contains("diesel") || combustible.ToLower().Contains("bioacem") || combustible.ToLower().Contains("acpm"))
+            {
+                return alegraOptions.Estaciones?.ContainsKey(estacion) == true ?
+                    alegraOptions.Estaciones[estacion].Acpm ?? alegraOptions.Acpm :
+                    alegraOptions.Acpm;
+            }
+            else if (combustible.ToLower().Contains("extra"))
+            {
+                return alegraOptions.Estaciones?.ContainsKey(estacion) == true ?
+                   alegraOptions.Estaciones[estacion].Extra ?? alegraOptions.Extra :
+                   alegraOptions.Extra;
             }
             else
             {
-                nombre = nombreCompleto;
-                apellido = tercero.Apellidos;
+                return alegraOptions.Estaciones?.ContainsKey(estacion) == true ?
+                    alegraOptions.Estaciones[estacion].Gas ?? alegraOptions.Gas :
+                    alegraOptions.Gas;
             }
-
-            var subtotal = x.SubTotal + x.Descuento;
-            var total = subtotal ;
-            return new FacturaSilog()
-            {
-                Guid = Guid.Parse(estacionGuid),
-                Consecutivo = x.IdVentaLocal,
-                Combustible = x.Combustible,
-                Cantidad = (decimal)x.Cantidad,
-                Precio = (decimal)x.Precio,
-                Total = (decimal)total,
-                Placa = x.Placa,
-                Kilometraje = x.Kilometraje,
-                Surtidor = x.Surtidor + "",
-                Cara = x.Cara + "",
-                Manguera = x.Manguera + "",
-                FormaDePago = x.FormaDePago,
-                Fecha = x.Fecha,
-                numeroTransaccion = x.numeroTransaccion,
-                Tercero = new TerceroSilog()
-                {
-                    Nombre = string.IsNullOrEmpty(tercero.Nombre) ? "No informado" : tercero.Nombre,
-                    Direccion = string.IsNullOrEmpty(tercero.Direccion) ? "No informado" : tercero.Direccion,
-                    Telefono = string.IsNullOrEmpty(tercero.Telefono) ? "No informado" : tercero.Telefono,
-                    Correo = string.IsNullOrEmpty(tercero.Correo) ? "No informado" : tercero.Correo,
-                    DescripcionTipoIdentificacion = string.IsNullOrEmpty(tercero.DescripcionTipoIdentificacion) ? "No especificada" : tercero.DescripcionTipoIdentificacion,
-                    Identificacion = string.IsNullOrEmpty(tercero.Identificacion) ? "No informado" : tercero.Identificacion,
-                    IdLocal = tercero.IdLocal
-                },
-                Descuento = x.Descuento,
-                IdLocal = x.IdLocal,
-                IdVentaLocal = x.IdVentaLocal,
-                IdTerceroLocal = x.Tercero.IdLocal,
-                FechaProximoMantenimiento = x.FechaProximoMantenimiento,
-                SubTotal = (decimal)subtotal,
-                Vendedor = x.Vendedor,
-                Identificacion = x.Tercero.Identificacion,
-                Prefijo = alegraOptions.Prefix,
-                Cedula = tercero.Identificacion,
-            };
         }
 
         public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero, Guid estacionGuid)
         {
-
+            if (orden.FormaDePago.ToLower().Contains("cali")
+           || orden.FormaDePago.ToLower().Contains("puntos")
+            || orden.FormaDePago.ToLower().Contains("asumidos")
+            )
+            {
+                return null;
+            }
             try
             {
-
                 var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
-                var invoice = await GetFacturaSilog(orden, tercero, estacionGuid.ToString());
-
-                Console.WriteLine(JsonConvert.SerializeObject(invoice));
-                Regex regex = new Regex(@"[ ]{2,}", RegexOptions.None);
-                var str = regex.Replace(orden.Tercero.Nombre, @" ");
-                Console.WriteLine(orden.Vendedor);
-                var cedula = await _empleadoRepositorio.GetEmpleadoByName(orden.Vendedor.Trim());
-                RequestContabilidad request = new RequestContabilidad(invoice, cedula?.Trim(), alegraOptions, estacionGuid.ToString());
-                if (resolucion != null && !string.IsNullOrEmpty(resolucion.token))
-                {
-
-                    invoice = await GetFacturaSilog(orden, tercero, resolucion.token);
-
-                    request = new RequestContabilidad(invoice, cedula?.Trim(), alegraOptions, resolucion.token);
-                }
+                var silogRequest = await GetSilogRequest(orden, tercero, resolucion, estacionGuid.ToString());
 
 
+                Console.WriteLine(JsonConvert.SerializeObject(silogRequest));
+                var responseBody = "";
                 using (var client = new HttpClient())
                 {
                     try
                     {
+                        var json = JsonConvert.SerializeObject(silogRequest);
+                        var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                        MultipartFormDataContent form = new MultipartFormDataContent();
+                        var response = await client.PostAsync(alegraOptions.Url + "output", content);
 
-                        var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(request));
-                        var facturaBase64 = System.Convert.ToBase64String(plainTextBytes);
-                        form.Add(new StringContent("generar_factura"), "function_name");
-                        form.Add(new StringContent(facturaBase64), "parameter");
-                        var response = await client.PostAsync(alegraOptions.Url, form);
+                        responseBody = await response.Content.ReadAsStringAsync();
+                        var responsesilog = JsonConvert.DeserializeObject<RespuestaSilog>(responseBody);
+                        // Verificar si la respuesta contiene "Factura generada exitosamente"
+                        if (responseBody.Contains("Factura generada exitosamente"))
+                        {
+                            return "Ok:" + responsesilog.message.currentOutput.prefijoResolucion + responsesilog.message.currentOutput.numeroResolucion + ":" + responsesilog.cufe;
+                        }
+
                         response.EnsureSuccessStatusCode();
 
-                        string responseBody = await response.Content.ReadAsStringAsync();
-                        var respuestaSilog = JsonConvert.DeserializeObject<REspuestaSilog>(responseBody);
                         if (responseBody.ToLower().Contains("error"))
                         {
-                            throw new AlegraException(responseBody + JsonConvert.SerializeObject(request));
-
+                            return "Error:" + responseBody + ":" + JsonConvert.SerializeObject(silogRequest);
                         }
                         else
                         {
-                            return "Ok:" + respuestaSilog.datos_factura.FirstOrDefault()?.arr_facturas.FirstOrDefault()?.prefijo_dian + respuestaSilog.datos_factura.FirstOrDefault()?.arr_facturas.FirstOrDefault()?.nro_dian + ":" + respuestaSilog.uuid_cufe;
-
+                            // Parsear la respuesta según la estructura que retorne Silog
+                            return "Ok:" + responsesilog.message.currentOutput.prefijoResolucion + responsesilog.message.currentOutput.numeroResolucion + ":" + responsesilog.cufe;
                         }
                     }
                     catch (Exception ex)
                     {
+                        // Verificar si la respuesta contiene "Factura generada exitosamente" incluso en caso de excepción
+                        if (responseBody.Contains("Factura generada exitosamente"))
+                        {
+                            return "Ok:" + responseBody;
+                        }
 
                         Console.WriteLine(ex);
                         Console.WriteLine(ex.StackTrace);
-                        throw;
+                        return "Error:" + responseBody + ":" + JsonConvert.SerializeObject(silogRequest) + ":" + ex.Message;
+
                     }
                 }
             }
@@ -356,7 +309,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             {
                 Console.WriteLine(ex);
                 Console.WriteLine(ex.StackTrace);
-                throw;
+                return "Error:" + ex.Message;
             }
         }
 
@@ -393,12 +346,12 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacion);
                 return new ResolucionElectronica
                 {
-                    invoiceText = $"Resolución electronica {resolucion.prefijo} - {resolucion.resolucion} desde 1 hasta 1000000. ",
+                    invoiceText = $"Resolución Dian {alegraOptions.Prefix} {alegraOptions.ResolutionNumber} de {alegraOptions.Desde} hasta {alegraOptions.Hasta} - vigencia del {alegraOptions.DesdeFecha} al {alegraOptions.HastaFecha}",
                     prefix = resolucion.prefijo
 
                 };
             }
-            catch (Exception ex)
+            catch
             {
                 return new ResolucionElectronica
                 {
@@ -407,21 +360,13 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
                 };
             }
-
-
         }
 
         public async Task<string> getJson(Modelo.OrdenDeDespacho orden, Guid estacion)
         {
-            var factura = await GetFacturaSilog(orden, orden.Tercero, estacion.ToString());
-
-            Console.WriteLine(JsonConvert.SerializeObject(factura));
-            Regex regex = new Regex(@"[ ]{2,}", RegexOptions.None);
-            var str = regex.Replace(orden.Tercero.Nombre, @" ");
-            Console.WriteLine(orden.Vendedor);
-            var cedula = await _empleadoRepositorio.GetEmpleadoByName(orden.Vendedor.Trim());
-            return JsonConvert.SerializeObject(new RequestContabilidad(factura, cedula?.Trim(), alegraOptions, estacion.ToString()));
-
+            var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacion.ToString());
+            var silogRequest = await GetSilogRequest(orden, orden.Tercero, resolucion, estacion.ToString());
+            return JsonConvert.SerializeObject(silogRequest);
         }
         public async Task<IEnumerable<TerceroResponse>> GetTerceros(int start)
         {
@@ -449,38 +394,59 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<string> GenerarFacturaElectronica(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid)
         {
+            if (factura.codigoFormaPago.Descripcion.ToLower().Contains("cali")
+           || factura.codigoFormaPago.Descripcion.ToLower().Contains("puntos")
+            || factura.codigoFormaPago.Descripcion.ToLower().Contains("asumidos")
+            )
+            {
+                return null;
+            }
             try
             {
-                var silogRequest = GetSilogRequest(factura, tercero, estacionGuid.ToString());
-                Console.WriteLine(JsonConvert.SerializeObject(silogRequest));
+                var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
 
+                var silogRequest = GetSilogRequest(factura, tercero, resolucion);
+                Console.WriteLine(JsonConvert.SerializeObject(silogRequest));
+                var responseBody = "";
                 using (var client = new HttpClient())
                 {
                     try
                     {
                         var json = JsonConvert.SerializeObject(silogRequest);
                         var content = new StringContent(json, Encoding.UTF8, "application/json");
-                        
-                        var response = await client.PostAsync(alegraOptions.Url, content);
+
+                        var response = await client.PostAsync(alegraOptions.Url + "output", content);
+                        responseBody = await response.Content.ReadAsStringAsync();
+                        var responsesilog = JsonConvert.DeserializeObject<RespuestaSilog>(responseBody);
+                        // Verificar si la respuesta contiene "Factura generada exitosamente"
+                        if (responseBody.Contains("Factura generada exitosamente"))
+                        {
+                            return "Ok:" + responsesilog.message.currentOutput.prefijoResolucion + responsesilog.message.currentOutput.numeroResolucion + ":" + responsesilog.cufe;
+                        }
+
                         response.EnsureSuccessStatusCode();
 
-                        string responseBody = await response.Content.ReadAsStringAsync();
-                        
                         if (responseBody.ToLower().Contains("error"))
                         {
-                            throw new AlegraException(responseBody + JsonConvert.SerializeObject(silogRequest));
+                            return "Error:" + responseBody + ":" + JsonConvert.SerializeObject(silogRequest);
                         }
                         else
                         {
                             // Parsear la respuesta según la estructura que retorne Silog
-                            return "Ok:" + responseBody;
+                            return "Ok:" + responsesilog.message.currentOutput.prefijoResolucion + responsesilog.message.currentOutput.numeroResolucion + ":" + responsesilog.cufe;
                         }
                     }
                     catch (Exception ex)
                     {
+                        // Verificar si la respuesta contiene "Factura generada exitosamente" incluso en caso de excepción
+                        if (responseBody.Contains("Factura generada exitosamente"))
+                        {
+                            return "Ok:" + responseBody;
+                        }
+
                         Console.WriteLine(ex);
                         Console.WriteLine(ex.StackTrace);
-                        throw;
+                        return "Error:" + responseBody + ":" + JsonConvert.SerializeObject(silogRequest) + ":" + ex.Message;
                     }
                 }
             }
@@ -492,10 +458,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
         }
 
-        public SilogRequest GetSilogRequest(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, string estacionGuid)
+        public SilogRequest GetSilogRequest(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, ResolucionFacturaElectronica resolucion)
         {
             var productList = new List<ProductInformation>();
-            
+
             // Agregar los productos de canastilla
             if (factura.canastillas != null)
             {
@@ -505,23 +471,27 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     {
                         ProductId = Int32.Parse(item.Canastilla?.campoextra),
                         Quantity = (decimal)item.cantidad,
-                        Discunt = 0 // Ajustar según sea necesario
+                        Discunt = 0,
+                        Price = (decimal)item.Canastilla?.precio,
+                        TotalPrice = (decimal)item.total,
+                        SkipAuditWarehouseValues = true
                     });
                 }
             }
 
+            // FacturaCanastilla no tiene campo vendedor, usar valores por defecto
             return new SilogRequest
             {
                 UserInformation = new UserInformation
                 {
-                    SucursalId = 1,
-                    UserIdent = alegraOptions.Usuario, // Necesitarás configurar estos valores
-                    UserPassword = alegraOptions.Token // Asegúrate de que estos valores estén configurados correctamente
+                    SucursalId = Int32.Parse(resolucion.idNumeracion),
+                    UserIdent = alegraOptions.Usuario,
+                    UserPassword = alegraOptions.Token
                 },
                 StationInformation = new StationInformation
                 {
                     Dispenser = "1",
-                    Island = "1", 
+                    Island = "1",
                     Hose = "1"
                 },
                 InvoiceInformation = new InvoiceInformation
@@ -541,20 +511,100 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         TypeId = GetTipoIdentificacionId(tercero.DescripcionTipoIdentificacion),
                         Id = tercero.Identificacion ?? "No informado",
                         Name = tercero.Nombre ?? "No informado",
-                        FirstLastName = tercero.Apellidos ?? "",
+                        FirstLastName = "",
                         SecondLastName = "",
                         Adress = tercero.Direccion ?? "No informado",
-                        Email = tercero.Correo ?? "No informado",
-                        PhoneNumber = tercero.Telefono ?? "No informado"
+                        Email = tercero.Correo ?? alegraOptions.Correo,
+                        PhoneNumber = GetValidPhoneNumber(tercero.Telefono)
                     },
                     ProductInformation = productList,
                     PaymentInformation = new PaymentInformation
                     {
-                        PaymentFormId = GetPaymentFormId(factura.codigoFormaPago?.Descripcion),
+                        PaymentFormId = GetPaymentFormId(factura.codigoFormaPago?.Descripcion,resolucion.idNumeracion),
                         PaymentMethodId = 1,
-                        PaymentMeandId = 1,
+                        PaymentMeanId = 1,
                         CardId = 1,
                         TransaccionNumber = factura.consecutivo
+                    }
+                }
+            };
+        }
+
+        public async Task<SilogRequest> GetSilogRequest(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero, ResolucionFacturaElectronica resolucion, string estacion)
+        {
+            var productList = new List<ProductInformation>
+            {
+                // Agregar el combustible como producto
+                new ProductInformation
+                {
+                    ProductId = int.Parse(GetCombustible(orden.Combustible, estacion)), // ID del combustible - ajustar según sea necesario
+                    Quantity = (decimal)orden.Cantidad,
+                    Discunt = orden.Descuento,
+                    Price = (decimal)orden.Precio,
+                    TotalPrice = (decimal)orden.Total,
+                    SkipAuditWarehouseValues = true
+                }
+            };
+
+            // Determinar si VehicleInformation debe ser null
+            VehicleInformation vehicleInfo = null;
+            if (!string.IsNullOrEmpty(orden.Placa) && tercero.Identificacion != "222222222222")
+            {
+                vehicleInfo = new VehicleInformation
+                {
+                    Plate = orden.Placa ?? "N/A",
+                    LastMaintenanceDate = DateTime.Now.ToString("yyyy-MM-dd"),
+                    NextMaintenanceDate = orden.FechaProximoMantenimiento.ToString("yyyy-MM-dd"),
+                    Mileage = orden.Kilometraje?.ToString() ?? "0.00"
+                };
+            }
+
+            // Buscar información del empleado
+            string empleadoIdentificacion = null;
+            if (!alegraOptions.AutenticaPorDefecto && !string.IsNullOrEmpty(orden.Vendedor))
+            {
+                empleadoIdentificacion = await _empleadoRepositorio.GetEmpleadoByName(orden.Vendedor.Trim());
+            }
+
+            return new SilogRequest
+            {
+                UserInformation = new UserInformation
+                {
+                    SucursalId = Int32.Parse(resolucion.idNumeracion),
+                    UserIdent = !string.IsNullOrEmpty(empleadoIdentificacion) ? empleadoIdentificacion : alegraOptions.Usuario,
+                    UserPassword = !string.IsNullOrEmpty(empleadoIdentificacion) ? empleadoIdentificacion : alegraOptions.Token
+                },
+                StationInformation = new StationInformation
+                {
+                    Dispenser = orden.Surtidor?.ToString() ?? "1",
+                    Island = "1",
+                    Hose = orden.Cara?.ToString() ?? "1"
+                },
+                InvoiceInformation = new InvoiceInformation
+                {
+                    PosConsecutive = orden.IdVentaLocal,
+                    InvoiceDate = orden.Fecha.ToString("yyyy-MM-dd"),
+                    Details = $"Orden de Despacho: {orden.Combustible.Trim()} - {orden.Cantidad}GL - {orden.IdVentaLocal} - Transaccion {orden.numeroTransaccion}",
+                    VehicleInformation = vehicleInfo,
+                    InvoiceHolderInformation = new InvoiceHolderInformation
+                    {
+                        TypeId = GetTipoIdentificacionId(tercero.DescripcionTipoIdentificacion),
+                        Id = tercero.Identificacion ?? "No informado",
+                        Name = tercero.Nombre ?? "No informado",
+                        FirstLastName = "",
+                        SecondLastName = "",
+                        Adress = tercero.Direccion ?? "No informado",
+                        Email = tercero.Correo ?? alegraOptions.Correo,
+                        PhoneNumber = GetValidPhoneNumber(tercero.Telefono)
+                    },
+                    ProductInformation = productList,
+                    PaymentInformation = new PaymentInformation
+                    {
+                        PaymentFormId = GetPaymentFormId(orden.FormaDePago, resolucion.idNumeracion),
+                        PaymentMethodId = GetMethodFormId(orden.FormaDePago, resolucion.idNumeracion),
+                        PaymentMeanId = GetMeandFormId(orden.FormaDePago, resolucion.idNumeracion),
+                        CardId = 1,
+                        TransaccionNumber = string.IsNullOrEmpty(orden.numeroTransaccion) ? orden.IdVentaLocal : int.Parse(orden.numeroTransaccion)
                     }
                 }
             };
@@ -567,28 +617,192 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 case "nit":
                     return 6;
                 case "cedula":
+                case "cédula ciudadanía":
                 case "cc":
-                    return 1;
+                    return 3;
                 case "cedula extranjeria":
                 case "ce":
-                    return 2;
+                    return 5;
                 default:
-                    return 1; // Por defecto cedula
+                    return 3; // Por defecto cedula
             }
         }
 
-        private int GetPaymentFormId(string formaDePago)
+        private int GetPaymentFormId(string formaDePago, string sucursal)
         {
-            switch (formaDePago?.ToLower())
+            if (sucursal == "603")
             {
-                case "efectivo":
+                if (formaDePago.ToLower().Contains("directo"))
+                {
+                    return 3;
+                }
+                else
+                {
                     return 1;
-                case "tarjeta":
-                case "credito":
-                    return 2;
-                default:
-                    return 1; // Por defecto efectivo
+                }
             }
+            if (formaDePago.ToLower().Contains("dito") || formaDePago.ToLower().Contains("cred") || formaDePago.ToLower().Contains("urbano")
+            || formaDePago.ToLower().Contains("vip")
+            || formaDePago.ToLower().Contains("doble")
+            || formaDePago.ToLower().Contains("micro"))
+            {
+                return 3;
+            }
+            else if (formaDePago.ToLower().Contains("tarjeta"))
+            {
+                return 2;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+        private int GetMethodFormId(string formaDePago, string sucursal)
+        {
+            if (sucursal == "603")
+            {
+
+                if (formaDePago.ToLower().Contains("directo"))
+                {
+                    return 3;
+                }
+                else if (formaDePago.ToLower().Contains("efe") )
+                {
+                    return 1;
+                }
+                else if (formaDePago.ToLower().Contains("tarjeta"))
+                {
+                    return 2;
+                }
+                else
+                {
+                    return 1;
+                }
+            }
+            if (formaDePago.ToLower().Contains("dito"))
+            {
+                return 3;
+            }
+            else if (formaDePago.ToLower().Contains("efe") || formaDePago.ToLower().Contains("dat"))
+            {
+                return 1;
+            }
+            else if (formaDePago.ToLower().Contains("cons"))
+            {
+                return 4;
+            }
+            else
+            {
+                return 3;
+            }
+        }
+        private int GetMeandFormId(string formaDePago, string sucursal)
+        {
+            if(sucursal == "603")
+            {
+                if (formaDePago.ToLower().Contains("bito"))
+                {
+                    return 8;
+                }
+                if (formaDePago.ToLower().Contains("tarjeta cr"))
+                {
+                    return 5;
+                }
+                else if (formaDePago.ToLower().Contains("directo") )
+                {
+                    return 3;
+                }
+                else
+                {
+                    return 1;
+                }
+            }
+            if (formaDePago.ToLower().Contains("efectivo urbano"))
+            {
+                return 3;
+            }
+            if (formaDePago.ToLower().Contains("cred.buses.escalera"))
+            {
+                return 12;
+            }
+            if (formaDePago.ToLower().Contains("cred.comb.fur"))
+            {
+                return 14;
+            }
+            if (formaDePago.ToLower().Contains("cred.camionetas.mixed"))
+            {
+                return 3;
+            }
+            if (formaDePago.ToLower().Contains("cred.comb.colect.intermun"))
+            {
+                return 10;
+            }
+            if (formaDePago.ToLower().Contains("cred.comb.serv.especial"))
+            {
+                return 13;
+            }
+            if (formaDePago.ToLower().Contains("arriendo"))
+            {
+                return 22;
+            }
+            if (formaDePago.ToLower().Contains("cred.comb.camperos"))
+            {
+                return 23;
+            }
+            if (formaDePago.ToLower().Contains("vip"))
+            {
+                return 24;
+            }
+            if (formaDePago.ToLower().Contains("doble yo"))
+            {
+                return 25;
+            }
+            if (formaDePago.ToLower().Contains("microbus"))
+            {
+                return 26;
+            }
+            if (formaDePago.ToLower().Contains("dito"))
+            {
+                return 3;
+            }
+            else if (formaDePago.ToLower().Contains("efe"))
+            {
+                return 1;
+            }
+            else if (formaDePago.ToLower().Contains("dat") && sucursal.ToLower() == "968")
+            {
+                return 29;
+            }
+            else if (formaDePago.ToLower().Contains("dat") && sucursal.ToLower() == "970")
+            {
+                return 28;
+            }
+            else if (formaDePago.ToLower().Contains("dat"))
+            {
+                return 27;
+            }
+            else if (formaDePago.ToLower().Contains("cons"))
+            {
+                return 4;
+            }
+            else
+            {
+                return 3;
+            }
+        }
+
+        private string GetValidPhoneNumber(string telefono)
+        {
+            // Si está vacío, es null, "No informado" o no es numérico, retornar null
+            if (string.IsNullOrEmpty(telefono) ||
+                telefono == "No informado" ||
+                !telefono.All(char.IsDigit))
+            {
+                return null;
+            }
+
+            // Si es válido y numérico, aplicar padding si es necesario
+            return telefono.Length < 10 ? telefono.PadLeft(10, '0') : telefono;
         }
 
         public Task<string> GetFacturaElectronica(string id, Guid estacionGuid)

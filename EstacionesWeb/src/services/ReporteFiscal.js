@@ -1,37 +1,35 @@
+import HttpService from './HttpService.js'
+
 const ReporteFiscal = async (fechaInicial, fechaFinal) => {
   try {
-    const token = localStorage.getItem('token')
-    const estacion = localStorage.getItem('estacion')
-    let body = {
+    const httpService = new HttpService()
+    const estacionGuid = localStorage.getItem('estacionGuid')
+
+    const body = {
       fechaInicial: fechaInicial,
       fechaFinal: fechaFinal,
-      estacion: estacion,
+      estacion: estacionGuid,
     }
+
+    const token = localStorage.getItem('token')
     if (!token) {
+      console.error('No token found in localStorage')
       return 'fail'
     }
-    const response = await fetch(window.SERVER_URL + '/api/Factura/GetConsolidado', {
-      method: 'POST',
-      mode: 'cors',
-      body: JSON.stringify(body),
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        accept: 'text/plain',
-        Authorization: 'Bearer ' + token,
-        'sec-fetch-mode': 'cors',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',
-      },
-    })
-    if (response.status == 200) {
-      let reporte = await response.json()
-      return reporte
-    }
-    if (response.status == 403) {
+
+    // Use HttpService to make the request with proper headers and error handling
+    const url = `${window.SERVER_URL}/Factura/GetConsolidado`
+    const response = await httpService.post(url, body)
+
+    // HttpService returns 'fail' for 401/403 errors
+    if (response === 'fail') {
+      console.error('Authentication failed for ReporteFiscal')
       return 'fail'
     }
-    return 'fail'
+
+    return response
   } catch (error) {
+    console.error('ReporteFiscal error:', error)
     return 'fail'
   }
 }

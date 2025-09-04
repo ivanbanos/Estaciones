@@ -106,8 +106,8 @@ namespace FactoradorEstacionesModelo.Convertidor
             venta.CEDULA = dr.IsNull("CEDULA") ? "" : dr.Field<string>("CEDULA");
             venta.FECHA_REAL = dr.IsNull("FechaReporte") ? null : dr.Field<DateTime?>("FechaReporte");
 
-            var suma = Convert.ToInt32(venta.PRECIO_UNI * venta.CANTIDAD);
-            var sumaTotal = Convert.ToInt32((venta.PRECIO_UNI * venta.CANTIDAD) - venta.Descuento);
+            var suma = Convert.ToInt64(venta.PRECIO_UNI * venta.CANTIDAD);
+            var sumaTotal = Convert.ToInt64((venta.PRECIO_UNI * venta.CANTIDAD) - venta.Descuento);
             if (suma >= 1000000 && venta.VALORNETO < 1000000)
             {
                 venta.VALORNETO = suma;
@@ -170,7 +170,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                         terceroId = dr.Field<int>("terceroId"),
                         tipoIdentificacion = dr.Field<int?>("tipoIdentificacion"),
                         tipoIdentificacionS = dr.Field<string>("descripcion"),
-                        //EnviadoSiesa = dr.Field<bool?>("enviadoSiesa"),
+                        EnviadoSiesa = dr.Table.Columns.Contains("enviadoSiesa") ? (dr.IsNull("enviadoSiesa") ? (bool?)null : dr.Field<bool?>("enviadoSiesa")) : (bool?)null,
                     },
                 })
             ) ;

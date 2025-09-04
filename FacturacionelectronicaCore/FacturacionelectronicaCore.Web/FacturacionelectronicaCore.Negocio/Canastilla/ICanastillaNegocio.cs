@@ -9,7 +9,7 @@ namespace FacturacionelectronicaCore.Negocio.Canastilla
     public interface ICanastillaNegocio
     {
         Task<int> AddOrUpdate(IEnumerable<Modelo.Canastilla> terceros);
-        Task<IEnumerable<Modelo.Canastilla>> GetCanastillas();
+        Task<IEnumerable<Modelo.Canastilla>> GetCanastillas(Guid? estacion = null);
         Task<Modelo.Canastilla> GetCanastilla(Guid guid);
     }
 }

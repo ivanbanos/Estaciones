@@ -1,6 +1,6 @@
 const GetToken = async (username, password) => {
   try {
-    const response = await fetch(window.SERVER_URL + '/api/Usuarios/' + username + '/' + password, {
+    const response = await fetch(window.SERVER_URL + '/Usuarios/' + username + '/' + password, {
       method: 'GET',
       mode: 'cors',
       headers: {

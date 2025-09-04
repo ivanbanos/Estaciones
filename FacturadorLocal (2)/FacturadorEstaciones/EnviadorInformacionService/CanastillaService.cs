@@ -354,7 +354,7 @@ namespace EnviadorInformacionService
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Fecha : ", _factura.fecha.ToString("dd/MM/yyyy HH:mm:ss")), false));
 
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Isla : ", _factura.Isla + ""), false));
-            lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendedor : ", _factura.Empleado.Trim() + ""), false));
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendedor : ", _factura.Empleado?.Trim() + ""), false));
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             if (_infoEstacion.ImpresionPDA)
             {

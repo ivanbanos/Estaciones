@@ -40,7 +40,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public bool EnviaCreditos { get; set; }
         public bool EnviaMes { get; set; }
         public bool Desactivado { get; set; }
-        public string City { get;  set; }
+        public string City { get; set; }
         public string Department { get; set; }
         public bool ExcluirDireccion { get; set; }
 
@@ -51,5 +51,21 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public int Debito { get; set; }
         public int Credito { get; set; }
         public int Efectivo { get; set; }
+
+        // Nueva propiedad para configuración de combustibles por estación
+        public Dictionary<string, EstacionCombustibles> Estaciones { get; set; }
+        public bool AutenticaPorDefecto { get; set; }
+        public object Desde { get; set; }
+        public object Hasta { get; set; }
+        public object DesdeFecha { get; set; }
+        public object HastaFecha { get; set; }
+    }
+
+    public class EstacionCombustibles
+    {
+        public string Corriente { get; set; }
+        public string Acpm { get; set; }
+        public string Extra { get; set; }
+        public string Gas { get; set; }
     }
 }

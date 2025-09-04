@@ -34,16 +34,41 @@ namespace EnviadorInformacionService
 
                     var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadasSiesa();
 
-                    var terceros = facturas.Select(x => x.Tercero);
+                    var terceros = facturas.Select(x => x.Tercero).GroupBy(t => t.terceroId).Select(g => g.First()).ToList();
                     if (terceros.Any(x => !x.EnviadoSiesa.HasValue || !x.EnviadoSiesa.Value))
                     {
-                        foreach(var t in terceros.Where(x => !x.EnviadoSiesa.HasValue || !x.EnviadoSiesa.Value)){
+                        var tercerosEnviados = new List<int>();
+                        var tercerosFallidos = new List<string>();
 
-                            _apiContabilidad.EnviarTercero(t);
-                            _estacionesRepositorio.MarcarTercerosEnviadosASiesa(terceros.Select(x => x.terceroId));
+                        foreach (var t in terceros.Where(x => !x.EnviadoSiesa.HasValue || !x.EnviadoSiesa.Value))
+                        {
+                            Logger.Info($"Iniciando envío de tercero - ID: {t.terceroId}, Identificación: {t.identificacion}, Nombre: {t.Nombre}");
+                            if (_apiContabilidad.EnviarTercero(t))
+                            {
+                                tercerosEnviados.Add(t.terceroId);
+                                Logger.Info($"Tercero enviado exitosamente - ID: {t.terceroId}, Identificación: {t.identificacion}, Nombre: {t.Nombre}");
+                            }
+                            else
+                            {
+                                tercerosFallidos.Add($"ID: {t.terceroId}, Identificación: {t.identificacion}, Nombre: {t.Nombre}");
+                                Logger.Warn($"Fallo al enviar tercero - ID: {t.terceroId}, Identificación: {t.identificacion}, Nombre: {t.Nombre}");
+                            }
+                        }
+
+                        if (tercerosEnviados.Any())
+                        {
+                            _estacionesRepositorio.MarcarTercerosEnviadosASiesa(tercerosEnviados);
+                            Logger.Info($"Total terceros enviados exitosamente: {tercerosEnviados.Count} - IDs: {string.Join(", ", tercerosEnviados)}");
+                        }
+
+                        if (tercerosFallidos.Any())
+                        {
+                            Logger.Warn($"Total terceros que fallaron al enviar: {tercerosFallidos.Count} - {string.Join(" | ", tercerosFallidos)}");
                         }
                     }
                     var facturasEnviadas = new List<int>();
+                    var facturasFallidas = new List<string>();
+
                     foreach (var factura in facturas)
                     {
                         try
@@ -54,12 +79,22 @@ namespace EnviadorInformacionService
 
                             if (factura.codigoFormaPago != 6)
                             {
+                                Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Venta.Combustible} Enviandose a Siesa");
+
                                 try
                                 {
                                     var intentos = 0;
                                     do
                                     {
-                                        infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(factura.ventaId, estacionFuente, _conexionEstacionRemota.getToken());
+                                        try
+                                        {
+                                            infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(factura.ventaId, estacionFuente, _conexionEstacionRemota.getToken());
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            infoTemp = "";
+                                            Logger.Error($"Error al obtener información de la factura electrónica para la factura {factura.ventaId}: {ex.Message}");
+                                        }
                                         Thread.Sleep(100);
                                     } while (infoTemp == null || intentos++ < 3);
 
@@ -88,42 +123,55 @@ namespace EnviadorInformacionService
 
                                                 Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Venta.Combustible} no se envió no exite auxiliar cruce creado");
                                             }
+                                            Logger.Info($"Iniciando envío de factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Combustible: {factura.Venta.Combustible}");
                                             _apiContabilidad.EnviarFactura(factura, facturaElectronica[2], numeros, auxiliarContable, auxiliarCruce);
                                             //_apiContabilidad.EnviarRecibo(factura, facturaElectronica[2], numeros, _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, true), _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, false));
                                             facturasEnviadas.Add(factura.ventaId);
+                                            Logger.Info($"Factura enviada exitosamente - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Combustible: {factura.Venta.Combustible}");
                                         }
+                                    }
+                                    else
+                                    {
+
+                                        facturasEnviadas.Add(factura.ventaId);
                                     }
 
                                 }
                                 catch (Exception ex)
                                 {
-
-                                    Logger.Info($"Factura {JsonConvert.SerializeObject(factura)} no se envió {ex.Message}");
+                                    facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
+                                    Logger.Warn($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
                                 }
                             }
                             else
                             {
-
                                 facturasEnviadas.Add(factura.ventaId);
                             }
                         }
                         catch (Exception ex)
                         {
-                            Logger.Info($"Factura {JsonConvert.SerializeObject(factura)} no se envió {ex.Message}");
+                            facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
+                            Logger.Warn($"Fallo al procesar factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
                         }
                     }
-                    if(facturasEnviadas.Any() )
+                    if (facturasEnviadas.Any())
                     {
-                        Logger.Info($"Facturas {JsonConvert.SerializeObject(facturasEnviadas)} enviadas");
+                        Logger.Info($"Total facturas enviadas exitosamente: {facturasEnviadas.Count} - IDs: {string.Join(", ", facturasEnviadas)}");
                         _estacionesRepositorio.ActuralizarFacturasEnviadosSiesa(facturasEnviadas);
                     }
-                    Thread.Sleep(5000);
+
+                    if (facturasFallidas.Any())
+                    {
+                        Logger.Warn($"Total facturas que fallaron al enviar: {facturasFallidas.Count} - {string.Join(" | ", facturasFallidas)}");
+                    }
+
+                    Thread.Sleep(1000);
                 }
                 catch (Exception ex)
                 {
 
                     Logger.Info("Ex" + ex.Message);
-                    Thread.Sleep(300000);
+                    Thread.Sleep(5000);
                 }
             }
         }

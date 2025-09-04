@@ -18,10 +18,8 @@ namespace EstacionesServicio.Respositorio.Extention
             services.Configure<RepositorioConfig>(options => configuration.GetSection("RepositorioConfig").Bind(options)); 
             services.AddTransient<IMongoHelper>(s => new MongoHelper(configuration));
             services.AddScoped<IUsuarioRespositorio, UsuarioRepositorio>();
-            services.AddScoped<IFacturasRepository, FacturasRepository>();
             services.AddScoped<ITerceroRepositorio, TerceroRepositorio>();
             services.AddScoped<IOrdenDeDespachoRepositorio, OrdenDeDespachoRepositorio>();
-            services.AddScoped<IFacturasRepository, FacturasRepository>();
             services.AddScoped<IResolucionRepositorio, ResolucionRepositorio>();
             services.AddScoped<ITipoIdentificacionRepositorio, TipoIdentificacionRepositorio>();
             services.AddScoped<IEstacionesRepository, EstacionesRepository>();

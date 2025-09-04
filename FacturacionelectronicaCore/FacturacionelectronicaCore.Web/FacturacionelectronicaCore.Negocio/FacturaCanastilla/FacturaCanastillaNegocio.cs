@@ -29,7 +29,7 @@ namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
 
         public async Task<FacturaCanastilla> GetFactura(string idFactura)
         {
-            return (await _facturaCanastillaRepository.GetFactura(idFactura)).FirstOrDefault();
+            return (await _facturaCanastillaRepository.GetFactura(idFactura))?.FirstOrDefault();
         }
 
         public async Task<IEnumerable<FacturaCanastilla>> GetFacturas(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid estacion)

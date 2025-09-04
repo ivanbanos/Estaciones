@@ -633,10 +633,6 @@ namespace FacturadorEstacionesRepositorio
             return facturas.ToList();
         }
 
-        public void ActualizarCanastilla(Canastilla canastilla)
-        {
-            throw new NotImplementedException();
-        }
 
         public FacturaCanastilla BuscarFacturaCanastillaPorConsecutivo(int consecutivo)
         {
@@ -665,10 +661,6 @@ namespace FacturadorEstacionesRepositorio
             return facturasEnviar.FirstOrDefault();
         }
 
-        public object ActualizarResolucionCanastilla(object resolucionRemota)
-        {
-            throw new NotImplementedException();
-        }
         
         public IEnumerable<FacturaCanastilla> BuscarFacturasNoEnviadasCanastilla()
         {
@@ -971,7 +963,7 @@ namespace FacturadorEstacionesRepositorio
             var parameters = new Dictionary<string, object>
             {
             };
-            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSinEnviarSiesa",
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSinEnviar",
                          parameters);
             return _convertidor.ConvertirFacturasSiges(dt2);
         }
@@ -979,18 +971,18 @@ namespace FacturadorEstacionesRepositorio
         public void MarcarTercerosEnviadosASiesa(IEnumerable<int> ids)
         {
             var table = new DataTable();
-            table.Columns.Add(new DataColumn("terceroId", typeof(int)));
+            table.Columns.Add(new DataColumn("ventaId", typeof(int)));
             foreach (var id in ids)
             {
                 var row = table.NewRow();
-                row["terceroId"] = id;
+                row["ventaId"] = id;
                 table.Rows.Add(row);
             }
             var parameters = new Dictionary<string, object>
             {
                 {"@terceros", table }
             };
-            LoadDataTableFromStoredProc(_connectionString.Facturacion, "MarcarTercerosEnviadosASiesa", parameters);
+            LoadDataTableFromStoredProc(_connectionString.Facturacion, "CambiarEstadoTerceroEnviadoSiesaSiges", parameters);
         }
 
         public string ObtenerAuxiliarContable(int codigoFormaPago, string combustible, bool contable, bool cruce)
@@ -999,11 +991,11 @@ namespace FacturadorEstacionesRepositorio
             {
                 {"@codigoFormaPago", codigoFormaPago },
                 {"@combustible", combustible },
-                {"@contable", contable },
+                {"@factura", contable },
                 {"@cruce", cruce }
             };
-            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ObtenerAuxiliarContable", parameters);
-            return dt.AsEnumerable().Select(dr => dr.Field<string>("Auxiliar")).FirstOrDefault();
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "BuscarAuxiliar", parameters);
+            return dt.AsEnumerable().Select(dr => dr.Field<string>("auxiliar")).FirstOrDefault();
         }
 
         public void ActualizarFacturaSiesa(int ventaId)
@@ -1013,6 +1005,131 @@ namespace FacturadorEstacionesRepositorio
                 {"@ventaId", ventaId }
             };
             LoadDataTableFromStoredProc(_connectionString.Facturacion, "ActualizarFacturaSiesa", parameters);
+        }
+
+        public TurnoSiges ObtenerTurnoIsla(int idIsla)
+        {
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.EstacionSiges, "ObtenerTurnoIsla",
+                            new Dictionary<string, object>{
+
+                    {"@idIsla", idIsla }
+                            });
+            var turno = _convertidor.ConvertirTurnoSiges(dt).FirstOrDefault();
+            if (turno != null)
+            {
+                var parameters2 = new Dictionary<string, object>
+                {
+                 {"@Id",turno.Id },
+                };
+                DataTable dt3 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnoSurtidorInfo",
+                             parameters2);
+                turno.turnoSurtidores = _convertidor.ConvertirTurnoSurtidoresSiges(dt3);
+            }
+
+            return turno;
+        }
+
+        public void AddFidelizado(string documento, float? puntos)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@documento", documento },
+                {"@puntos", puntos }
+            };
+            LoadDataTableFromStoredProc(_connectionString.Facturacion, "AddFidelizado", parameters);
+        }
+
+        public Puntos GetVentaFidelizarAutomatica(int id)
+        {
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetVentaFidelizarAutomatica",
+                                        new Dictionary<string, object>{
+
+                    {"@ventaId", id }
+                                        });
+            return _convertidor.ConvertirPuntos(dt).FirstOrDefault();
+        }
+
+        public Fidelizado getFidelizado(int ventaId)
+        {
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetFidelizado",
+                                        new Dictionary<string, object>{
+
+                    {"@ventaId", ventaId }
+                                        });
+            return _convertidor.ConvertirFidelizado(dt).FirstOrDefault();
+        }
+
+        public List<FacturaSiges> GetReporteCierrePorTotal(int id)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@idTurno", id }
+            };
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetReporteCierrePorTotal", parameters);
+            return _convertidor.ConvertirFacturasSiges(dt);
+        }
+
+        public IEnumerable<FacturaSiges> GetFacturasPorFechas(DateTime desde, DateTime hasta)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@fechaInicio", desde },
+                {"@fechaFin", hasta }
+            };
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetFacturasPorFechas", parameters);
+            return _convertidor.ConvertirFacturasSiges(dt);
+        }
+
+        public IEnumerable<TurnoSiges> GetTurnosByFechas(DateTime desde, DateTime hasta)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@fechaInicio", desde },
+                {"@fechaFin", hasta }
+            };
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnosPorFechas", parameters);
+            return _convertidor.ConvertirTurnoSiges(dt);
+        }
+
+        public IEnumerable<TurnoSurtidor> ObtenerTurnoInfo(int id)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@Id", id }
+            };
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetTurnoSurtidorInfo", parameters);
+            return _convertidor.ConvertirTurnoSurtidoresSiges(dt);
+        }
+
+        public IEnumerable<FacturaSiges> BuscarFacturasNoEnviadasSiesa()
+        {
+            var parameters = new Dictionary<string, object>
+            {
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSinEnviarSiesaSiges",
+                         parameters);
+            return _convertidor.ConvertirFacturasSiges(dt2);
+        }
+
+        public void ActuralizarFacturasEnviadosSiesa(List<int> facturasEnviadas)
+        {
+            var ventasIds = new DataTable();
+            ventasIds.Columns.Add(new DataColumn("ventaId", typeof(long))
+            {
+                AllowDBNull = false
+            });
+            foreach (var t in facturasEnviadas)
+            {
+                var row = ventasIds.NewRow();
+                row["ventaId"] = t;
+                ventasIds.Rows.Add(row);
+            }
+            var parameters = new Dictionary<string, object>
+            {
+                {"@facturas",ventasIds }
+            };
+            DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ActuralizarEnviadasSiesaSiges",
+                         parameters);
         }
     }
 }

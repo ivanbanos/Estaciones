@@ -8,5 +8,6 @@
         public float subtotal { get; set; }
         public float iva { get; set; }
         public float total { get; set; }
+        public float TotalPrice { get { return subtotal + iva; } }
     }
 }

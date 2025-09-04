@@ -1,41 +1,38 @@
+import HttpService from './HttpService.js'
+
 const ObtenerInfoCanastilla = async (fechaInicial, fechaFinal) => {
-    try {
-      const token = localStorage.getItem('token')
-      const estacion = localStorage.getItem('estacion')
-      let body = {
-        fechaInicial: fechaInicial,
-        fechaFinal: fechaFinal,
-        estacion: estacion,
-      }
-      if (!token) {
-        return 'fail'
-      }
-      const response = await fetch(window.SERVER_URL + '/api/FacturasCanastilla/GetFacturasReporte', {
-        method: 'POST',
-        mode: 'cors',
-        body: JSON.stringify(body),
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          accept: 'text/plain',
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer ' + token,
-          'sec-fetch-mode': 'cors',
-          'Access-Control-Allow-Headers': 'Content-Type',
-          'Access-Control-Allow-Methods': 'OPTIONS,POST,GET',
-        },
-      })
-      if (response.status == 200) {
-        let reporte = await response.json()
-        return reporte
-      }
-      if (response.status == 403) {
-        return 'fail'
-      }
-      return 'fail'
-    } catch (error) {
+  try {
+    const httpService = new HttpService()
+    const estacionGuid = localStorage.getItem('estacionGuid')
+    
+    const token = localStorage.getItem('token')
+    if (!token) {
+      console.error('No token found in localStorage')
       return 'fail'
     }
+    
+    const body = {
+      fechaInicial: fechaInicial,
+      fechaFinal: fechaFinal,
+      estacion: estacionGuid,
+    }
+    
+    // Use the correct API endpoint
+    const url = `${window.SERVER_URL}/FacturasCanastilla/GetFacturasReporte`
+    const response = await httpService.post(url, body)
+    
+    // HttpService returns 'fail' for 401/403 errors
+    if (response === 'fail') {
+      console.error('Authentication failed for ObtenerInfoCanastilla')
+      return 'fail'
+    }
+    
+    return response
+  } catch (error) {
+    console.error('ObtenerInfoCanastilla error:', error)
+    return 'fail'
   }
+}
   
   export default ObtenerInfoCanastilla
   

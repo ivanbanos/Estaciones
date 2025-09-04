@@ -33,8 +33,8 @@ namespace EnviadorInformacionService
             };
             var logconsole = new NLog.Targets.ConsoleTarget("logconsole");
             // Rules for mapping loggers to targets            
-            config.AddRule(LogLevel.Trace, LogLevel.Error, logconsole);
-            config.AddRule(LogLevel.Trace, LogLevel.Error, logfile);
+            config.AddRule(LogLevel.Trace, LogLevel.Fatal, logconsole);
+            config.AddRule(LogLevel.Trace, LogLevel.Fatal, logfile);
 
             // Apply config           
             NLog.LogManager.Configuration = config;

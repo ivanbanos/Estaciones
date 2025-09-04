@@ -33,6 +33,7 @@ namespace ReporteFacturas
         public string Linea2 { get; set; }
         public string Linea3 { get; set; }
         public string Linea4 { get; set; }
-        public bool ImpresionPDA { get; internal set; }
+        public bool ImpresionPDA { get; set; }
+        public bool Rifa { get; set; }
     }
 }

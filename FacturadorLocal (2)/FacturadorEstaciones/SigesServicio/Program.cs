@@ -30,7 +30,7 @@ NLog.LogManager.Configuration = config;
 var logger = NLog.LogManager.GetCurrentClassLogger();
 logger.Info("Iniciando");
 
-await Task.Delay(5000, default);
+await Task.Delay(2000, default);
 try
 {
     IHost host = Host.CreateDefaultBuilder(args)
@@ -48,12 +48,12 @@ try
         services.Configure<InformacionCuenta>(options => hostContext.Configuration.GetSection("InformacionCuenta").Bind(options));
 
         services.AddSingleton<IConexionEstacionRemota, ConexionEstacionRemota>();
-        //services.AddHostedService<SubirVentasWorker>();
-        //services.AddHostedService<ObtenerVehiculosWorker>();
-        //services.AddHostedService<WorkerImpresion>();
-        //services.AddHostedService<CanastillaWorker>();
-        //services.AddHostedService<FacturasWorker>();
-        services.AddHostedService<SiesaWorker>();
+        services.AddHostedService<SubirVentasWorker>();
+        services.AddHostedService<ObtenerVehiculosWorker>();
+        services.AddHostedService<WorkerImpresion>();
+        services.AddHostedService<CanastillaWorker>();
+        services.AddHostedService<FacturasWorker>();
+        // services.AddHostedService<SiesaWorker>();
 
     })
 

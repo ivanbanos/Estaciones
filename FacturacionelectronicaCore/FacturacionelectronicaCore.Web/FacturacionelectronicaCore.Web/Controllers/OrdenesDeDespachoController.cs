@@ -20,6 +20,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
         {
             _ordenDeDespachoNegocio = ordenDeDespachoNegocio;
         }
+
         /// <summary>
         /// Obtiene una lista de ordenes de despacho por Fecha inicial o Fecha final o Identiciación o Nombre de tercero
         /// </summary>
@@ -31,6 +32,17 @@ namespace FacturacionelectronicaCore.Web.Controllers
         [HttpPost]
         public async Task<IEnumerable<OrdenDeDespacho>> GetOrdenesDeDespacho(FiltroBusqueda filtroOrdenDeDespacho)
         => await _ordenDeDespachoNegocio.GetOrdenesDeDespacho(filtroOrdenDeDespacho);
+
+        [HttpPost("ReenviarOrdenesDespachoPorIdVentaLocal")]
+        public async Task<ActionResult<List<string>>> ReenviarOrdenesDespachoPorIdVentaLocal([FromBody] ReenvioOrdenesRequest request)
+        {
+            if (request == null || request.IdVentaLocalList == null || !request.IdVentaLocalList.Any())
+                return BadRequest("Debe enviar una lista de idVentaLocal y el Guid de la estación.");
+
+            var resultado = await _ordenDeDespachoNegocio.ReenviarOrdenesDespachoPorIdVentaLocal(request.IdVentaLocalList, request.Estacion);
+            return Ok(resultado);
+        }
+        
 
         [HttpPost("AddOrdenesImprimir")]
         public async Task<ActionResult<int>> AddOrdenesImprimir(IEnumerable<FacturasEntity> ordenes)
@@ -55,19 +67,6 @@ namespace FacturacionelectronicaCore.Web.Controllers
 
             await _ordenDeDespachoNegocio.AnularOrdenes(ordenes);
             return Ok();
-        }
-
-        [HttpGet("EnviarFacturacion/{ordenGuid}")]
-        public async Task<ActionResult<string>> EnviarFacturacion(string ordenGuid)
-        {
-            var result = await _ordenDeDespachoNegocio.EnviarAFacturacion(ordenGuid);
-            return Ok(result);
-        }
-        [HttpGet("EnviarFacturacion/{idVentaLocal}/{estacion}")]
-        public async Task<ActionResult<string>> EnviarFacturacion(int idVentaLocal, Guid estacion)
-        {
-            var result = await _ordenDeDespachoNegocio.EnviarAFacturacion(idVentaLocal, estacion);
-            return Ok(result);
         }
 
         [HttpPost("CrearFacturaOrdenesDeDespacho")]
@@ -101,5 +100,18 @@ namespace FacturacionelectronicaCore.Web.Controllers
             var response = await _ordenDeDespachoNegocio.ObtenerOrdenesPorTurno(turno);
             return Ok(response);
         }
+
+        [HttpPost("ObtenerOrdenesSinFacturaCreditoDirecto")]
+        public async Task<ActionResult<IEnumerable<OrdenDeDespacho>>> ObtenerOrdenesSinFacturaCreditoDirecto([FromBody] FiltroBusqueda filtro)
+        {
+            var resultado = await _ordenDeDespachoNegocio.GetOrdenesSinFacturaElectronicaCreditoDirecto(filtro);
+            return Ok(resultado);
+        }
+    }
+    
+    public class ReenvioOrdenesRequest
+    {
+        public List<int> IdVentaLocalList { get; set; }
+        public Guid Estacion { get; set; }
     }
 }

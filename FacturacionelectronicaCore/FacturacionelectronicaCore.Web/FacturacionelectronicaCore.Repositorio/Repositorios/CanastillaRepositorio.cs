@@ -26,9 +26,14 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         }
 
         /// <inheritdoc />
-        public async Task<IEnumerable<Canastilla>> GetCanastillas()
+        public async Task<IEnumerable<Canastilla>> GetCanastillas(Guid? estacion = null)
         {
-            return await _sqlHelper.GetsAsync<Canastilla>(StoredProcedures.GetCanastilla);
+            var paramList = new DynamicParameters();
+            if (estacion.HasValue)
+            {
+                paramList.Add("estacion", estacion.Value);
+            }
+            return await _sqlHelper.GetsAsync<Canastilla>(StoredProcedures.GetCanastilla, paramList);
         }
 
     }

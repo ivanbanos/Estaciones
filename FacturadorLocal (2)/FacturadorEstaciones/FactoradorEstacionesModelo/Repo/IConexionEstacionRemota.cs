@@ -40,5 +40,6 @@ namespace FacturadorEstacionesPOSWinForm.Repo
         bool EnviarFacturasCanastilla(IEnumerable<FacturaCanastilla> facturas, Guid estacionFuente, string token);
         int ObtenerParaImprimir(Guid idEstacion, string token);
         ResolucionElectronica GetResolucionElectronica(string token);
+        string GetInfoFacturaElectronicaCanastilla(int facturasCanastillaId, Guid estacionFuente, string v);
     }
 }

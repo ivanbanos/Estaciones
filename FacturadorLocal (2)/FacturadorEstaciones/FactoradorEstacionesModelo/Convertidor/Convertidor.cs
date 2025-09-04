@@ -346,51 +346,57 @@ namespace FactoradorEstacionesModelo.Convertidor
             List<FacturaSiges> response = new List<FacturaSiges>();
 
             response.AddRange(
-                dt.AsEnumerable().Select(dr => new FacturaSiges()
+                dt.AsEnumerable().Select(dr =>
                 {
-                    facturaPOSId = dr.Field<int>("facturaPOSId"),
-                    ventaId = dr.Field<int>("ventaId"),
-                    Consecutivo = dr.Field<int>("CONSECUTIVO"),
-                    DescripcionResolucion = dr.Field<string>("descripcionRes"),
-                    Autorizacion = dr.Field<string>("autorizacion"),
-                    Placa = dr.Field<string>("Placa"),
-                    Kilometraje = dr.Field<string>("Kilometraje"),
-                    fecha = dr.Field<DateTime>("fecha"),
-                    Final = dr.Field<int>("consecutivoFinal"),
-                    Inicio = dr.Field<int>("consecutivoInicio"),
-                    FechaFinalResolucion = dr.Field<DateTime>("fechafinal"),
-                    FechaInicioResolucion = dr.Field<DateTime>("fechaInicio"),
-                    habilitada = dr.Field<bool>("habilitada"),
-                    impresa = dr.Field<int>("impresa"),
-                    Estado = dr.Field<string>("estado"),
-                    codigoFormaPago = dr.Field<int>("codigoFormaPago"),
-                    Combustible = dr.Field<string>("Combustible"),
-                    Surtidor = dr.Field<string>("Surtidor"),
-                    Cara = dr.Field<string>("Cara"),
-                    Mangueras = dr.Field<string>("Manguera"),
-                    Cantidad = dr.Field<double>("cantidad"),
-                    Precio = dr.Field<double>("precio"),
-                    Total = dr.Field<double>("total"),
-                    Subtotal = dr.Field<double>("subtotal"),
-                    Descuento = dr.Field<double>("descuento"),
-                    Empleado = dr.Field<string>("Empleado"),
-                    fechaProximoMantenimiento = dr.Field<DateTime?>("fechaProximoMantenimiento"),
-
-                    Tercero = new Tercero()
+                    
+                    return new FacturaSiges()
                     {
-                        COD_CLI = dr.Field<string>("COD_CLI"),
-                        Direccion = dr.Field<string>("direccion"),
-                        Nombre = dr.Field<string>("Nombre"),
-                        Telefono = dr.Field<string>("Telefono"),
-                        identificacion = dr.Field<string>("identificacion"),
+                        facturaPOSId = dr.Field<int>("facturaPOSId"),
+                        ventaId = dr.Field<int>("ventaId"),
+                        Consecutivo = dr.Field<int>("CONSECUTIVO"),
+                        DescripcionResolucion = dr.Field<string>("descripcionRes"),
+                        Autorizacion = dr.Field<string>("autorizacion"),
+                        Placa = dr.Field<string>("Placa"),
+                        Kilometraje = dr.Field<string>("Kilometraje"),
+                        fecha = dr.Field<DateTime>("fecha"),
+                        Final = dr.Field<int>("consecutivoFinal"),
+                        Inicio = dr.Field<int>("consecutivoInicio"),
+                        FechaFinalResolucion = dr.Field<DateTime>("fechafinal"),
+                        FechaInicioResolucion = dr.Field<DateTime>("fechaInicio"),
+                        habilitada = dr.Field<bool>("habilitada"),
+                        impresa = dr.Field<int>("impresa"),
+                        Estado = dr.Field<string>("estado"),
+                        codigoFormaPago = dr.Field<int>("codigoFormaPago"),
+                        Combustible = dr.Field<string>("Combustible"),
+                        Surtidor = dr.Field<string>("Surtidor"),
+                        Cara = dr.Field<string>("Cara"),
+                        Mangueras = dr.Field<string>("Manguera"),
+                        Cantidad = dr.Field<double>("cantidad"),
+                        Precio = dr.Field<double>("precio"),
+                        Total = dr.Field<double>("total"),
+                        Subtotal = dr.Field<double>("subtotal"),
+                        Descuento = dr.Field<double>("descuento"),
+                        Empleado = dr.Field<string>("Empleado"),
+                        fechaProximoMantenimiento = dr.Field<DateTime?>("fechaProximoMantenimiento"),
 
-                        Correo = dr.Field<string>("correo"),
-                        terceroId = dr.Field<int>("terceroId"),
-                        tipoIdentificacion = dr.Field<int?>("tipoIdentificacion"),
-                        tipoIdentificacionS = dr.Field<string>("descripcion"),
-                    },
+                        Tercero = new Tercero()
+                        {
+                            COD_CLI = dr.Field<string>("COD_CLI"),
+                            Direccion = dr.Field<string>("direccion"),
+                            Nombre = dr.Field<string>("Nombre"),
+                            Telefono = dr.Field<string>("Telefono"),
+                            identificacion = dr.Field<string>("identificacion"),
+
+                            Correo = dr.Field<string>("correo"),
+                            terceroId = dr.Field<int>("terceroId"),
+                            tipoIdentificacion = dr.Field<int?>("tipoIdentificacion"),
+                            tipoIdentificacionS = dr.Field<string>("descripcion"),
+                            EnviadoSiesa = dt.Columns.Contains("enviadoSiesa") ? dr.Field<bool?>("enviadoSiesa") : null,
+                        },
+                    };
                 })
             );
+
             return response;
         }
 

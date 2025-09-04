@@ -28,12 +28,23 @@ import {
 
 const Toast = forwardRef((props, ref) => {
   const [toast, addToast] = useState(0)
+  const toaster = useRef()
+
   useImperativeHandle(ref, () => ({
-    showToast(message) {
+    addMessage(message, type = 'primary') {
+      const colorMap = {
+        success: 'success',
+        error: 'danger',
+        warning: 'warning',
+        info: 'info',
+        primary: 'primary',
+      }
+
       addToast(
         <CToast
-          autohide={false}
-          color="primary"
+          autohide={true}
+          delay={4000}
+          color={colorMap[type] || 'primary'}
           className="text-white align-items-center"
           visible={true}
         >
@@ -44,8 +55,11 @@ const Toast = forwardRef((props, ref) => {
         </CToast>,
       )
     },
+    showToast(message) {
+      this.addMessage(message, 'primary')
+    },
   }))
-  const toaster = useRef()
+
   return (
     <>
       <CToaster ref={toaster} push={toast} placement="top-end" />

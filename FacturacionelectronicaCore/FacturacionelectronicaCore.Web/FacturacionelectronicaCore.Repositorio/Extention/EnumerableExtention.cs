@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 
@@ -15,7 +16,22 @@ namespace EstacionesSevicio.Respositorio.Extention
             for (int i = 0; i < props.Count; i++)
             {
                 PropertyDescriptor prop = props[i];
-                table.Columns.Add(prop.Name, prop.PropertyType);
+                
+                // Handle nullable types by getting the underlying type
+                Type propertyType = prop.PropertyType;
+                Type underlyingType = Nullable.GetUnderlyingType(propertyType);
+                
+                // If it's a nullable type, use the underlying type for the column
+                Type columnType = underlyingType ?? propertyType;
+                
+                // Add the column with AllowDBNull set to true for nullable types
+                DataColumn column = new DataColumn(prop.Name, columnType);
+                if (underlyingType != null)
+                {
+                    column.AllowDBNull = true;
+                }
+                
+                table.Columns.Add(column);
             }
 
             object[] values = new object[props.Count];
@@ -23,7 +39,9 @@ namespace EstacionesSevicio.Respositorio.Extention
             {
                 for (int i = 0; i < values.Length; i++)
                 {
-                    values[i] = props[i].GetValue(item);
+                    object value = props[i].GetValue(item);
+                    // Convert null values to DBNull for DataTable
+                    values[i] = value ?? DBNull.Value;
                 }
                 table.Rows.Add(values);
             }

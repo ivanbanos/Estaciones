@@ -51,9 +51,6 @@ namespace EnviadorInformacion
         private void EnviarFacturas()
         {
             string token = _conexionEstacionRemota.getToken();
-
-            //var ResolucionesRemota = _conexionEstacionRemota.GetResolucionEstacion(estacionFuente, token);
-            //var resolucion = _estacionesRepositorio.BuscarResolucionActiva(ResolucionesRemota);
             var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadas();
             if (facturas.Any(x=>x.Manguera!=null))
             {

@@ -233,10 +233,11 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             filters.Add(Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", idVentaLocal));
 
             var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "ordenes", filters);
-            if (facturasMongo.Any(x => x.EstacionGuid == estacion.ToString()))
+            if (facturasMongo.Any(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower()))
             {
-                return facturasMongo.Where(x => x.EstacionGuid == estacion.ToString());
-            }return new List<OrdenesMongo>();
+                return facturasMongo.Where(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower());
+            }
+            return new List<OrdenesMongo>();
             //else
             //{
             //    var facturas = await _sqlHelper.GetsAsync<OrdenDeDespacho>(StoredProcedures.GetOrdenesDeDespacho, paramList);
