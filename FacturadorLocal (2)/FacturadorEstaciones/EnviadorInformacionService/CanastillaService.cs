@@ -311,7 +311,7 @@ namespace EnviadorInformacionService
                     do
                     {
                         infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronicaCanastilla(_factura.FacturasCanastillaId, estacionFuente, _conexionEstacionRemota.getToken());
-                        Thread.Sleep(100);
+                        Thread.Sleep(5000);
                     } while (infoTemp == null || intentos++ < 3);
 
                     Console.WriteLine("info fac elec " + infoTemp);

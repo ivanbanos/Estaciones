@@ -156,20 +156,20 @@ namespace EnviadorInformacionService.Contabilidad
             return requestContent;
         }
 
-        internal void EnviarFactura(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce)
+        internal void EnviarFactura(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce, string auxiliarDescuento)
         {
             var contentString = "";
             var responseString = "";
             if (factura.codigoFormaPago == 4)
             {
                 // Pago en efectivo - usar formato con Caja
-                var requestContent = ConvertirAMovimientoSiesaCaja(factura, facturaelectronica, consecutivo, auxiliarContable, cruce);
+                var requestContent = ConvertirAMovimientoSiesaCaja(factura, facturaelectronica, consecutivo, auxiliarContable, cruce, auxiliarDescuento);
                 contentString = JsonConvert.SerializeObject(requestContent);
             }
             else
             {
                 // Otros métodos de pago - usar formato con MovimientoCxC
-                var requestContent = ConvertirAMovimientoSiesa(factura, facturaelectronica, consecutivo, auxiliarContable, cruce);
+                var requestContent = ConvertirAMovimientoSiesa(factura, facturaelectronica, consecutivo, auxiliarContable, cruce, auxiliarDescuento);
                 contentString = JsonConvert.SerializeObject(requestContent);
             }
 
@@ -225,8 +225,73 @@ namespace EnviadorInformacionService.Contabilidad
             }
         }
 
-        private object ConvertirAMovimientoSiesa(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce)
+        private object ConvertirAMovimientoSiesa(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce, string auxiliarDescuento)
         {
+            var movimientos = new List<object>();
+            // Primer movimiento contable
+            movimientos.Add(new
+            {
+                F_CIA = "1",
+                F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescontableotros"].ToString(),
+                F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
+                F350_CONSEC_DOCTO = consecutivo,
+                F351_ID_AUXILIAR = auxiliarContable,
+                F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
+                F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocontableotros"].ToString(),
+                F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocontableotros"].ToString(),
+                F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocontableotros"].ToString(),
+                F351_ID_FE = "",
+                F351_VALOR_DB = "0",
+                F351_VALOR_CR = factura.Venta.TOTAL.ToString("0.00", CultureInfo.InvariantCulture),
+                F351_BASE_GRAVABLE = "",
+                F351_DOCTO_BANCO = "",
+                F351_NRO_DOCTO_BANCO = "",
+                F351_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}"
+            });
+            // Segundo movimiento contable
+            movimientos.Add(new
+            {
+                F_CIA = "1",
+                F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionesotros"].ToString(),
+                F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
+                F350_CONSEC_DOCTO = consecutivo,
+                F351_ID_AUXILIAR = cruce,
+                F351_ID_TERCERO = "",
+                F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientootros"].ToString(),
+                F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociootros"].ToString(),
+                F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostootros"].ToString(),
+                F351_ID_FE = ConfigurationManager.AppSettings["idfeotros"].ToString(),
+                F351_VALOR_DB = factura.Venta.TOTAL.ToString("0.00", CultureInfo.InvariantCulture),
+                F351_VALOR_CR = "0",
+                F351_BASE_GRAVABLE = "",
+                F351_DOCTO_BANCO = "CG",
+                F351_NRO_DOCTO_BANCO = factura.fecha.ToString("yyyyMMdd"),
+                F351_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}"
+            });
+            // Movimiento de descuento si aplica
+            if (factura.Venta.Descuento > 0)
+            {
+                movimientos.Add(new
+                {
+                    F_CIA = "1",
+                    F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescontabledescuento"]?.ToString() ?? "101",
+                    F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
+                    F350_CONSEC_DOCTO = consecutivo,
+                    F351_ID_AUXILIAR = auxiliarDescuento,
+                    F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
+                    F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocontabledescuento"]?.ToString() ?? "101",
+                    F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociodescuento"]?.ToString() ?? "03",
+                    F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostodescuento"]?.ToString() ?? "0203",
+                    F351_ID_FE = ConfigurationManager.AppSettings["idfedescuento"]?.ToString() ?? "1",
+                    F351_VALOR_DB = factura.Venta.Descuento.ToString("0.00", CultureInfo.InvariantCulture),
+                    F351_VALOR_CR = "",
+                    F351_BASE_GRAVABLE = "1",
+                    F351_DOCTO_BANCO = "",
+                    F351_NRO_DOCTO_BANCO = "",
+                    F351_NOTAS = $"FAC {consecutivo} DESCUENTO PROMOCIÓN",
+                    F351_ID_SUCURSAL = ConfigurationManager.AppSettings["sucursal"]?.ToString() ?? "001"
+                });
+            }
             var requestContent = new
             {
                 Inicial = new List<object> { new { F_CIA = "1" } },
@@ -242,62 +307,62 @@ namespace EnviadorInformacionService.Contabilidad
                     F350_IND_ESTADO = "1",
                     F350_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}",
                 }},
-                Movimientocontable = new List<object>()
-                {
-                    // Primer movimiento contable
-                    new
-                    {
-                        F_CIA = "1",
-                        F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescontableotros"].ToString(),
-                        F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
-                        F350_CONSEC_DOCTO = consecutivo,
-                        F351_ID_AUXILIAR = auxiliarContable,
-                        F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
-                        F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocontableotros"].ToString(),
-                        F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocontableotros"].ToString(),
-                        F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocontableotros"].ToString(),
-                        F351_ID_FE = "",
-                        F351_VALOR_DB = "0",
-                        F351_VALOR_CR = factura.Venta.TOTAL.ToString("0.00", CultureInfo.InvariantCulture),
-                        F351_BASE_GRAVABLE = "",
-                        F351_DOCTO_BANCO = "",
-                        F351_NRO_DOCTO_BANCO = "",
-                        F351_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}"
-                    },
-                    // Segundo movimiento contable
-                    new
-                    {
-                        F_CIA = "1",
-                        F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionesotros"].ToString(),
-                        F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
-                        F350_CONSEC_DOCTO = consecutivo,
-                        F351_ID_AUXILIAR = cruce,
-                        F351_ID_TERCERO = "",
-                        F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientootros"].ToString(),
-                        F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociootros"].ToString(),
-                        F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostootros"].ToString(),
-                        F351_ID_FE = ConfigurationManager.AppSettings["idfeotros"].ToString(),
-                        F351_VALOR_DB = factura.Venta.TOTAL.ToString("0.00", CultureInfo.InvariantCulture),
-                        F351_VALOR_CR = "0",
-                        F351_BASE_GRAVABLE = "",
-                        F351_DOCTO_BANCO = "CG",
-                        F351_NRO_DOCTO_BANCO = factura.fecha.ToString("yyyyMMdd"),
-                        F351_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}"
-                    }
-                }
+                Movimientocontable = movimientos
             };
             return requestContent;
         }
-
-        private MovimientosCaja ConvertirAMovimientoSiesaCaja(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce)
+        private MovimientosCaja ConvertirAMovimientoSiesaCaja(Factura factura, string facturaelectronica, string consecutivo, string auxiliarContable, string cruce, string auxiliarDescuento)
         {
+            var movimientos = new List<Movimientocontable>();
+            movimientos.Add(new Movimientocontable()
+            {
+                F_CIA = "1",
+                F350_ID_CO = ConfigurationManager.AppSettings["centrooperaciones"].ToString(),
+                F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
+                F350_CONSEC_DOCTO = consecutivo,
+                F351_BASE_GRAVABLE = "",
+                F351_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}",
+                F351_DOCTO_BANCO = "",
+                F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
+                F351_ID_AUXILIAR = auxiliarContable,
+                F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocosto"].ToString(),
+                F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimiento"].ToString(),
+                F351_ID_FE = consecutivo,
+                F351_NRO_DOCTO_BANCO="",
+                F351_ID_UN = ConfigurationManager.AppSettings["unidadnegocio"].ToString(),
+                F351_VALOR_CR = factura.Venta.TOTAL.ToString("0.00", CultureInfo.InvariantCulture),
+                F351_VALOR_DB = "0",
+            });
+            // Movimiento de descuento si aplica
+            if (factura.Venta.Descuento > 0)
+            {
+                movimientos.Add(new Movimientocontable()
+                {
+                    F_CIA = "1",
+                    F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescontabledescuento"]?.ToString() ?? "101",
+                    F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
+                    F350_CONSEC_DOCTO = consecutivo,
+                    F351_ID_AUXILIAR = auxiliarDescuento,
+                    F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
+                    F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocontabledescuento"]?.ToString() ?? "101",
+                    F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociodescuento"]?.ToString() ?? "03",
+                    F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostodescuento"]?.ToString() ?? "0203",
+                    F351_ID_FE = ConfigurationManager.AppSettings["idfedescuento"]?.ToString() ?? "1",
+                    F351_VALOR_DB = factura.Venta.Descuento.ToString("0.00", CultureInfo.InvariantCulture),
+                    F351_VALOR_CR = "",
+                    F351_BASE_GRAVABLE = "1",
+                    F351_DOCTO_BANCO = "",
+                    F351_NRO_DOCTO_BANCO = "",
+                    F351_NOTAS = $"FAC {consecutivo} DESCUENTO PROMOCIÓN",
+                    F351_ID_SUCURSAL = ConfigurationManager.AppSettings["sucursal"]?.ToString() ?? "001"
+                });
+            }
             var requestContent = new MovimientosCaja()
             {
                 Inicial = new List<Compania> { new Compania() { F_CIA = "1" } },
                 Final = new List<Compania> { new Compania() { F_CIA = "1" } },
                 Caja = new List<Caja> {
                 new Caja {
-
                         F_CIA = "1",
                         F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescaja"].ToString(),
                         F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
@@ -318,9 +383,6 @@ namespace EnviadorInformacionService.Contabilidad
                         F358_NRO_AUTORIZACION="",
                         F358_NRO_CUENTA=cruce,
                         F358_REFERENCIA_OTROS=""
-
-
-
                 }
                 },
                 Documentocontable = new List<Documentocontable> { new Documentocontable() {
@@ -333,37 +395,9 @@ namespace EnviadorInformacionService.Contabilidad
                 F350_ID_TERCERO = factura.Tercero.identificacion.ToString(),
                 F350_IND_ESTADO = "1",
                 F350_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {consecutivo}",
-
-
                 }
                },
-                Movimientocontable = new List<Movimientocontable>()
-                {
-                    new Movimientocontable()
-                    {
-                        F_CIA = "1",
-                        F350_ID_CO = ConfigurationManager.AppSettings["centrooperaciones"].ToString(),
-                        F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"].ToString(),
-                        F350_CONSEC_DOCTO = consecutivo,
-                        F351_BASE_GRAVABLE = "",
-                        F351_NOTAS = $"Factura combustible {factura.Venta.Combustible.Trim()} id local {factura.ventaId}",
-                        F351_DOCTO_BANCO = "",
-                        F351_ID_TERCERO = factura.Tercero.identificacion.ToString(),
-                        F351_ID_AUXILIAR = auxiliarContable,
-                        F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocosto"].ToString(),
-                        F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimiento"].ToString(),
-                        F351_ID_FE = consecutivo,
-                        F351_NRO_DOCTO_BANCO="",
-                        F351_ID_UN = ConfigurationManager.AppSettings["unidadnegocio"].ToString(),
-                        F351_VALOR_CR = factura.Venta.TOTAL.ToString("0.00", CultureInfo.InvariantCulture),
-                        F351_VALOR_DB = "0",
-
-
-
-                    }
-
-                },
-
+                Movimientocontable = movimientos
             };
             return requestContent;
         }

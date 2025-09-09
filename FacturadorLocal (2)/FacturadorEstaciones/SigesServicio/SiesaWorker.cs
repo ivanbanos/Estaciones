@@ -275,6 +275,71 @@ namespace EnviadorInformacionService.Contabilidad
 
         private object ConvertirAMovimientoSiesa(FacturaSiges factura, string facturaelectronica, string consecutivo, string? auxiliarContable, string? auxiliarCruce)
         {
+            var movimientos = new List<object>();
+            // Primer movimiento contable
+            movimientos.Add(new
+            {
+                F_CIA = "1",
+                F350_ID_CO = _siesa.CentroOperacionesContableOtros ?? "",
+                F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
+                F350_CONSEC_DOCTO = consecutivo,
+                F351_ID_AUXILIAR = auxiliarContable ?? "",
+                F351_ID_TERCERO = factura.Tercero.identificacion?.ToString() ?? "",
+                F351_ID_CO_MOV = _siesa.MovimientoContableOtros ?? "",
+                F351_ID_UN = _siesa.UnidadNegocioContableOtros ?? "",
+                F351_ID_CCOSTO = _siesa.CentroCostoContableOtros ?? "",
+                F351_ID_FE = "",
+                F351_VALOR_DB = "0",
+                F351_VALOR_CR = factura.Total.ToString("0", CultureInfo.InvariantCulture),
+                F351_BASE_GRAVABLE = "",
+                F351_DOCTO_BANCO = "",
+                F351_NRO_DOCTO_BANCO = "",
+                F351_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}"
+            });
+            // Segundo movimiento contable
+            movimientos.Add(new
+            {
+                F_CIA = "1",
+                F350_ID_CO = _siesa.CentroOperacionesOtros ?? "",
+                F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
+                F350_CONSEC_DOCTO = consecutivo,
+                F351_ID_AUXILIAR = auxiliarCruce ?? "",
+                F351_ID_TERCERO = "",
+                F351_ID_CO_MOV = _siesa.MovimientoOtros ?? "",
+                F351_ID_UN = _siesa.UnidadNegocioOtros ?? "",
+                F351_ID_CCOSTO = _siesa.CentroCostoOtros ?? "",
+                F351_ID_FE = _siesa.IdFeOtros ?? "",
+                F351_VALOR_DB = factura.Total.ToString("0", CultureInfo.InvariantCulture),
+                F351_VALOR_CR = "0",
+                F351_BASE_GRAVABLE = "",
+                F351_DOCTO_BANCO = "CG",
+                F351_NRO_DOCTO_BANCO = factura.fecha.ToString("yyyyMMdd"),
+                F351_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}"
+            });
+            // Movimiento de descuento si aplica
+            if (factura.Descuento != null && factura.Descuento > 0)
+            {
+                movimientos.Add(new
+                {
+                    F_CIA = "1",
+                    F350_ID_CO = _siesa.CentroOperacionesContableDescuento ?? "101",
+                    F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
+                    F350_CONSEC_DOCTO = consecutivo,
+                    F351_ID_AUXILIAR = _siesa.AuxiliarDescuento ?? "58904001",
+                    F351_ID_TERCERO = factura.Tercero.identificacion?.ToString() ?? "",
+                    F351_ID_CO_MOV = _siesa.MovimientoContableDescuento ?? "101",
+                    F351_ID_UN = _siesa.UnidadNegocioDescuento ?? "03",
+                    F351_ID_CCOSTO = _siesa.CentroCostoDescuento ?? "0203",
+                    F351_ID_FE = _siesa.IdFeDescuento ?? "1",
+                    F351_VALOR_DB = factura.Descuento.ToString("0", CultureInfo.InvariantCulture),
+                    F351_VALOR_CR = "",
+                    F351_BASE_GRAVABLE = "1",
+                    F351_DOCTO_BANCO = "",
+                    F351_NRO_DOCTO_BANCO = "",
+                    F351_NOTAS = $"FAC {consecutivo} DESCUENTO PROMOCIÓN",
+                    F351_ID_SUCURSAL = _siesa.Sucursal ?? "001"
+                });
+            }
             var requestContent = new
             {
                 Inicial = new List<object> { new { F_CIA = "1" } },
@@ -289,49 +354,7 @@ namespace EnviadorInformacionService.Contabilidad
                     F350_IND_ESTADO = "1",
                     F350_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}",
                 }},
-                Movimientocontable = new List<object>()
-                {
-                    // Primer movimiento contable
-                    new
-                    {
-                        F_CIA = "1",
-                        F350_ID_CO = _siesa.CentroOperacionesContableOtros ?? "",
-                        F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
-                        F350_CONSEC_DOCTO = consecutivo,
-                        F351_ID_AUXILIAR = auxiliarContable ?? "",
-                        F351_ID_TERCERO = factura.Tercero.identificacion?.ToString() ?? "",
-                        F351_ID_CO_MOV = _siesa.MovimientoContableOtros ?? "",
-                        F351_ID_UN = _siesa.UnidadNegocioContableOtros ?? "",
-                        F351_ID_CCOSTO = _siesa.CentroCostoContableOtros ?? "",
-                        F351_ID_FE = "",
-                        F351_VALOR_DB = "0",
-                        F351_VALOR_CR = factura.Total.ToString("0", CultureInfo.InvariantCulture),
-                        F351_BASE_GRAVABLE = "",
-                        F351_DOCTO_BANCO = "",
-                        F351_NRO_DOCTO_BANCO = "",
-                        F351_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}"
-                    },
-                    // Segundo movimiento contable
-                    new
-                    {
-                        F_CIA = "1",
-                        F350_ID_CO = _siesa.CentroOperacionesOtros ?? "",
-                        F350_ID_TIPO_DOCTO = _siesa.DocumentoFactura,
-                        F350_CONSEC_DOCTO = consecutivo,
-                        F351_ID_AUXILIAR = auxiliarCruce ?? "",
-                        F351_ID_TERCERO = "",
-                        F351_ID_CO_MOV = _siesa.MovimientoOtros ?? "",
-                        F351_ID_UN = _siesa.UnidadNegocioOtros ?? "",
-                        F351_ID_CCOSTO = _siesa.CentroCostoOtros ?? "",
-                        F351_ID_FE = _siesa.IdFeOtros ?? "",
-                        F351_VALOR_DB = factura.Total.ToString("0", CultureInfo.InvariantCulture),
-                        F351_VALOR_CR = "0",
-                        F351_BASE_GRAVABLE = "",
-                        F351_DOCTO_BANCO = "CG",
-                        F351_NRO_DOCTO_BANCO = factura.fecha.ToString("yyyyMMdd"),
-                        F351_NOTAS = $"Factura combustible {factura.Combustible.Trim()} id local {consecutivo}"
-                    }
-                },
+                Movimientocontable = movimientos,
                 Final = new List<object> { new { F_CIA = "1" } }
             };
             return requestContent;

@@ -46,7 +46,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
             _estacionesRepository = estacionesRepository;
         }
-        
+
         public async Task EnviarOrdenesDespacho(IEnumerable<Modelo.OrdenDeDespacho> ordenDeDespachos, Guid estacion)
         {
             await EnviarTerceros(ordenDeDespachos.Select(x => x.Tercero));
@@ -67,12 +67,13 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                     || ordenDeDespachoEntity.idFacturaElectronica.StartsWith("Error"))
                     && _alegra.EnvioDirecto)
                 {
-                    if ((x.Fecha > DateTime.Now.AddMonths(-1) 
+                    if ((x.Fecha > DateTime.Now.AddMonths(-1)
                         || (_alegra.EnviaMes && DateTime.Now.AddMonths(-1) < x.Fecha))
                         && (_alegra.EnviaCreditos || (!x.FormaDePago.ToLower().Contains("dir") && !x.FormaDePago.ToLower().Contains("calibra") && !x.FormaDePago.ToLower().Contains("puntos"))))
                     {
 
                         var id = await EnviarAFacturacion(x, estacion);
+                        await Task.Delay(2000); // Esperar 2 segundos para no saturar el servicio
                         Console.WriteLine(id);
 
                         x.idFacturaElectronica = id;
@@ -162,7 +163,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             try
             {
 
-                terceros = terceros.Where(x => !string.IsNullOrEmpty(x.Identificacion) && !string.IsNullOrEmpty(x.DescripcionTipoIdentificacion) );
+                terceros = terceros.Where(x => !string.IsNullOrEmpty(x.Identificacion) && !string.IsNullOrEmpty(x.DescripcionTipoIdentificacion));
                 await _terceroRepositorio.AddOrUpdate(_mapper.Map<IEnumerable<TerceroInput>>(terceros));
                 if (_alegra.Proveedor == "ALEGRA")
                 {
@@ -245,7 +246,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
 
                     if (ordenDeDespachoEntity.idFacturaElectronica.Split(':')[0] != "error")
                     {
-                        if(_alegra.Proveedor == "SIIGO")
+                        if (_alegra.Proveedor == "SIIGO")
                         {
                             return await _alegraFacade.GetFacturaElectronica(ordenDeDespachoEntity.idFacturaElectronica, estacion);
                         }
@@ -270,10 +271,10 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                     {
                         var facturaCanastilla = await _facturaCanastillaRepository.GetFacturaPorIdCanastilla(factura.FacturasCanastillaId, estacion);
                         var idFactruraElectronica = "";
-                if (facturaCanastilla == null
-                    || facturaCanastilla.idFacturaElectronica == null
-                    || facturaCanastilla.idFacturaElectronica.StartsWith("error")
-                    || facturaCanastilla.idFacturaElectronica.StartsWith("Error"))
+                        if (facturaCanastilla == null
+                            || facturaCanastilla.idFacturaElectronica == null
+                            || facturaCanastilla.idFacturaElectronica.StartsWith("error")
+                            || facturaCanastilla.idFacturaElectronica.StartsWith("Error"))
                         {
                             var terceroEntity = (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(factura.terceroId.Identificacion)).FirstOrDefault();
                             if (terceroEntity != null)
@@ -285,14 +286,14 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                     idFactruraElectronica = "error:Tercero no está apto para facturación electrónica";
                                 }
                                 var response = await _alegraFacade.GenerarFacturaElectronica(factura, tercero, estacion);
-
+                                await Task.Delay(2000);
                                 idFactruraElectronica = response;
                                 factura.idFacturaElectronica = idFactruraElectronica;
                             }
                             else
                             {
                                 var response = await _alegraFacade.GenerarFacturaElectronica(factura, factura.terceroId, estacion);
-
+                                await Task.Delay(2000);
                                 idFactruraElectronica = response;
                                 factura.idFacturaElectronica = idFactruraElectronica;
                             }
@@ -308,7 +309,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                     {
                         Console.WriteLine(ex.Message);
                         Console.WriteLine(ex.StackTrace);
-                        factura.idFacturaElectronica = ex.Message+ex.StackTrace; 
+                        factura.idFacturaElectronica = ex.Message + ex.StackTrace;
                     }
                 }
                 return 1;
@@ -332,7 +333,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             var ordenDeDespachoEntity = (await _ordenDeDespachoRepositorio.ObtenerOrdenDespachoPorIdVentaLocal(idVentaLocal, estacion))?.FirstOrDefault();
             var ordenesDeDespacho = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity);
 
-            if(ordenDeDespachoEntity == null )
+            if (ordenDeDespachoEntity == null)
             {
                 return "error:Venta no existe en el sistema";
             }
@@ -344,10 +345,10 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                 return "error:Tercero no está apto para facturación electrónica";
             }
             ordenesDeDespacho.Tercero = tercero;
-            return await _alegraFacade.getJson(ordenesDeDespacho, estacion)+" respuesta "+(ordenDeDespachoEntity.idFacturaElectronica??"No generada");
+            return await _alegraFacade.getJson(ordenesDeDespacho, estacion) + " respuesta " + (ordenDeDespachoEntity.idFacturaElectronica ?? "No generada");
         }
 
-        public  async Task<string> GetInfoFacturaElectronicaCanastilla(int consecutivo, Guid estacion)
+        public async Task<string> GetInfoFacturaElectronicaCanastilla(int consecutivo, Guid estacion)
         {
             var ordenDeDespachoEntity = (await _facturaCanastillaRepository.GetFacturaPorIdCanastilla(consecutivo, estacion));
             if (ordenDeDespachoEntity != null)

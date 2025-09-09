@@ -66,7 +66,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         }
 
         /// <inheritdoc />
-        public async Task<IEnumerable<OrdenDeDespacho>> GetOrdenesDeDespacho(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, 
+        public async Task<IEnumerable<OrdenDeDespacho>> GetOrdenesDeDespacho(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero,
                                                                        string nombreTercero, Guid? estacion)
         {
             List<FilterDefinition<OrdenesMongo>> filters = new List<FilterDefinition<OrdenesMongo>>();
@@ -96,11 +96,33 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
 
             var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "ordenes", filters);
-            //if (facturasMongo.Any(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower()))
-            //{
+
             if (estacion != null)
             {
-                return facturasMongo.Where(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower());
+                var facturas = facturasMongo.Where(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower());
+                if (facturas.Any())
+                {
+                    return facturas;
+                }
+                else
+                {
+                    if (fechaInicial != null)
+                    {
+                        paramList.Add("FechaInicial", fechaInicial);
+
+                        filters.Add(Builders<OrdenesMongo>.Filter.Gte("FechaReporte", fechaInicial.Value.AddHours(-12)));
+                    }
+                    if (fechaFinal != null)
+                    {
+                        paramList.Add("FechaFinal", fechaFinal);
+                        filters.Add(Builders<OrdenesMongo>.Filter.Lte("FechaReporte", fechaFinal.Value.AddDays(1).AddHours(-12)));
+                    }
+                    facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "ordenes", filters);
+                    facturas = facturasMongo.Where(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower());
+
+                }
+                return facturas;
+
             }
             else
             {
@@ -119,6 +141,9 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             //    return facturas;
             //}
         }
+
+
+
 
         public Task<int> AddOrdenesImprimir(IEnumerable<FacturasEntity> lists)
         {
@@ -151,7 +176,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                 //else
                 //{
 
-                    listFacturas.AddRange(facturasMongo);
+                listFacturas.AddRange(facturasMongo);
                 //}
             }
 

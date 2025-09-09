@@ -115,8 +115,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public double quantity { get; set; }
         public List<RetentionDataico> retentions { get; set; }
         public string mandante_identification_type { get; set; }
-        public double original_price { get; set; }
-        public double discount_rate { get; set; }
+    public double? original_price { get; set; }
+    public decimal? discount_rate { get; set; }
         public double price { get; set; }
         public string description { get; set; }
     }

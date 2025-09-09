@@ -28,7 +28,7 @@ namespace SigesServicio
         public string Movimiento { get; set; }
         public string UnidadNegocio { get; set; }
         public string Sucursal { get; set; }
-        
+
         // Propiedades para pagos no efectivo
         public string? CentroOperacionesContableOtros { get; set; }
         public string? MovimientoContableOtros { get; set; }
@@ -40,5 +40,11 @@ namespace SigesServicio
         public string? CentroCostoOtros { get; set; }
         public string? IdFeOtros { get; set; }
         public string? IdDOcumentoCliente { get; set; }
+        public string CentroOperacionesContableDescuento { get; set; }
+        public string AuxiliarDescuento { get; set; }
+        public string MovimientoContableDescuento { get; set; }
+        public string UnidadNegocioDescuento { get; set; }
+        public string CentroCostoDescuento { get; set; }
+        public string IdFeDescuento { get; set; }
     }
 }
