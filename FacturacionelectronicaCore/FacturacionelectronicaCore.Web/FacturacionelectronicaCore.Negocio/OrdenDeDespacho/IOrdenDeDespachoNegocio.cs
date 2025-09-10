@@ -16,5 +16,6 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
         Task<IEnumerable<Modelo.OrdenDeDespacho>> ObtenerOrdenesPorTurno(Guid turno);
         Task<IEnumerable<Modelo.OrdenDeDespacho>> GetOrdenesSinFacturaElectronicaCreditoDirecto(FiltroBusqueda filtroOrdenDeDespacho);
         Task<List<string>> ReenviarOrdenesDespachoPorIdVentaLocal(List<int> idVentaLocalList, Guid estacion);
+        Task<ReporteFiscal> GetReporteFiscal(FiltroBusqueda filtroFactura);
     }
 }

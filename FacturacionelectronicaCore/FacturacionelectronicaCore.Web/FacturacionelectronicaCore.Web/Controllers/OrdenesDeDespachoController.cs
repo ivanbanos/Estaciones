@@ -42,7 +42,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
             var resultado = await _ordenDeDespachoNegocio.ReenviarOrdenesDespachoPorIdVentaLocal(request.IdVentaLocalList, request.Estacion);
             return Ok(resultado);
         }
-        
+
 
         [HttpPost("AddOrdenesImprimir")]
         public async Task<ActionResult<int>> AddOrdenesImprimir(IEnumerable<FacturasEntity> ordenes)
@@ -106,6 +106,19 @@ namespace FacturacionelectronicaCore.Web.Controllers
         {
             var resultado = await _ordenDeDespachoNegocio.GetOrdenesSinFacturaElectronicaCreditoDirecto(filtro);
             return Ok(resultado);
+        }
+
+        [HttpPost("GetConsolidado")]
+        public async Task<ActionResult<ReporteFiscal>> GetConsolidado(FiltroBusqueda filtroFactura) 
+        {
+            var reporteFiscal = await _ordenDeDespachoNegocio.GetReporteFiscal(filtroFactura);
+
+            if (reporteFiscal == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(reporteFiscal);
         }
     }
     

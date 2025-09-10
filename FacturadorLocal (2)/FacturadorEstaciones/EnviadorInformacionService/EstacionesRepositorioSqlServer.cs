@@ -958,5 +958,40 @@ DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetFidel
             return dt2.AsEnumerable().FirstOrDefault()?.Field<string>("auxiliar");
 
         }
+
+        /// <summary>
+        /// Obtiene el último turno cerrado por isla.
+        /// </summary>
+        /// <param name="isla">Identificador de la isla</param>
+        /// <returns>Turno cerrado o null</returns>
+        public Turno ObtenerUltimoTurnoCerradoPorIsla(string isla)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@IdIsla", isla }
+            };
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "ObtenerTurnoIslaCerrado", parameters);
+            var turnos = _convertidor.ConvertirTurno(dt);
+            return turnos?.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Obtiene las facturas de canastilla por isla y turno.
+        /// </summary>
+        /// <param name="isla">Identificador de la isla</param>
+        /// <param name="turno">Número de turno</param>
+        /// <returns>Lista de facturas canastilla</returns>
+        public List<FacturaCanastilla> GetFacturasCanastillaPorIslaTurno(string isla, int turno, int fechaTurno)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@isla", isla },
+                {"@turno", turno },
+                {"@fechaTurno", fechaTurno }
+            };
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetFacturasCanastillaIslaTurno", parameters);
+            var facturas = _convertidor.ConvertirFacturaCanastilla(dt);
+            return facturas?.ToList() ?? new List<FacturaCanastilla>();
+        }
     }
 }

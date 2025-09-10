@@ -354,7 +354,7 @@ namespace EnviadorInformacionService.Contabilidad
                     F351_DOCTO_BANCO = "",
                     F351_NRO_DOCTO_BANCO = "",
                     F351_NOTAS = $"FAC {consecutivo} DESCUENTO PROMOCIÓN",
-                    F351_ID_SUCURSAL = ConfigurationManager.AppSettings["sucursal"]?.ToString() ?? "001"
+                    //F351_ID_SUCURSAL = ConfigurationManager.AppSettings["sucursal"]?.ToString() ?? "001"
                 });
             }
             var requestContent = new MovimientosCaja()

@@ -18,7 +18,7 @@ const ReporteFiscal = async (fechaInicial, fechaFinal) => {
     }
 
     // Use HttpService to make the request with proper headers and error handling
-    const url = `${window.SERVER_URL}/Factura/GetConsolidado`
+    const url = `${window.SERVER_URL}/OrdenesDeDespacho/GetConsolidado`
     const response = await httpService.post(url, body)
 
     // HttpService returns 'fail' for 401/403 errors

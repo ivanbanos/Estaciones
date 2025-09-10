@@ -291,7 +291,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 var ordenes = await _ordenDeDespachoRepositorio.ObtenerOrdenDespachoPorIdVentaLocal(idVentaLocal, estacion);
                 foreach (var orden in ordenes)
                 {
-                    if (orden != null  && (_alegra.EnviaCreditos || (!orden.FormaDePago.ToLower().Contains("dir") && !orden.FormaDePago.ToLower().Contains("calibra") && !orden.FormaDePago.ToLower().Contains("puntos"))) && (string.IsNullOrEmpty(orden.idFacturaElectronica) || orden.idFacturaElectronica.StartsWith("error") || orden.idFacturaElectronica.Contains("Bad Request")))
+                    if (orden != null && (_alegra.EnviaCreditos || (!orden.FormaDePago.ToLower().Contains("dir") && !orden.FormaDePago.ToLower().Contains("calibra") && !orden.FormaDePago.ToLower().Contains("puntos"))) && (string.IsNullOrEmpty(orden.idFacturaElectronica) || orden.idFacturaElectronica.StartsWith("error") || orden.idFacturaElectronica.Contains("Bad Request")))
                     {
                         var ordenModelo = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(orden);
                         ordenModelo.Tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(
@@ -315,5 +315,167 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             }
             return resultados;
         }
+
+        public async Task ReenviarFacturas(DateTime fechaInicial, DateTime fechaFinal, Guid estacion)
+        {
+            var ordenes = await _ordenDeDespachoRepositorio.GetOrdenesDeDespacho(fechaInicial, fechaFinal, null, null, estacion);
+
+            if (ordenes != null)
+            {
+                foreach (var orden in ordenes)
+                {
+                    if (orden.idFacturaElectronica == null) continue;
+                    if (orden.idFacturaElectronica.StartsWith("error") || orden.idFacturaElectronica.Contains("Bad Request"))
+                    {
+                        var ordenModelo = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(orden);
+                        var terceroModelo = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(
+                            (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(orden.Identificacion)).FirstOrDefault());
+
+                        orden.idFacturaElectronica = await _alegraFacade.GenerarFacturaElectronica(ordenModelo, terceroModelo, estacion);
+                    }
+                    else
+                    {
+                        var ordenModelo = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(orden);
+                        var terceroModelo = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(
+                            (await _terceroRepositorio.ObtenerTerceroPorIdentificacion(orden.Identificacion)).FirstOrDefault());
+
+                        orden.idFacturaElectronica = await _alegraFacade.GenerarFacturaElectronica(ordenModelo, terceroModelo, estacion);
+                        //orden.idFacturaElectronica = await _alegraFacade.ReenviarFactura(orden, estacion);
+                    }
+
+                    if (true)
+                    {
+
+                        var ordenesentity = new List<Repositorio.Entities.OrdenDeDespacho>
+                    {
+                        new Repositorio.Entities.OrdenDeDespacho()
+                        {
+                        guid = orden.guid.ToString(),
+                        Cantidad = orden.Cantidad,
+                        Cara = orden.Cara,
+                        Combustible = orden.Combustible,
+                        Descuento = orden.Descuento,
+                        Estado = orden.Estado,
+                        Fecha = orden.Fecha,
+                        FechaReporte = orden.FechaReporte,
+                        FechaProximoMantenimiento = orden.FechaProximoMantenimiento,
+                        FormaDePago = orden.FormaDePago,
+                        Identificacion = orden.Identificacion,
+                        IdentificacionTercero = orden.IdentificacionTercero,
+                        IdEstacion = orden.IdEstacion,
+                        IdEstadoActual = orden.IdEstadoActual,
+                        IdFactura = orden.IdFactura,
+                        IdInterno = orden.IdInterno,
+                        IdLocal = orden.IdLocal,
+                        IdTerceroLocal = orden.IdTerceroLocal,
+                        IdVentaLocal = orden.IdVentaLocal,
+                        Kilometraje = orden.Kilometraje,
+                        Manguera = orden.Manguera,
+                        NombreTercero = orden.NombreTercero,
+                        Placa = orden.Placa,
+                        Precio = orden.Precio,
+                        SubTotal = orden.SubTotal,
+                        Surtidor = orden.Surtidor,
+                        Total = orden.Total,
+                        idFacturaElectronica = orden.idFacturaElectronica ?? orden?.idFacturaElectronica,
+                        Vendedor = orden.Vendedor,
+                        }
+                    };
+                        await _ordenDeDespachoRepositorio.AddRange(ordenesentity, estacion);
+                    }
+
+
+                }
+            }
+        }
+
+        public async Task<ReporteFiscal> GetReporteFiscal(FiltroBusqueda filtroFactura)
+        {
+            try
+            {
+                var ordenes = await GetOrdenesDeDespacho(filtroFactura).ConfigureAwait(true);
+
+                foreach (var orden in ordenes)
+                {
+                    if (orden.Precio > 20000)
+                    {
+
+                        orden.Precio /= 10;
+                        orden.SubTotal /= 10;
+                        orden.Total /= 10;
+                        orden.Descuento /= 10;
+                    }
+                }
+                if (!ordenes.Any())
+                {
+                    return null;
+                }
+
+                var reporte = new ReporteFiscal
+                {
+                    ConsolidadoOrdenesAnuladas = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => orden.Estado == "Anulado" || orden.Estado == "Anulada" || orden.idFacturaElectronica != null)),
+                    TotalDeOrdenes = !ordenes.Any() ? 0 : ordenes.Count(orden => orden.Estado != "Anulado" && orden.Estado != "Anulada" && orden.idFacturaElectronica == null),
+                    ConsolidadosOrdenes = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => orden.Estado != "Anulado" && orden.Estado != "Anulada" && orden.idFacturaElectronica == null)),
+                    consolidadoClienteOrdenes = !ordenes.Any() ? new List<ConsolidadoCliente>() : GetConsolidadosOrdenesCliente(ordenes.Where(orden => orden.Estado != "Anulado" && orden.Estado != "Anulada" && orden.idFacturaElectronica == null)),
+                    TotalOrdenesAnuladas = !ordenes.Any() ? 0 : ordenes.Count(orden => orden.Estado == "Anulado" || orden.Estado == "Anulada" || orden.idFacturaElectronica != null),
+                };
+                return reporte;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+        }
+
+        private IEnumerable<ConsolidadoCliente> GetConsolidadosOrdenesCliente(IEnumerable<Modelo.OrdenDeDespacho> ordenes)
+        {
+            var consolidados = new List<ConsolidadoCliente>();
+            foreach (var orden in ordenes)
+            {
+                if (!consolidados.Any(consolidado => consolidado.Cliente == orden.NombreTercero))
+                {
+                    consolidados.Add(new ConsolidadoCliente
+                    {
+                        Cliente = orden.NombreTercero,
+                        Cantidad = 0,
+                        Total = 0
+                    });
+                }
+                var consolidado = consolidados.First(consolidado => consolidado.Cliente == orden.NombreTercero);
+                consolidado.Cantidad += Convert.ToDecimal(orden.Cantidad);
+                consolidado.Total += Convert.ToDecimal(orden.Total);
+            }
+
+            return consolidados;
+        }
+
+
+
+        private IEnumerable<ConsolidadoCombustible> GetConsolidadosOrdenes(IEnumerable<Modelo.OrdenDeDespacho> ordenes)
+        {
+            var consolidados = new List<ConsolidadoCombustible>();
+            foreach (var orden in ordenes)
+            {
+                if (!consolidados.Any(consolidado => consolidado.Combustible == orden.Combustible))
+                {
+                    consolidados.Add(new ConsolidadoCombustible
+                    {
+                        Combustible = orden.Combustible,
+                        Cantidad = 0,
+                        Total = 0
+                    });
+                }
+                var consolidado = consolidados.First(consolidado => consolidado.Combustible == orden.Combustible);
+                consolidado.Cantidad += Convert.ToDecimal(orden.Cantidad);
+                consolidado.Total += Convert.ToDecimal(orden.Total);
+            }
+
+            return consolidados;
+        }
+
+
     }
 }
+
+

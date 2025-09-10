@@ -1,4 +1,4 @@
-USE [EstacionSIGES]
+USE Facturacion_Electronica
 
 GO
 
@@ -61,6 +61,26 @@ BEGIN
   
   ALTER TABLE FacturasCanastilla
 drop column canastillaId;
+END;
+
+GO
+IF NOT EXISTS (
+  SELECT
+    *
+  FROM
+    INFORMATION_SCHEMA.COLUMNS
+  WHERE
+    TABLE_NAME = 'FacturasCanastilla' AND COLUMN_NAME = 'Vendedor')
+BEGIN
+  
+  ALTER TABLE FacturasCanastilla
+add Vendedor varchar(50) null;
+  ALTER TABLE FacturasCanastilla
+add isla varchar(50) null;
+  ALTER TABLE FacturasCanastilla
+add fechaturno int null;
+  ALTER TABLE FacturasCanastilla
+add turno int null;
 END;
 GO
 
@@ -164,70 +184,147 @@ CREATE procedure [dbo].[CrearFacturaCanastilla]
 	@terceroId int,
 	@COD_FOR_PAG smallint,
 	@canastillaIds [canastillaType] readonly,
-
 	@descuento float,
-	@imprimir bit=1
+	@imprimir bit = 1,
+	@vendedor varchar(50) = null,
+	@isla varchar(50) = null
 )
 as
 begin try
     set nocount on;
-	declare @ResolucionId int, @consecutivoActual int, @fechafinal DATETIME, @facturaCanastillaId int, @ConsecutivoFinal int,
-	
-	@cantidadCanastillas INT, @verificarConsecutivo int, @mismaResolucion VARCHAR (50), @subtotal float = 0, @iva float, @total float;
-	declare @ivaCanastila INT = 0;
-
-	select @ivaCanastila+= (c.precio*c.iva/100) * c.cantidad
-	from @canastillaIds c
-
     
-	select @cantidadCanastillas = count(ResolucionId) from Resoluciones where esPos = 'S' and estado = 'AC'
-
-	if @cantidadCanastillas = 1
-	begin
-		select @mismaResolucion='SI'
-	end
-	else
-	begin
-		select @mismaResolucion=valor from configuracionEstacion where descripcion = 'mismaResolucion'
-	end
-	select @subtotal+=cids.cantidad* (Canastilla.precio*((100-cids.iva)/1000)) from @canastillaIds cids
-	inner join Canastilla on  cids.canastillaId = Canastilla.canastillaId
-
-	if @subtotal != 0
-	begin
-		select @ResolucionId = ResolucionId, @consecutivoActual = consecutivoActual, @fechafinal = fechafinal, @ConsecutivoFinal = consecutivoFinal
-		from Resoluciones where esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 1)
-		update Resoluciones set consecutivoActual = @consecutivoActual+1 WHERE esPos = 'S' and estado = 'AC'
-		if @fechafinal is null or @fechafinal < GETDATE() or @ConsecutivoFinal <= @consecutivoActual
-		begin
-			update Resoluciones set estado = 'VE' WHERE esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 1)
-			select @facturaCanastillaId as facturaPOSId
-		end
-		else
-		begin
-			
-			insert into FacturasCanastilla (fecha,resolucionId,consecutivo,estado,terceroid, enviada, codigoFormaPago, subtotal, descuento, iva, total)
-					select GETDATE(), @ResolucionId, @consecutivoActual, 'CR',@terceroId, 0, @COD_FOR_PAG, @subtotal, @descuento, @ivaCanastila, @subtotal- @descuento +@ivaCanastila
-					from Resoluciones 
-					WHERE @ResolucionId = ResolucionId
-					
-			
-					select @facturaCanastillaId = SCOPE_IDENTITY()
-
-					insert into FacturasCanastillaDetalle (FacturasCanastillaId,canastillaId,cantidad,precio,subtotal,iva,total)
-					select @facturaCanastillaId, cids.canastillaId, cids.cantidad, cids.precio, (cids.precio*((100-cids.iva)/100))*cids.cantidad,(cids.precio*cids.iva/100)*cids.cantidad,cids.precio*cids.cantidad from @canastillaIds cids
-	inner join Canastilla on  cids.canastillaId = Canastilla.canastillaId 
-			
-				exec MandarImprimirCanastilla @facturaCanastillaId
-				end
-				select consecutivo as facturaCanastillaId from FacturasCanastilla where @facturaCanastillaId = facturasCanastillaId
-			
-		
-		end
-		else 
-		begin 
-		select 0 as facturaCanastillaId
-		end
+    -- Variables principales
+    declare @ResolucionId int, @consecutivoActual int, @fechafinal DATETIME, 
+            @facturaCanastillaId int, @ConsecutivoFinal int, @cantidadCanastillas INT, 
+            @mismaResolucion VARCHAR(50), @fecha int, @turno int;
+    
+    -- Variables para cálculos
+    declare @subtotal float = 0, @totalIva float = 0, @total float = 0;
+    declare @ivaPorcentaje bit = 0;
+    
+    -- Obtener información del turno
+    select @fecha = FECHA, @turno = NUM_TUR 
+    from ventas.dbo.TURN_EST 
+    where TURN_EST.estado != 'C' and COD_ISL = @isla
+    order by FECHA desc;
+    
+    -- Determinar tipo de IVA (porcentaje vs valor fijo)
+    select @ivaPorcentaje = case when MAX(c.iva) < 30 then 1 else 0 end
+    from @canastillaIds c;
+    
+    -- Calcular totales según tipo de IVA
+    if @ivaPorcentaje = 1
+    begin
+        -- IVA como porcentaje - precio es sin IVA, calcular el IVA a agregar
+        select 
+            @subtotal = SUM(ROUND(c.cantidad * c.precio, 2)),
+            @totalIva = SUM(ROUND((c.cantidad * c.precio) * (c.iva/100.0), 2))
+        from @canastillaIds c;
+    end
+    else 
+    begin
+        -- IVA como valor fijo por unidad - precio es sin IVA
+        select 
+            @subtotal = SUM(ROUND(c.cantidad * c.precio, 2)),
+            @totalIva = SUM(ROUND(c.cantidad * c.iva, 2))
+        from @canastillaIds c;
+    end
+    
+    -- Calcular total final
+    set @total = @subtotal + @totalIva - @descuento;
+    
+    -- Validar que hay productos para facturar
+    if @subtotal <= 0
+    begin
+        select 0 as facturaCanastillaId;
+        return;
+    end
+    
+    -- Determinar configuración de resolución
+    select @cantidadCanastillas = count(ResolucionId) 
+    from Resoluciones 
+    where esPos = 'S' and estado = 'AC';
+    
+    set @mismaResolucion = case 
+        when @cantidadCanastillas = 1 then 'SI' 
+        else ISNULL((select valor from configuracionEstacion where descripcion = 'mismaResolucion'), 'NO')
+    end;
+    
+    -- Obtener resolución y actualizar consecutivo
+    select @ResolucionId = ResolucionId, 
+           @consecutivoActual = consecutivoActual, 
+           @fechafinal = fechafinal, 
+           @ConsecutivoFinal = consecutivoFinal
+    from Resoluciones 
+    where esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 1);
+    
+    update Resoluciones 
+    set consecutivoActual = @consecutivoActual + 1 
+    where esPos = 'S' and estado = 'AC';
+    
+    -- Validar resolución activa
+    if @fechafinal is null or @fechafinal < GETDATE() or @ConsecutivoFinal <= @consecutivoActual
+    begin
+        update Resoluciones 
+        set estado = 'IN' 
+        where esPos = 'S' and estado = 'AC' and (@mismaResolucion = 'SI' or tipo = 1);
+        
+        select @facturaCanastillaId as facturaCanastillaId;
+        return;
+    end
+    
+    -- Crear factura
+    insert into FacturasCanastilla (
+        fecha, resolucionId, consecutivo, estado, terceroid, enviada, 
+        codigoFormaPago, subtotal, descuento, iva, total, impresa,
+        vendedor, isla, fechaturno, turno
+    )
+    values (
+        GETDATE(), @ResolucionId, @consecutivoActual, 'CR', @terceroId, 0, 
+        @COD_FOR_PAG, @subtotal, @descuento, @totalIva, @total, -1,
+        @vendedor, @isla, @fecha, @turno
+    );
+    
+    set @facturaCanastillaId = SCOPE_IDENTITY();
+    
+    -- Crear detalle de factura
+    if @ivaPorcentaje = 1
+    begin
+        -- IVA como porcentaje - precio es sin IVA, calcular total
+        insert into FacturasCanastillaDetalle (
+            FacturasCanastillaId, canastillaId, cantidad, precio, subtotal, iva, total
+        )
+        select 
+            @facturaCanastillaId, 
+            cids.canastillaId, 
+            cids.cantidad, 
+            cids.precio,
+            ROUND(cids.cantidad * cids.precio, 2) as subtotal,
+            ROUND((cids.cantidad * cids.precio) * (cids.iva/100.0), 2) as iva,
+            ROUND((cids.cantidad * cids.precio) + ((cids.cantidad * cids.precio) * (cids.iva/100.0)), 2) as total
+        from @canastillaIds cids;
+    end
+    else 
+    begin
+        -- IVA como valor fijo - precio es sin IVA, agregar IVA fijo
+        insert into FacturasCanastillaDetalle (
+            FacturasCanastillaId, canastillaId, cantidad, precio, subtotal, iva, total
+        )
+        select 
+            @facturaCanastillaId, 
+            cids.canastillaId, 
+            cids.cantidad, 
+            cids.precio,
+            ROUND(cids.cantidad * cids.precio, 2) as subtotal,
+            ROUND(cids.cantidad * cids.iva, 2) as iva,
+            ROUND((cids.cantidad * cids.precio) + (cids.cantidad * cids.iva), 2) as total
+        from @canastillaIds cids;
+    end
+    
+    -- Retornar el consecutivo de la factura creada
+    select consecutivo as facturaCanastillaId 
+    from FacturasCanastilla 
+    where FacturasCanastillaId = @facturaCanastillaId;
 	
 end try
 begin catch
@@ -576,3 +673,31 @@ delete FacturasCanastilla from FacturasCanastilla fc
 left join FacturasCanastillaDetalle fcd
 on fc.FacturasCanastillaId = fcd.FacturasCanastillaId
 where fcd.FacturasCanastillaDetalleId is null
+
+GO
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'GetFacturasCanastillaIslaTurno')
+    DROP PROCEDURE [dbo].[GetFacturasCanastillaIslaTurno]
+GO
+CREATE PROCEDURE [dbo].[GetFacturasCanastillaIslaTurno]
+    @isla VARCHAR(50) = NULL,
+    @fechaturno INT = NULL,
+    @turno INT = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    select 
+	Resoluciones.descripcion as descripcionRes, Resoluciones.autorizacion, Resoluciones.consecutivoActual,
+	Resoluciones.consecutivoFinal, Resoluciones.consecutivoInicio, Resoluciones.esPOS, Resoluciones.estado,
+	Resoluciones.fechafinal, Resoluciones.fechaInicio, Resoluciones.ResolucionId, Resoluciones.habilitada, FacturasCanastilla.[FacturasCanastillaId]
+      ,FacturasCanastilla.*, terceros.*, TipoIdentificaciones.*
+	
+	from dbo.FacturasCanastilla
+	left join dbo.Resoluciones on FacturasCanastilla.resolucionId = Resoluciones.ResolucionId
+	left join dbo.terceros on FacturasCanastilla.terceroId = terceros.terceroId
+    left join dbo.TipoIdentificaciones on terceros.tipoIdentificacion = TipoIdentificaciones.TipoIdentificacionId
+	
+    WHERE (@isla IS NULL OR isla = @isla)
+      AND (@fechaturno IS NULL OR fechaturno = @fechaturno)
+      AND (@turno IS NULL OR turno = @turno)
+END
+GO

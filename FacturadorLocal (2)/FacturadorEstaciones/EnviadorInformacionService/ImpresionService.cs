@@ -215,7 +215,25 @@ namespace EnviadorInformacionService
                                         }
                                     }
                                     break;
-
+                                case "CierreCanastilla":
+                                    // Se espera que objetoImprimir.Isla tenga la isla a imprimir
+                                    var isla = objetoImprimir.Isla;
+                                    var turnoCerrado = _estacionesRepositorio.ObtenerUltimoTurnoCerradoPorIsla(isla.ToString());
+                                    if (turnoCerrado == null)
+                                    {
+                                        Logger.Warn($"No hay turno cerrado para la isla {isla}");
+                                        break;
+                                    }
+                                    var facturas = _estacionesRepositorio.GetFacturasCanastillaPorIslaTurno(isla, turnoCerrado.FechaApertura);
+                                    if (facturas == null || !facturas.Any())
+                                    {
+                                        Logger.Warn($"No hay facturas de canastilla para el cierre de la isla {isla} turno {turnoCerrado.Numero}");
+                                        break;
+                                    }
+                                    ImprimirCierreCanastilla(isla, turnoCerrado.Numero, facturas);
+                                    _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                    break;
+       
                             }
 
                         }
@@ -329,6 +347,91 @@ namespace EnviadorInformacionService
                     Logger.Error("Error " + ex.StackTrace);
                     Thread.Sleep(100);
                 }
+            }
+        }
+
+ // --- Cierre Canastilla Printing ---
+        private List<LineasImprimir> lineasImprimirCierreCanastilla;
+        private void ImprimirCierreCanastilla(string isla, int turno, IEnumerable<dynamic> facturas)
+        {
+            try
+            {
+                getLineasImprimirCierreCanastilla(isla, turno, facturas);
+                printFont = new Font("Console", 9);
+                PrintDocument pd = new PrintDocument();
+                pd.PrintPage += new PrintPageEventHandler(pd_PrintCierreCanastilla);
+                pd.DefaultPageSettings.Margins.Bottom = 20;
+                if (islasImpresoras.ContainsKey(isla))
+                {
+                    Console.WriteLine("Selecionando impresora " + islasImpresoras[isla].Trim());
+                    pd.PrinterSettings.PrinterName = islasImpresoras[isla].Trim();
+                }
+                pd.Print();
+            }
+            catch (Exception ex)
+            {
+                imprimiendo = 0;
+                Logger.Info("Error " + ex.Message);
+                Logger.Info("Error " + ex.StackTrace);
+                Thread.Sleep(5000);
+            }
+        }
+
+        private void getLineasImprimirCierreCanastilla(string isla, int turno, IEnumerable<dynamic> facturas)
+        {
+            lineasImprimirCierreCanastilla = new List<LineasImprimir>();
+            var guiones = new StringBuilder();
+            guiones.Append('-', _infoEstacion.CaracteresPorPagina > 0 ? _infoEstacion.CaracteresPorPagina : 40);
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(_infoEstacion.Razon, true));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir("NIT             " + _infoEstacion.NIT, false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(_infoEstacion.Nombre, false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(_infoEstacion.Direccion, false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(_infoEstacion.Telefono, false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(guiones.ToString(), false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir($"Cierre Canastilla Isla: {isla} Turno: {turno}", true));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(guiones.ToString(), false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir("ID Factura   Total        Forma de Pago", false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(guiones.ToString(), false));
+            foreach (var f in facturas)
+            {
+                string linea = string.Format("{0,-12}{1,10:N2}   {2}", f.FacturasCanastillaId, f.total, f.codigoFormaPago);
+                lineasImprimirCierreCanastilla.Add(new LineasImprimir(linea, false));
+            }
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(guiones.ToString(), false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir("Fabricado por: SIGES SOLUCIONES SAS ", true));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir("Nit: 901430393-2 ", true));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir("Nombre: Facturador SIGES ", true));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress ?? ""), false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(".", true));
+        }
+
+        private void pd_PrintCierreCanastilla(object sender, PrintPageEventArgs ev)
+        {
+            try
+            {
+                float yPos = 0;
+                int count = 0;
+                float leftMargin = 5;
+                float topMargin = 10;
+                String line = null;
+                int sizePaper = ev.PageSettings.PaperSize.Width;
+                int fonSizeInches = 72 / 9;
+                int caracteresPorPagina = _infoEstacion.CaracteresPorPagina > 0 ? _infoEstacion.CaracteresPorPagina : fonSizeInches * sizePaper / 100;
+                foreach (var linea in lineasImprimirCierreCanastilla)
+                {
+                    count = printLine(linea.linea, ev, count, leftMargin, topMargin, linea.centrada);
+                }
+                count = printLine(" ", ev, count, leftMargin, topMargin, false);
+                count = printLine(" ", ev, count, leftMargin, topMargin, false);
+                ev.HasMorePages = false;
+                imprimiendo--;
+            }
+            catch (Exception ex)
+            {
+                imprimiendo = 0;
+                Logger.Info("Error " + ex.Message);
+                Logger.Info("Error " + ex.StackTrace);
+                Thread.Sleep(5000);
             }
         }
 
@@ -897,9 +1000,6 @@ namespace EnviadorInformacionService
                 lineasImprimir.Add(new LineasImprimir(" ", false));
                 lineasImprimir.Add(new LineasImprimir(" ", false));
                 lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-
-                lineasImprimir.Add(new LineasImprimir(" ", false));
-                lineasImprimir.Add(new LineasImprimir("NOMBRE ", false));
 
                 lineasImprimir.Add(new LineasImprimir(" ", false));
                 lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));

@@ -303,7 +303,7 @@ namespace EnviadorInformacionService
             lineasImprimir.Add(new LineasImprimir(_infoEstacion.Telefono, true));
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             var infoTemp = "";
-            if (generaFacturaElectronica )
+            if (generaFacturaElectronica)
             {
                 try
                 {
@@ -311,6 +311,21 @@ namespace EnviadorInformacionService
                     do
                     {
                         infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronicaCanastilla(_factura.FacturasCanastillaId, estacionFuente, _conexionEstacionRemota.getToken());
+                        if (!string.IsNullOrEmpty(infoTemp))
+                        {
+                            continue;
+                        }
+                        else
+                        {
+                            if (!_factura.enviada)
+                            {
+                                var ok = _conexionEstacionRemota.EnviarFacturasCanastilla(new List<FacturaCanastilla> { _factura }, estacionFuente, _conexionEstacionRemota.getToken());
+                                if (ok)
+                                {
+                                    _estacionesRepositorio.ActuralizarFacturasEnviadosCanastilla(new List<int> { _factura.FacturasCanastillaId });
+                                }
+                            }
+                        }
                         Thread.Sleep(5000);
                     } while (infoTemp == null || intentos++ < 3);
 
@@ -346,9 +361,9 @@ namespace EnviadorInformacionService
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", _factura.terceroId.Nombre == null ? "" : _factura.terceroId.Nombre.Trim()), false));
-                lineasImprimir.Add(new LineasImprimir(formatoTotales("Nit/C.C. : ", _factura.terceroId.identificacion.Trim()), false));
-                
-            
+            lineasImprimir.Add(new LineasImprimir(formatoTotales("Nit/C.C. : ", _factura.terceroId.identificacion.Trim()), false));
+
+
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Fecha : ", _factura.fecha.ToString("dd/MM/yyyy HH:mm:ss")), false));
@@ -410,30 +425,30 @@ namespace EnviadorInformacionService
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago : ", forma?.Descripcion?.Trim()), false));
 
 
-           
-                try
+
+            try
+            {
+                var resoluconElectronica = _conexionEstacionRemota.GetResolucionElectronica(_conexionEstacionRemota.getToken());
+
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                if (resoluconElectronica.invoiceText.Contains("desde"))
                 {
-                    var resoluconElectronica = _conexionEstacionRemota.GetResolucionElectronica(_conexionEstacionRemota.getToken());
 
-                    lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-                    if (resoluconElectronica.invoiceText.Contains("desde"))
-                    {
-
-                        lineasImprimir.Add(new LineasImprimir(resoluconElectronica.invoiceText.Substring(0, resoluconElectronica.invoiceText.IndexOf("desde")), false));
-                        lineasImprimir.Add(new LineasImprimir(resoluconElectronica.invoiceText.Substring(resoluconElectronica.invoiceText.IndexOf("desde"), resoluconElectronica.invoiceText.IndexOf("Valido")), false));
-                        lineasImprimir.Add(new LineasImprimir(resoluconElectronica.invoiceText.Substring(resoluconElectronica.invoiceText.IndexOf("Valido")), false));
-                    }
-                    else
-                    {
-
-                        lineasImprimir.Add(new LineasImprimir(resoluconElectronica.invoiceText, false));
-                    }
+                    lineasImprimir.Add(new LineasImprimir(resoluconElectronica.invoiceText.Substring(0, resoluconElectronica.invoiceText.IndexOf("desde")), false));
+                    lineasImprimir.Add(new LineasImprimir(resoluconElectronica.invoiceText.Substring(resoluconElectronica.invoiceText.IndexOf("desde"), resoluconElectronica.invoiceText.IndexOf("Valido")), false));
+                    lineasImprimir.Add(new LineasImprimir(resoluconElectronica.invoiceText.Substring(resoluconElectronica.invoiceText.IndexOf("Valido")), false));
                 }
-                catch (Exception)
+                else
                 {
-                    lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-                    lineasImprimir.Add(new LineasImprimir("Modalidad Factura Electrónica ", false));
+
+                    lineasImprimir.Add(new LineasImprimir(resoluconElectronica.invoiceText, false));
                 }
+            }
+            catch (Exception)
+            {
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                lineasImprimir.Add(new LineasImprimir("Modalidad Factura Electrónica ", false));
+            }
 
             if (!String.IsNullOrEmpty(_infoEstacion.Linea1))
             {
@@ -640,7 +655,7 @@ namespace EnviadorInformacionService
                 tabs.Append(' ', whitespaces);
                 text = tabs.ToString() + text;
             }
-            float yPos = topMargin + (count * printFont.GetHeight(ev.Graphics)); 
+            float yPos = topMargin + (count * printFont.GetHeight(ev.Graphics));
             if (isQr)
             {
                 GenerateQRCode(text, 160);

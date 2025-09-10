@@ -40,11 +40,11 @@ namespace EnviadorInformacionService
             {
 
                 Logger.Error("Iniciando ");
-                // if (ConfigurationManager.AppSettings["EnvioInformacion"] == "true")
-                // {
-                //     envioThread = new Thread(new ThreadStart(enviadorDeInformacion.EnviarInformacion));
-                //     envioThread.Start();
-                // }
+                if (ConfigurationManager.AppSettings["EnvioInformacion"] == "true")
+                {
+                    envioThread = new Thread(new ThreadStart(enviadorDeInformacion.EnviarInformacion));
+                    envioThread.Start();
+                }
 
                 ////Logger.Info(ConfigurationManager.AppSettings["EnvioASilog"]);
                 ////if (ConfigurationManager.AppSettings["EnvioASilog"] == "true")
@@ -54,12 +54,12 @@ namespace EnviadorInformacionService
                 ////    enviadorProsoftThread = new Thread(new ThreadStart(enviadorFacturas.EnviarInformacion));
                 ////    enviadorProsoftThread.Start();
                 ////}
-                // impresionThread = new Thread(new ThreadStart(impresionService.Execute));
-                // impresionThread.Start();
-                canastillaServiceThread = new Thread(new ThreadStart(canastillaService.ProcesoCanastilla));
-                canastillaServiceThread.Start();
-                canastillaWebServiceThread = new Thread(new ThreadStart(canastillaService.WebCanastilla));
-                canastillaWebServiceThread.Start();
+                impresionThread = new Thread(new ThreadStart(impresionService.Execute));
+                impresionThread.Start();
+                // canastillaServiceThread = new Thread(new ThreadStart(canastillaService.ProcesoCanastilla));
+                // canastillaServiceThread.Start();
+                // canastillaWebServiceThread = new Thread(new ThreadStart(canastillaService.WebCanastilla));
+                // canastillaWebServiceThread.Start();
                 // siesaThread = new Thread(new ThreadStart(protocoloSiesa.Ejecutar));
                 // siesaThread.Start();
 

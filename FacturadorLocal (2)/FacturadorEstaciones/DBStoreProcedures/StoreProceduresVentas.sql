@@ -517,8 +517,6 @@ begin catch
 end catch;
 GO
 
-
-
 IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerTurnoIsla')
 	DROP PROCEDURE [dbo].[ObtenerTurnoIsla]
 GO
@@ -568,6 +566,38 @@ inner join VENTAS On VENTAS.FECHA_REAL = TURN_EST.FECHA and VENTAS.NUM_TUR = TUR
 inner join VENTAS On VENTAS.FECHA_REAL = TURN_LEC.FECHA and VENTAS.NUM_TUR = TURN_LEC.NUM_TUR
 inner join ARTICULO On ARTICULO.COD_ART = TURN_LEC.COD_ART1
  where VENTAS.CONSECUTIVO = @ventaId
+     
+end try
+begin catch
+    declare 
+        @errorMessage varchar(2000),
+        @errorProcedure varchar(255),
+        @errorLine int;
+
+    select  
+        @errorMessage = error_message(),
+        @errorProcedure = error_procedure(),
+        @errorLine = error_line();
+
+    raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
+end catch;
+GO
+
+
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerTurnoIslaCerrado')
+	DROP PROCEDURE [dbo].[ObtenerTurnoIslaCerrado]
+GO
+CREATE procedure [dbo].[ObtenerTurnoIslaCerrado]
+(@IdIsla int)
+as
+begin try
+    set nocount on;
+	select  NUM_TUR as Id, EMPLEADO.NOMBRE, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(FECHA) as FechaApertura ,null as FechaCierre 
+ from TURN_EST
+inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
+inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL
+ where estado = 'C' and ISLAS.COD_ISL = @IdISla 
+ order by FechaApertura desc, NUM_TUR desc
      
 end try
 begin catch
