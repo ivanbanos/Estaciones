@@ -210,7 +210,9 @@ const OrdenesDespacho = () => {
     .filter((orden) => {
       if (!sinFacturar) return true
       const id = orden.idFacturaElectronica
-      return !id || (!id.startsWith('Ok') && !id.startsWith('ok'))
+      const result = !id || (!id.startsWith('Ok') && !id.startsWith('ok'))
+      console.log('Filtrando orden:', orden, 'idFacturaElectronica:', id, 'result:', result)
+      return result
     })
 
   // Paginación
@@ -672,7 +674,10 @@ const OrdenesDespacho = () => {
                 <div>
                   <CButton
                     color="primary"
-                    onClick={() => handleSearch()}
+                    onClick={() => {
+                      handleSearch()
+                      setSinFacturar(false) // Desmarcar al buscar
+                    }}
                     disabled={loading}
                     className="w-100 mb-2"
                   >
@@ -695,6 +700,7 @@ const OrdenesDespacho = () => {
                         checked={sinFacturar}
                         onChange={() => setSinFacturar(!sinFacturar)}
                         style={{ marginRight: '6px' }}
+                        disabled={!showResults || ordenes.length === 0}
                       />
                       Órdenes sin facturar
                     </CFormLabel>

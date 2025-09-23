@@ -23,7 +23,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         private readonly ItemHandler itemHandler;
         private readonly ResolucionNumber _resolucionNumber;
         private readonly IResolucionRepositorio _resolucionRepositorio;
-        private static readonly Semaphore _semaphore = new(initialCount: 1, maximumCount: 1);
+        private static readonly SemaphoreSlim _globalSemaphore = new(1, 1);
 
         public FacturacionDataico(IOptions<Alegra> alegra, ResolucionNumber resolucionNumber, IResolucionRepositorio resolucionRepositorio)
         {
@@ -41,15 +41,14 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<string> GenerarFacturaElectronica(Modelo.Factura factura, Modelo.Tercero tercero, Guid estacionGuid)
         {
+            await _globalSemaphore.WaitAsync();
             try
             {
-
                 var invoice = await GetFacturaDataico(factura, tercero, estacionGuid.ToString());
                 Console.WriteLine(JsonConvert.SerializeObject(invoice));
                 var triedAgain = 0;
                 while (triedAgain++ < 2)
                 {
-
                     using (var client = new HttpClient())
                     {
                         client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
@@ -154,6 +153,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 Console.WriteLine(ex.StackTrace);
                 throw;
             }
+            finally
+            {
+                _globalSemaphore.Release();
+            }
         }
 
         public async Task<FacturaDataico> GetFacturaDataico(Modelo.Factura factura, Modelo.Tercero tercero, string estacion)
@@ -182,37 +185,23 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 nombre = nombreCompleto;
                 apellido = tercero.Apellidos;
             }
+            var cantidadRedondeada = Math.Round((double)factura.Cantidad, 2);
+            var precioCalculado = (cantidadRedondeada > 0)
+                ? Math.Round(((double)factura.Total + (double)factura.Descuento) / cantidadRedondeada, 2)
+                : 0.0;
             var items = new List<ItemDataico>();
-            if (factura.SubTotal == (decimal)factura.Total)
+            items.Add(new ItemDataico()
             {
-                items.Add(new ItemDataico()
-                {
-                    sku = GetCodeCombustible(factura.Combustible),
-                    description = factura.Combustible,
-                    quantity = (double)factura.Cantidad,
-                    taxes = new List<TaxDataico>() { },
-                    measuring_unit = "GL",
-                    retentions = new List<RetentionDataico>() { },
-                    original_price = (factura.Descuento > 0) ? (double?)((double)factura.Precio) : null,
-                    discount_rate = (decimal?)((factura.Descuento > 0 && factura.SubTotal > 0) ? Math.Round(factura.Descuento / (factura.SubTotal + factura.Descuento) * 100, 2) : (decimal?)null),
-                    price = (double)(factura.Precio * (1 - (factura.Descuento / (factura.SubTotal + factura.Descuento))))
-                });
-            }
-            else
-            {
-                items.Add(new ItemDataico()
-                {
-                    sku = GetCodeCombustible(factura.Combustible),
-                    description = factura.Combustible,
-                    quantity = (double)factura.Cantidad,
-                    taxes = new List<TaxDataico>() { },
-                    measuring_unit = "GL",
-                    retentions = new List<RetentionDataico>() { },
-                    original_price = (factura.Descuento > 0) ? (double?)((double)factura.Precio) : null,
-                    discount_rate = (decimal?)((factura.Descuento > 0 && factura.SubTotal > 0) ? Math.Round(factura.Descuento / factura.SubTotal * 100, 2) : (decimal?)null),
-                    price = (double)(factura.Precio * (1 - (factura.Descuento / factura.SubTotal)))
-                });
-            }
+                sku = GetCodeCombustible(factura.Combustible),
+                description = factura.Combustible,
+                quantity = cantidadRedondeada,
+                taxes = new List<TaxDataico>() { },
+                measuring_unit = "GL",
+                retentions = new List<RetentionDataico>() { },
+                original_price = (factura.Descuento > 0 && cantidadRedondeada > 0) ? (double?)(precioCalculado + ((double)factura.Descuento / cantidadRedondeada)) : null,
+                discount_rate = (decimal?)((factura.Descuento > 0 && factura.SubTotal > 0) ? Math.Round(factura.Descuento / (factura.SubTotal + factura.Descuento) * 100, 2) : (decimal?)null),
+                price = precioCalculado
+            });
             return new FacturaDataico()
             {
                 actions = new ActionsDataico() { send_dian = true, send_email = true },
@@ -342,37 +331,25 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 apellido = tercero.Apellidos;
             }
 
+
+            var cantidadRedondeada = Math.Round((double)factura.Cantidad, 2);
+            var precioCalculado = (cantidadRedondeada > 0)
+                ? Math.Round(((double)factura.Total + (double)factura.Descuento) / cantidadRedondeada, 2)
+                : 0.0;
             var items = new List<ItemDataico>();
-            if (factura.SubTotal == (decimal)factura.Total)
+            items.Add(new ItemDataico()
             {
-                items.Add(new ItemDataico()
-                {
-                    sku = GetCodeCombustible(factura.Combustible),
-                    description = factura.Combustible,
-                    quantity = (double)factura.Cantidad,
-                    taxes = new List<TaxDataico>() { },
-                    measuring_unit = "GL",
-                    retentions = new List<RetentionDataico>() { },
-                    original_price = (factura.Descuento > 0) ? (double)factura.Precio : (double?)null,
-                    discount_rate = (decimal?)((factura.Descuento > 0 && factura.SubTotal > 0) ? Math.Round(factura.Descuento / (factura.SubTotal + factura.Descuento) * 100, 2) : (decimal?)null),
-                    price = (double)(factura.Precio * (double)(1 - (factura.Descuento / (factura.SubTotal + factura.Descuento))))
-                });
-            }
-            else
-            {
-                items.Add(new ItemDataico()
-                {
-                    sku = GetCodeCombustible(factura.Combustible),
-                    description = factura.Combustible,
-                    quantity = (double)factura.Cantidad,
-                    taxes = new List<TaxDataico>() { },
-                    measuring_unit = "GL",
-                    retentions = new List<RetentionDataico>() { },
-                    original_price = (factura.Descuento > 0) ? (double)factura.Precio : (double?)null,
-                    discount_rate = (decimal?)((factura.Descuento > 0 && factura.SubTotal > 0) ? Math.Round(factura.Descuento / (factura.SubTotal) * 100, 2) : (decimal?)null),
-                    price = (double)(factura.Precio * (double)(1 - (factura.Descuento / (factura.SubTotal))))
-                });
-            }
+                sku = GetCodeCombustible(factura.Combustible),
+                description = factura.Combustible,
+                quantity = cantidadRedondeada,
+                taxes = new List<TaxDataico>() { },
+                measuring_unit = "GL",
+                retentions = new List<RetentionDataico>() { },
+                original_price = (factura.Descuento > 0 && cantidadRedondeada > 0) ? (double?)(precioCalculado + ((double)factura.Descuento / cantidadRedondeada)) : null,
+                discount_rate = (decimal?)((factura.Descuento > 0 && factura.SubTotal > 0) ? Math.Round(factura.Descuento / (factura.SubTotal + factura.Descuento) * 100, 2) : (decimal?)null),
+                price = precioCalculado
+            });
+
             return new FacturaDataico()
             {
                 actions = new ActionsDataico() { send_dian = true, send_email = true },
@@ -501,8 +478,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero, Guid estacionGuid)
         {
 
-            _semaphore.WaitOne();
-
+            await _globalSemaphore.WaitAsync();
             try
             {
                 if (alegraOptions.ExcluirDireccion)
@@ -778,7 +754,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
             finally
             {
-                _semaphore.Release();
+                _globalSemaphore.Release();
             }
         }
 
@@ -877,6 +853,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<string> GenerarFacturaElectronica(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid)
         {
+            await _globalSemaphore.WaitAsync();
             try
             {
                 Console.WriteLine(estacionGuid.ToString());
@@ -1015,6 +992,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
                 throw new AlegraException(ex.Message);
+            }
+            finally
+            {
+                _globalSemaphore.Release();
             }
         }
 

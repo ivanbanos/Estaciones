@@ -970,9 +970,9 @@ DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetFidel
             {
                 {"@IdIsla", isla }
             };
-            DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "ObtenerTurnoIslaCerrado", parameters);
-            var turnos = _convertidor.ConvertirTurno(dt);
-            return turnos?.FirstOrDefault();
+            var dt = LoadDataSetFromStoredProc(_connectionString.estacion, "ObtenerTurnoIslaCerrado", parameters);
+            var turno = _convertidor.ConvertirTurno(dt);
+            return turno;
         }
 
         /// <summary>

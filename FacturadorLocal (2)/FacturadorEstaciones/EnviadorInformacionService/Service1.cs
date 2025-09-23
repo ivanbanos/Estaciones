@@ -30,8 +30,8 @@ namespace EnviadorInformacionService
             InitializeComponent();
             // enviadorDeInformacion = new EnviadorDeInformacion();
             // impresionService = new ImpresionService();
-            // protocoloSiesa = new ProtocoloSiesa();
-            canastillaService = new CanastillaService();
+            protocoloSiesa = new ProtocoloSiesa();
+            // canastillaService = new CanastillaService();
         }
 
         protected override void OnStart(string[] args)
@@ -39,12 +39,12 @@ namespace EnviadorInformacionService
             try
             {
 
-                Logger.Error("Iniciando ");
-                if (ConfigurationManager.AppSettings["EnvioInformacion"] == "true")
-                {
-                    envioThread = new Thread(new ThreadStart(enviadorDeInformacion.EnviarInformacion));
-                    envioThread.Start();
-                }
+                // Logger.Error("Iniciando ");
+                // if (ConfigurationManager.AppSettings["EnvioInformacion"] == "true")
+                // {
+                //     envioThread = new Thread(new ThreadStart(enviadorDeInformacion.EnviarInformacion));
+                //     envioThread.Start();
+                // }
 
                 ////Logger.Info(ConfigurationManager.AppSettings["EnvioASilog"]);
                 ////if (ConfigurationManager.AppSettings["EnvioASilog"] == "true")
@@ -54,14 +54,14 @@ namespace EnviadorInformacionService
                 ////    enviadorProsoftThread = new Thread(new ThreadStart(enviadorFacturas.EnviarInformacion));
                 ////    enviadorProsoftThread.Start();
                 ////}
-                impresionThread = new Thread(new ThreadStart(impresionService.Execute));
-                impresionThread.Start();
+                // impresionThread = new Thread(new ThreadStart(impresionService.Execute));
+                // impresionThread.Start();
                 // canastillaServiceThread = new Thread(new ThreadStart(canastillaService.ProcesoCanastilla));
                 // canastillaServiceThread.Start();
                 // canastillaWebServiceThread = new Thread(new ThreadStart(canastillaService.WebCanastilla));
                 // canastillaWebServiceThread.Start();
-                // siesaThread = new Thread(new ThreadStart(protocoloSiesa.Ejecutar));
-                // siesaThread.Start();
+                siesaThread = new Thread(new ThreadStart(protocoloSiesa.Ejecutar));
+                siesaThread.Start();
 
             }
             catch (Exception ex)
@@ -82,8 +82,8 @@ namespace EnviadorInformacionService
                 // envioThread.Abort();
                 // impresionThread.Abort();
                 //enviadorProsoftThread.Abort();
-                // siesaThread.Abort();
-                canastillaServiceThread.Abort(); canastillaWebServiceThread.Abort();    
+                siesaThread.Abort();
+                // canastillaServiceThread.Abort(); canastillaWebServiceThread.Abort();    
             }
             catch (Exception ex)
             {

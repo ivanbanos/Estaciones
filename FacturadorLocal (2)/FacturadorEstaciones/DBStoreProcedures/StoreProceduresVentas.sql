@@ -75,7 +75,7 @@ as
 begin try
     set nocount on;
 	select top(1)EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, MANGUERA.COD_SUR, MANGUERA.COD_CAR, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
-	v.*, CLIENTES.*, IMPRESOR.*,dbo.Finteger(AUTOMOTO.FECH_PRMA) as MANTENIMIENTO,AUTOMOTO.*
+	v.*, CLIENTES.*, IMPRESOR.*,dbo.Finteger(AUTOMOTO.FECH_PRMA) as MANTENIMIENTO,AUTOMOTO.*, dbo.finteger(v.FECHA) FechaReporte 
 	
 	from dbo.VENTAS v
 	left join dbo.CLIENTES on v.COD_CLI = CLIENTES.COD_CLI
@@ -118,7 +118,7 @@ begin try
     set nocount on; 
 
 	select top(1)EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, MANGUERA.COD_SUR, MANGUERA.COD_CAR, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
-	v.*, CLIENTES.*, IMPRESOR.*,dbo.Finteger(AUTOMOTO.FECH_PRMA) as MANTENIMIENTO,AUTOMOTO.*
+	v.*, CLIENTES.*, IMPRESOR.*,dbo.Finteger(AUTOMOTO.FECH_PRMA) as MANTENIMIENTO,AUTOMOTO.*, dbo.finteger(v.FECHA) FechaReporte 
 	
 	from dbo.VENTAS v
 	left join dbo.CLIENTES on v.COD_CLI = CLIENTES.COD_CLI
@@ -176,7 +176,7 @@ as
 begin try
     set nocount on;
 	select EMPLEADO.Nombre as VENDEDOR, EMPLEADO.CEDULA as CEDULA,MANGUERA.COD_MAN, MANGUERA.COD_TANQ, ARTICULO.DESCRIPCION, MANGUERA.DS_ROM,
-	v.*, CLIENTES.*, IMPRESOR.*
+	v.*, CLIENTES.*, IMPRESOR.*, dbo.finteger(v.FECHA) FechaReporte 
 	
 	from dbo.VENTAS v
 	left join dbo.CLIENTES on v.COD_CLI = CLIENTES.COD_CLI
@@ -525,7 +525,7 @@ CREATE procedure [dbo].[ObtenerTurnoIsla]
 as
 begin try
     set nocount on;
-	select  NUM_TUR as Id, EMPLEADO.NOMBRE, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(FECHA) as FechaApertura ,null as FechaCierre 
+	select  NUM_TUR as numero, EMPLEADO.NOMBRE, empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(FECHA) as FechaApertura ,dbo.Finteger(FECHA)  as FechaCierre ,  FECHA
  from TURN_EST
 inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
 inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL
@@ -554,7 +554,7 @@ CREATE procedure [dbo].[ObtenerTurnoIslaPorVenta]
 as
 begin try
     set nocount on;
-	select  TURN_EST.NUM_TUR as Numero, EMPLEADO.NOMBRE as empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(TURN_EST.FECHA) as FechaApertura ,dbo.Finteger(TURN_EST.FECHA) as FechaCierre 
+	select  TURN_EST.NUM_TUR as Numero, EMPLEADO.NOMBRE as empleado, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(TURN_EST.FECHA) as FechaApertura ,dbo.Finteger(TURN_EST.FECHA) as FechaCierre,  , FECHA 
  from TURN_EST
 inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
 inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL
@@ -592,7 +592,7 @@ CREATE procedure [dbo].[ObtenerTurnoIslaCerrado]
 as
 begin try
     set nocount on;
-	select  NUM_TUR as Id, EMPLEADO.NOMBRE, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(FECHA) as FechaApertura ,null as FechaCierre 
+	select  NUM_TUR as Id, EMPLEADO.NOMBRE, ISLAS.DESCRIPCION as Isla, 0 IdEstado, dbo.Finteger(FECHA) as FechaApertura ,null as FechaCierre , FECHA
  from TURN_EST
 inner join EMPLEADO On EMPLEADO.COD_EMP = TURN_EST.COD_EMP
 inner join ISLAS On ISLAS.COD_ISL = TURN_EST.COD_ISL

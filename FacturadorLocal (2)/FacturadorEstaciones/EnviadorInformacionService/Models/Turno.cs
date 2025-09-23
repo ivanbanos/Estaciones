@@ -18,6 +18,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public string EstacionGuid { get; set; }
         public List<TurnoSurtidor> turnoSurtidores { get; set; }
         public List<Bolsa> Bolsas { get; set; } = new List<Bolsa>();
+        public int FechaAperturaJuliana { get; internal set; }
     }
 
     public class TurnoSurtidor

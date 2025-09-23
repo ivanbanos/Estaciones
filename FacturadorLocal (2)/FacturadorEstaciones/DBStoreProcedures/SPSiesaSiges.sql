@@ -210,3 +210,7 @@ begin catch
     raiserror (	N'<message>Error occurred in %s :: %s :: Line number: %d</message>', 16, 1, @errorProcedure, @errorMessage, @errorLine);
 end catch;
 GO
+
+IF EXISTS(SELECT * FROM sys.procedures WHERE Name = 'ObtenerTurnoIslaCerrado')
+	DROP PROCEDURE [dbo].[ObtenerTurnoIslaCerrado]
+GO

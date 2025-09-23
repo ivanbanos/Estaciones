@@ -25,8 +25,8 @@ const ReporteFiscal = async (fechaInicial, fechaFinal) => {
     if (response === 'fail') {
       console.error('Authentication failed for ReporteFiscal')
       return 'fail'
-    }
-
+    }car
+ a bus
     return response
   } catch (error) {
     console.error('ReporteFiscal error:', error)

@@ -414,18 +414,32 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 var reporte = new ReporteFiscal
                 {
                     ConsolidadoOrdenesAnuladas = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => orden.Estado == "Anulado" || orden.Estado == "Anulada" || orden.idFacturaElectronica != null)),
-                    TotalDeOrdenes = !ordenes.Any() ? 0 : ordenes.Count(orden => orden.Estado != "Anulado" && orden.Estado != "Anulada" && orden.idFacturaElectronica == null),
-                    ConsolidadosOrdenes = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => orden.Estado != "Anulado" && orden.Estado != "Anulada" && orden.idFacturaElectronica == null)),
-                    consolidadoClienteOrdenes = !ordenes.Any() ? new List<ConsolidadoCliente>() : GetConsolidadosOrdenesCliente(ordenes.Where(orden => orden.Estado != "Anulado" && orden.Estado != "Anulada" && orden.idFacturaElectronica == null)),
+                    TotalDeOrdenes = !ordenes.Any() ? 0 : ordenes.Count(),
+                    ConsolidadosOrdenes = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes),
+                    consolidadoClienteOrdenes = !ordenes.Any() ? new List<ConsolidadoCliente>() : GetConsolidadosOrdenesCliente(ordenes),
                     TotalOrdenesAnuladas = !ordenes.Any() ? 0 : ordenes.Count(orden => orden.Estado == "Anulado" || orden.Estado == "Anulada" || orden.idFacturaElectronica != null),
+                    ConsolidadoFormaPagoOrdenes = !ordenes.Any() ? new List<ConsolidadoFormaPago>() : GetConsolidadoFormaPagoOrdenes(ordenes),
                 };
                 return reporte;
             }
             catch (Exception)
             {
-
                 throw;
             }
+        }
+
+        private IEnumerable<ConsolidadoFormaPago> GetConsolidadoFormaPagoOrdenes(IEnumerable<Modelo.OrdenDeDespacho> ordenes)
+        {
+            return ordenes
+                .GroupBy(o => o.FormaDePago)
+                .Select(g => new ConsolidadoFormaPago
+                {
+                    FormaPago = g.Key,
+                    CantidadFacturas = g.Count(),
+                    CantidadCombustible = g.Sum(x => Convert.ToDecimal(x.Cantidad)),
+                    Total = g.Sum(x => Convert.ToDecimal(x.Total))
+                })
+                .ToList();
         }
 
         private IEnumerable<ConsolidadoCliente> GetConsolidadosOrdenesCliente(IEnumerable<Modelo.OrdenDeDespacho> ordenes)

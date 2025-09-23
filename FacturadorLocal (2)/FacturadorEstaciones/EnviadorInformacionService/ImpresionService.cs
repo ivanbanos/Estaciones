@@ -224,13 +224,13 @@ namespace EnviadorInformacionService
                                         Logger.Warn($"No hay turno cerrado para la isla {isla}");
                                         break;
                                     }
-                                    var facturas = _estacionesRepositorio.GetFacturasCanastillaPorIslaTurno(isla, turnoCerrado.FechaApertura);
+                                    var facturas = _estacionesRepositorio.GetFacturasCanastillaPorIslaTurno(isla.ToString(), turnoCerrado.Numero, turnoCerrado.FechaAperturaJuliana);
                                     if (facturas == null || !facturas.Any())
                                     {
                                         Logger.Warn($"No hay facturas de canastilla para el cierre de la isla {isla} turno {turnoCerrado.Numero}");
                                         break;
                                     }
-                                    ImprimirCierreCanastilla(isla, turnoCerrado.Numero, facturas);
+                                    ImprimirCierreCanastilla(isla.ToString(), turnoCerrado.Numero, facturas);
                                     _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
                                     break;
        

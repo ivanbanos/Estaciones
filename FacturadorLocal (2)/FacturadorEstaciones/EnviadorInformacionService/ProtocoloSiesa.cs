@@ -113,18 +113,20 @@ namespace EnviadorInformacionService
 
                                             string auxiliarContable = _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, true).Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
                                             string auxiliarCruce = _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, false).Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
+
+                                            // Dynamic discount auxiliary lookup (after cruce)
+                                            string auxiliarDescuento = ObtenerAuxiliarDescuento(factura.codigoFormaPago, factura.Venta.Combustible);
+
                                             if (auxiliarContable == null)
                                             {
-
                                                 Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Venta.Combustible} no se envió no exite auxiliar contrable creado");
                                             }
                                             if (auxiliarCruce == null)
                                             {
-
                                                 Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Venta.Combustible} no se envió no exite auxiliar cruce creado");
                                             }
                                             Logger.Info($"Iniciando envío de factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Combustible: {factura.Venta.Combustible}");
-                                            _apiContabilidad.EnviarFactura(factura, facturaElectronica[2], numeros, auxiliarContable, auxiliarCruce, null);
+                                            _apiContabilidad.EnviarFactura(factura, facturaElectronica[2], numeros, auxiliarContable, auxiliarCruce, auxiliarDescuento);
                                             //_apiContabilidad.EnviarRecibo(factura, facturaElectronica[2], numeros, _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, true), _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, false));
                                             facturasEnviadas.Add(factura.ventaId);
                                             Logger.Info($"Factura enviada exitosamente - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Combustible: {factura.Venta.Combustible}");
@@ -175,5 +177,27 @@ namespace EnviadorInformacionService
                 }
             }
         }
+        /// <summary>
+        /// Busca el auxiliar de descuento según forma de pago y combustible.
+        /// </summary>
+        /// <param name="codigoFormaPago">Código de forma de pago</param>
+        /// <param name="combustible">Nombre del combustible</param>
+        /// <returns>Auxiliar de descuento</returns>
+        private string ObtenerAuxiliarDescuento(int codigoFormaPago, string combustible)
+        {
+            // Normalizar nombre de combustible
+            var combustibleKey = (combustible ?? "").Trim().ToLower();
+            if (combustibleKey == "corriente") combustibleKey = "corriente";
+            // Puedes agregar más normalizaciones si es necesario
+
+            // Buscar clave específica
+            string key = $"auxiliardescuento_{codigoFormaPago}_{combustibleKey}";
+            var valor = ConfigurationManager.AppSettings[key];
+            if (!string.IsNullOrEmpty(valor))
+                return valor;
+            // Si no existe, usar el general
+            return ConfigurationManager.AppSettings["auxiliardescuento"];
+        }
     }
+    
 }

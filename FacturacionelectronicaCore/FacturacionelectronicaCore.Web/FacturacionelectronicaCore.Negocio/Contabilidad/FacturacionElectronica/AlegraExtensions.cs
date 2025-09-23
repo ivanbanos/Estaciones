@@ -27,7 +27,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     break;
                 case "DATATICO":
                 case "DATAICO":
-                    services.AddScoped<IFacturacionElectronicaFacade, FacturacionDataico>();
+                    services.AddSingleton<IFacturacionElectronicaFacade, FacturacionDataico>();
                     break;
                 case "TITAN":
                     services.AddScoped<IFacturacionElectronicaFacade, FacturacionTitan>();
@@ -38,60 +38,12 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 case "FACTURA1":
                     services.AddScoped<IFacturacionElectronicaFacade, FacturacionFactura1>();
                     break;
-
             }
 
             services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
             return services;
         }
 
-        public static IServiceCollection AddAlegra(
-            this IServiceCollection services,
-            IConfiguration configuration)
-        {
-            services.AddScoped<IFacturacionElectronicaFacade, AlegraFacade>();
-
-            services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
-            return services;
-        }
-
-        public static IServiceCollection AddSilog(
-            this IServiceCollection services,
-            IConfiguration configuration)
-        {
-            services.AddScoped<IFacturacionElectronicaFacade, FacturacionSilog>();
-
-            services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
-            return services;
-        }
-
-        public static IServiceCollection AddDataico(
-            this IServiceCollection services,
-            IConfiguration configuration)
-        {
-            services.AddScoped<IFacturacionElectronicaFacade, FacturacionDataico>();
-
-            services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
-            return services;
-        }
-        public static IServiceCollection AddTitan(
-            this IServiceCollection services,
-            IConfiguration configuration)
-        {
-            services.AddScoped<IFacturacionElectronicaFacade, FacturacionTitan>();
-
-            services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
-            return services;
-        }
-        public static IServiceCollection AddFactura1(
-            this IServiceCollection services,
-            IConfiguration configuration)
-        {
-            services.AddScoped<IFacturacionElectronicaFacade, FacturacionFactura1>();
-
-            services.Configure<Alegra>(options => configuration.GetSection("Alegra").Bind(options));
-            return services;
-        }
 
         public static Invoice ConvertirAInvoice(this Modelo.Factura factura, Item item)
         {
