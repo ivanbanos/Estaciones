@@ -69,7 +69,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         }
                         else
                         {
-                            return "Ok:" + respuestaSilog.message.currentOutput.prefijoResolucion + respuestaSilog.message.currentOutput.numeroResolucion + ":" + respuestaSilog.cufe;
+                            return "Ok:" + respuestaSilog.message.currentOutput.prefijoResolucion + respuestaSilog.message.currentOutput.numeroResolucion + ":" + respuestaSilog.cufe+ ":" + responseBody;
                         }
                     }
                     catch (Exception ex)
@@ -275,7 +275,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         // Verificar si la respuesta contiene "Factura generada exitosamente"
                         if (responseBody.Contains("Factura generada exitosamente"))
                         {
-                            return "Ok:" + responsesilog.message.currentOutput.prefijoResolucion + responsesilog.message.currentOutput.numeroResolucion + ":" + responsesilog.cufe;
+                            return "Ok:" + responsesilog.message.currentOutput.prefijoResolucion + responsesilog.message.currentOutput.numeroResolucion + ":" + responsesilog.cufe+ ":" + responseBody;
                         }
 
                         response.EnsureSuccessStatusCode();
@@ -287,7 +287,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         else
                         {
                             // Parsear la respuesta según la estructura que retorne Silog
-                            return "Ok:" + responsesilog.message.currentOutput.prefijoResolucion + responsesilog.message.currentOutput.numeroResolucion + ":" + responsesilog.cufe;
+                            return "Ok:" + responsesilog.message.currentOutput.prefijoResolucion + responsesilog.message.currentOutput.numeroResolucion + ":" + responsesilog.cufe+ ":" + responseBody;
                         }
                     }
                     catch (Exception ex)
@@ -421,7 +421,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         // Verificar si la respuesta contiene "Factura generada exitosamente"
                         if (responseBody.Contains("Factura generada exitosamente"))
                         {
-                            return "Ok:" + responsesilog.message.currentOutput.prefijoResolucion + responsesilog.message.currentOutput.numeroResolucion + ":" + responsesilog.cufe;
+                            return "Ok:" + responsesilog.message.currentOutput.prefijoResolucion + responsesilog.message.currentOutput.numeroResolucion + ":" + responsesilog.cufe + ":" + responseBody;
                         }
 
                         response.EnsureSuccessStatusCode();
@@ -433,7 +433,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         else
                         {
                             // Parsear la respuesta según la estructura que retorne Silog
-                            return "Ok:" + responsesilog.message.currentOutput.prefijoResolucion + responsesilog.message.currentOutput.numeroResolucion + ":" + responsesilog.cufe;
+                            return "Ok:" + responsesilog.message.currentOutput.prefijoResolucion + responsesilog.message.currentOutput.numeroResolucion + ":" + responsesilog.cufe + ":" + responseBody;
                         }
                     }
                     catch (Exception ex)
@@ -454,7 +454,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             {
                 Console.WriteLine(ex);
                 Console.WriteLine(ex.StackTrace);
-                throw;
+                return "Error:" + ex.Message;
+                   
             }
         }
 
@@ -472,7 +473,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         ProductId = Int32.Parse(item.Canastilla?.campoextra),
                         Quantity = (decimal)item.cantidad,
                         Discunt = 0,
-                        Price = (decimal)item.Canastilla?.precio,
+                        Price = (decimal)item.precio,
                         TotalPrice = (decimal)item.total,
                         SkipAuditWarehouseValues = true
                     });

@@ -21,6 +21,8 @@ namespace FactoradorEstacionesModelo.Objetos
         public int IVA { get; set; }
         public decimal SUBTOTAL { get; set; }
         public decimal TOTAL { get; set; }
+        public decimal TOTALCalculado { get { return (CANTIDAD * PRECIO_UNI) - (CANTIDAD * PRECIO_UNI * IVA / 100); } }
+
         public decimal VALORNETO { get; set; }
         public string NOMBRE { get; set; }
         public string TIPO_NIT { get; set; }

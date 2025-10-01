@@ -113,12 +113,12 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                     {
                         paramList.Add("FechaInicial", fechaInicial);
 
-                        filters.Add(Builders<OrdenesMongo>.Filter.Gte("Fecha", fechaInicial.Value.AddHours(-12)));
+                        filters.Add(Builders<OrdenesMongo>.Filter.Gte("Fecha", fechaInicial.Value.AddHours(7)));
                     }
                     if (fechaFinal != null)
                     {
                         paramList.Add("FechaFinal", fechaFinal);
-                        filters.Add(Builders<OrdenesMongo>.Filter.Lte("Fecha", fechaFinal.Value.AddDays(1).AddHours(-12)));
+                        filters.Add(Builders<OrdenesMongo>.Filter.Lte("Fecha", fechaFinal.Value.AddDays(1).AddHours(7)));
                     }
                     if (!string.IsNullOrEmpty(identificacionTercero))
                     {
@@ -299,6 +299,26 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
 
             return await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "ordenes", filters);
+        }
+
+        public async Task AgregarFechaReporteFactura(IEnumerable<FacturaFechaReporte> facturas, Guid estacion)
+        {
+            foreach (var factura in facturas)
+            {
+           
+                var filtero = Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", factura.IdVentaLocal);
+                var ordenesMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filtero);
+                if (ordenesMongo.Any(x => x.EstacionGuid == estacion.ToString()))
+                {
+                    var ordenMongo = ordenesMongo.First(x => x.EstacionGuid == estacion.ToString());
+                    var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", ordenMongo.guid);
+                    var update = Builders<OrdenesMongo>.Update
+                        .Set(x => x.FechaReporte, factura.FechaReporte);
+                    await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "ordenes", filterGuid, update);
+
+                }
+
+            }
         }
     }
 }

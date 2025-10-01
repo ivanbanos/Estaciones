@@ -44,6 +44,7 @@ namespace FactoradorEstacionesModelo.Siges
         public double Iva { get; set; }
         public double Subtotal { get; set; }
         public double Total { get; set; }
+        public double TOTALCalculado{ get { return Cantidad * Precio; }}
         public double Descuento { get; set; }
         public int IdCara { get; set; }
         public string IButton { get; set; }

@@ -62,5 +62,6 @@ namespace Modelo
         
         public string Isla { get; set; }
         public string ArchivoSiCOM { get; set; }
+        public IEnumerable<string> DataicoToken { get; set; }
     }
 }

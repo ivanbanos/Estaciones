@@ -18,5 +18,6 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         Task<ResolucionElectronica> GetResolucionElectronica();
         Task<string> JsonFacturaElectronica(int idVentaLocal, Guid estacion);
         Task<string> GetInfoFacturaElectronicaCanastilla(int consecutivo, Guid estacion);
+        Task AgregarFechaReporteFactura(IEnumerable<FacturaFechaReporte> facturas, Guid estacion);
     }
 }

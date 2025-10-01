@@ -56,6 +56,7 @@ namespace FacturacionelectronicaCore.Web.Controllers
         [HttpPost("AgregarFechaReporteFactura")]
         public async Task<ActionResult> AgregarFechaReporteFactura(RequestCambiarFechasReporte requestCambiarFechasReporte)
         {
+            await _manejadorInformacionLocalNegocio.AgregarFechaReporteFactura(requestCambiarFechasReporte.facturas, requestCambiarFechasReporte.Estacion);
 
             return Ok();
         }

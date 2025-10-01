@@ -33,5 +33,6 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
         Task<IEnumerable<OrdenDeDespacho>> ObtenerOrdenDespachoPorGuid(string guid);
         Task<IEnumerable<OrdenDeDespacho>> ObtenerOrdenDespachoPorIdVentaLocal(int idVentaLocal, Guid estacion);
         Task<IEnumerable<OrdenDeDespacho>> ObtenerOrdenesPorTurno(Guid turno);
+        Task AgregarFechaReporteFactura(IEnumerable<FacturaFechaReporte> facturas, Guid estacion);
     }
 }

@@ -117,6 +117,35 @@ namespace EnviadorInformacionService
                                             // Dynamic discount auxiliary lookup (after cruce)
                                             string auxiliarDescuento = ObtenerAuxiliarDescuento(factura.codigoFormaPago, factura.Venta.Combustible);
 
+                                            // Obtener fecha de facturación desde Dataico
+                                            try
+                                            {
+                                                string dataicoToken = ConfigurationManager.AppSettings["dataico_token"];
+                                                string url = $"https://api.dataico.com/dataico_api/v2/invoices?number={facturaElectronica[2]}";
+                                                using (var client = new System.Net.Http.HttpClient())
+                                                {
+                                                    client.DefaultRequestHeaders.Add("auth-token", dataicoToken);
+                                                    var response = client.GetAsync(url).Result;
+                                                    if (response.IsSuccessStatusCode)
+                                                    {
+                                                        var json = response.Content.ReadAsStringAsync().Result;
+                                                        dynamic obj = JsonConvert.DeserializeObject(json);
+                                                        // La fecha está en obj.invoice.issue_date
+                                                        string fechaFacturacion = obj.invoice.issue_date;
+                                                        // Setear la fecha en la factura
+                                                        factura.fecha = DateTime.ParseExact(fechaFacturacion, "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture);
+                                                    }
+                                                    else
+                                                    {
+                                                        Logger.Warn($"No se pudo obtener la fecha de facturación desde Dataico para factura {facturaElectronica[2]}. Código: {response.StatusCode}");
+                                                    }
+                                                }
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                Logger.Error($"Error al obtener la fecha de facturación desde Dataico: {ex.Message}");
+                                            }
+
                                             if (auxiliarContable == null)
                                             {
                                                 Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Venta.Combustible} no se envió no exite auxiliar contrable creado");

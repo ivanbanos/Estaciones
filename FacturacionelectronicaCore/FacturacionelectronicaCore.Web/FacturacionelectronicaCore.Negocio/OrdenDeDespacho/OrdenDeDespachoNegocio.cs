@@ -86,7 +86,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                         factura.Descuento /= 10;
                     }
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
-                    factura.Fecha = factura.Fecha.ToLocalTime().AddHours(3);
+                    factura.Fecha = factura.Fecha.ToLocalTime();
                 }
                 return ordenes.OrderBy(x => x.IdVentaLocal);
             }
@@ -144,7 +144,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                     return "Una orden ya tiene factura electrónica existente";
                 }
 
-                ordenDeDespachoEntity.Fecha = ordenDeDespachoEntity.Fecha.ToLocalTime().AddHours(3);
+                ordenDeDespachoEntity.Fecha = ordenDeDespachoEntity.Fecha.ToLocalTime();
                 ordenes.Add(_mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(ordenDeDespachoEntity));
             }
             if (ordenes.GroupBy(x => x.Identificacion).Count() > 1)

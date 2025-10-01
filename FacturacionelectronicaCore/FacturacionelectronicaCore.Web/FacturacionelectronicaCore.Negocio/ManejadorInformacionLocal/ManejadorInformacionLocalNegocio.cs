@@ -16,22 +16,23 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
 {
     public class ManejadorInformacionLocalNegocio : IManejadorInformacionLocalNegocio
     {
-        private readonly IEstacionesRepository _estacionesRepository;
-        private readonly IOrdenDeDespachoRepositorio _ordenDeDespachoRepositorio;
-        private readonly ITipoIdentificacionRepositorio _tipoIdentificacionRepositorio;
-        private readonly ITerceroRepositorio _terceroRepositorio;
-        private readonly IResolucionRepositorio _resolucionRepositorio;
-        private readonly IMapper _mapper;
-        private readonly IApiContabilidad _apiContabilidad;
-        private readonly IFacturacionElectronicaFacade _alegraFacade;
-        private readonly IFacturaCanastillaRepository _facturaCanastillaRepository;
-        private readonly IValidadorGuidAFacturaElectronica _validadorGuidAFacturaElectronica;
-        private readonly Alegra _alegra;
+    private readonly IEstacionesRepository _estacionesRepository;
+    private readonly IOrdenDeDespachoRepositorio _ordenDeDespachoRepositorio;
+    private readonly ITipoIdentificacionRepositorio _tipoIdentificacionRepositorio;
+    private readonly ITerceroRepositorio _terceroRepositorio;
+    private readonly IResolucionRepositorio _resolucionRepositorio;
+    private readonly IMapper _mapper;
+    private readonly IApiContabilidad _apiContabilidad;
+    private readonly IFacturacionElectronicaFacade _alegraFacade;
+    private readonly IFacturaCanastillaRepository _facturaCanastillaRepository;
+    private readonly ICanastillaRepositorio _canastillaRepositorio;
+    private readonly IValidadorGuidAFacturaElectronica _validadorGuidAFacturaElectronica;
+    private readonly Alegra _alegra;
 
         public ManejadorInformacionLocalNegocio(ITerceroRepositorio tercerosRepositorio, IMapper mapper, IResolucionRepositorio resolucionRepositorio,
             IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio,
             IApiContabilidad apiContabilidad, ITipoIdentificacionRepositorio tipoIdentificacionRepositorio,
-            IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, IFacturaCanastillaRepository facturaCanastillaRepository, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica, IEstacionesRepository estacionesRepository)
+            IFacturacionElectronicaFacade alegraFacade, IOptions<Alegra> alegra, IFacturaCanastillaRepository facturaCanastillaRepository, ICanastillaRepositorio canastillaRepositorio, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica, IEstacionesRepository estacionesRepository)
         {
             _terceroRepositorio = tercerosRepositorio;
             _resolucionRepositorio = resolucionRepositorio;
@@ -43,6 +44,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             _alegraFacade = alegraFacade;
             _tipoIdentificacionRepositorio = tipoIdentificacionRepositorio;
             _facturaCanastillaRepository = facturaCanastillaRepository;
+            _canastillaRepositorio = canastillaRepositorio;
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
             _estacionesRepository = estacionesRepository;
         }
@@ -263,12 +265,27 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         {
             try
             {
-
+                
                 await EnviarTerceros(facturas.Select(x => x.terceroId));
+                // Get all canastillas from repo for this estacion
+                var canastillasRepo = await _canastillaRepositorio.GetCanastillas(estacion);
                 foreach (var factura in facturas)
                 {
                     try
                     {
+                        // Replace campoextra in each factura.canastillas from repo
+                        foreach (var canastilla in factura.canastillas)
+                        {
+                            if (canastilla.Canastilla != null)
+                            {
+                                var repoCanastilla = canastillasRepo.FirstOrDefault(c => c.guid == canastilla.Canastilla.guid);
+                                if (repoCanastilla != null)
+                                {
+                                    canastilla.Canastilla.campoextra = repoCanastilla.campoextra;
+                                }
+                            }
+                        }
+
                         var facturaCanastilla = await _facturaCanastillaRepository.GetFacturaPorIdCanastilla(factura.FacturasCanastillaId, estacion);
                         var idFactruraElectronica = "";
                         if (facturaCanastilla == null
@@ -282,7 +299,6 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                 var tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(terceroEntity);
                                 if (_alegra.ValidaTercero && tercero.idFacturacion == null)
                                 {
-
                                     idFactruraElectronica = "error:Tercero no está apto para facturación electrónica";
                                 }
                                 var response = await _alegraFacade.GenerarFacturaElectronica(factura, tercero, estacion);
@@ -292,19 +308,21 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                             }
                             else
                             {
-                                var response = await _alegraFacade.GenerarFacturaElectronica(factura, factura.terceroId, estacion);
-                                await Task.Delay(2000);
-                                idFactruraElectronica = response;
-                                factura.idFacturaElectronica = idFactruraElectronica;
+                                if ((factura.fecha > DateTime.Now.AddMonths(-1)
+                                    || (_alegra.EnviaMes && DateTime.Now.AddMonths(-1) < factura.fecha))
+                                    && (_alegra.EnviaCreditos || (!factura.codigoFormaPago.Descripcion.ToLower().Contains("dir") && !factura.codigoFormaPago.Descripcion.ToLower().Contains("calibra") && !factura.codigoFormaPago.Descripcion.ToLower().Contains("puntos"))))
+                                {
+                                    var response = await _alegraFacade.GenerarFacturaElectronica(factura, factura.terceroId, estacion);
+                                    await Task.Delay(2000);
+                                    idFactruraElectronica = response;
+                                    factura.idFacturaElectronica = idFactruraElectronica;
+                                }
                             }
                         }
 
-
                         var facturaRepo = _mapper.Map<Modelo.FacturaCanastilla, Repositorio.Entities.FacturaCanastilla>(factura);
-
                         await _facturaCanastillaRepository.Add(facturaRepo, facturaRepo.canastillas, estacion);
                     }
-
                     catch (Exception ex)
                     {
                         Console.WriteLine(ex.Message);
@@ -370,5 +388,12 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             }
             return null;
         }
+
+        public async Task AgregarFechaReporteFactura(IEnumerable<Modelo.FacturaFechaReporte> facturaFechaReporte, Guid estacion)
+        {
+            var facturas = _mapper.Map<IEnumerable<Modelo.FacturaFechaReporte>, IEnumerable<Repositorio.Entities.FacturaFechaReporte>>(facturaFechaReporte);
+            await _ordenDeDespachoRepositorio.AgregarFechaReporteFactura(facturas, estacion);
+        }
+
     }
 }

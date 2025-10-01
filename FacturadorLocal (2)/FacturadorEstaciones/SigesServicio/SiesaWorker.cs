@@ -145,20 +145,47 @@ namespace EnviadorInformacionService.Contabilidad
 
                                                 string auxiliarContable = _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Combustible, true, true).Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
                                                 string auxiliarCruce = _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Combustible, true, false).Replace("\r\n", "").Replace("\r", "").Replace("\n", "");
+
+                                                // Obtener fecha de facturación desde Dataico
+                                                try
+                                                {
+                                                    string url = $"https://api.dataico.com/dataico_api/v2/invoices?number={facturaElectronica[2]}";
+                                                    using (var client = new System.Net.Http.HttpClient())
+                                                    {
+                                                        client.DefaultRequestHeaders.Add("auth-token", _infoEstacion.DataicoToken);
+                                                        var response = client.GetAsync(url).Result;
+                                                        if (response.IsSuccessStatusCode)
+                                                        {
+                                                            var json = response.Content.ReadAsStringAsync().Result;
+                                                            dynamic obj = JsonConvert.DeserializeObject(json);
+                                                            // La fecha está en obj.invoice.issue_date
+                                                            string fechaFacturacion = obj.invoice.issue_date;
+                                                            // Setear la fecha en la factura
+                                                            factura.fecha = DateTime.ParseExact(fechaFacturacion, "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture);
+                                                        }
+                                                        else
+                                                        {
+                                                            Logger.Warn($"No se pudo obtener la fecha de facturación desde Dataico para factura {facturaElectronica[2]}. Código: {response.StatusCode}");
+                                                        }
+                                                    }
+                                                }
+                                                catch (Exception ex)
+                                                {
+                                                    Logger.Error($"Error al obtener la fecha de facturación desde Dataico: {ex.Message}");
+                                                }
+
                                                 if (auxiliarContable == null)
                                                 {
-
                                                     Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Combustible} no se envió no exite auxiliar contrable creado");
                                                 }
                                                 if (auxiliarCruce == null)
                                                 {
-
                                                     Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Combustible} no se envió no exite auxiliar cruce creado");
                                                 }
                                                 await EnviarFactura(factura, facturaElectronica[2], numeros, auxiliarContable, auxiliarCruce);
                                                 //_apiContabilidad.EnviarRecibo(factura, facturaElectronica[2], numeros, _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, true), _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, false));
                                                 facturasEnviadas.Add(factura.ventaId);
-                                                Logger.Info($"Factura enviada exitosamente - ID: {factura.ventaId}, Total: {factura.Total}, Forma Pago: {factura.codigoFormaPago}, Combustible: {factura.Combustible}");
+                                                Logger.Info($"Factura enviada exitosamente - ID: {factura.ventaId}, Total: {factura.TOTALCalculado}, Forma Pago: {factura.codigoFormaPago}, Combustible: {factura.Combustible}");
                                             }
                                         }
                                         else
@@ -170,8 +197,8 @@ namespace EnviadorInformacionService.Contabilidad
                                     }
                                     catch (Exception ex)
                                     {
-                                        facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Total}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
-                                        Logger.Warn($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.Total}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
+                                        facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.TOTALCalculado}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
+                                        Logger.Warn($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.TOTALCalculado}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
                                     }
                                 }
                                 else
@@ -181,8 +208,8 @@ namespace EnviadorInformacionService.Contabilidad
                             }
                             catch (Exception ex)
                             {
-                                facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Total}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
-                                Logger.Warn($"Fallo al procesar factura - ID: {factura.ventaId}, Total: {factura.Total}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
+                                facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.TOTALCalculado}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
+                                Logger.Warn($"Fallo al procesar factura - ID: {factura.ventaId}, Total: {factura.TOTALCalculado}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
                             }
                         }
                         if (facturasEnviadas.Any())
@@ -290,7 +317,7 @@ namespace EnviadorInformacionService.Contabilidad
                 F351_ID_CCOSTO = _siesa.CentroCostoContableOtros ?? "",
                 F351_ID_FE = "",
                 F351_VALOR_DB = "0",
-                F351_VALOR_CR = factura.Total.ToString("0", CultureInfo.InvariantCulture),
+                F351_VALOR_CR = factura.TOTALCalculado.ToString("0", CultureInfo.InvariantCulture),
                 F351_BASE_GRAVABLE = "",
                 F351_DOCTO_BANCO = "",
                 F351_NRO_DOCTO_BANCO = "",
@@ -309,7 +336,7 @@ namespace EnviadorInformacionService.Contabilidad
                 F351_ID_UN = _siesa.UnidadNegocioOtros ?? "",
                 F351_ID_CCOSTO = _siesa.CentroCostoOtros ?? "",
                 F351_ID_FE = _siesa.IdFeOtros ?? "",
-                F351_VALOR_DB = factura.Total.ToString("0", CultureInfo.InvariantCulture),
+                F351_VALOR_DB = factura.TOTALCalculado.ToString("0", CultureInfo.InvariantCulture),
                 F351_VALOR_CR = "0",
                 F351_BASE_GRAVABLE = "",
                 F351_DOCTO_BANCO = "CG",
@@ -379,7 +406,7 @@ namespace EnviadorInformacionService.Contabilidad
                         F351_ID_CO_MOV = _siesa.MovimientoCaja,
                         F351_ID_UN = _siesa.UnidadNegocioCaja,
                         F351_VALOR_CR = "0",
-                        F351_VALOR_DB = factura.Total.ToString("0.00", CultureInfo.InvariantCulture),
+                        F351_VALOR_DB = factura.TOTALCalculado.ToString("0.00", CultureInfo.InvariantCulture),
                         F351_ID_FE = _siesa.IdFe,
                         F358_COD_SEGURIDAD = "",
                         F358_FECHA_VCTO = factura.fecha.ToString("yyyyMMdd"),
@@ -426,7 +453,7 @@ namespace EnviadorInformacionService.Contabilidad
                         F351_ID_FE = consecutivo,
                         F351_NRO_DOCTO_BANCO="",
                         F351_ID_UN = _siesa.UnidadNegocio,
-                        F351_VALOR_CR = factura.Total.ToString("0.00", CultureInfo.InvariantCulture),
+                        F351_VALOR_CR = factura.TOTALCalculado.ToString("0.00", CultureInfo.InvariantCulture),
                         F351_VALOR_DB = "0",
 
 
