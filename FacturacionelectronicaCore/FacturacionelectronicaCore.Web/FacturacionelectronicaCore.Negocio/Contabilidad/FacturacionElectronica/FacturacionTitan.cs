@@ -511,5 +511,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         {
             throw new NotImplementedException();
         }
+
+        public Task<string> getJsonCanastilla(Modelo.FacturaCanastilla facturaCanastilla, Guid estacio)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -59,6 +59,19 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         public object Hasta { get; set; }
         public object DesdeFecha { get; set; }
         public object HastaFecha { get; set; }
+        public bool EnviaTodo { get; set; }
+
+        // Number of hours to add to incoming dates to align them with the server timezone.
+        // Use a positive or negative integer depending on the required offset.
+        // If not specified (null), a default of 0 will be used (no offset).
+        public int? ServerTimeOffsetHours { get; set; }
+
+        // Exact start date for Worker to begin processing orders from.
+        // If not specified (null), defaults to 2 months ago.
+        // Format: "yyyy-MM-dd" or "yyyy-MM-ddTHH:mm:ss"
+        public DateTime? WorkerStartDate { get; set; }
+
+
     }
 
     public class EstacionCombustibles

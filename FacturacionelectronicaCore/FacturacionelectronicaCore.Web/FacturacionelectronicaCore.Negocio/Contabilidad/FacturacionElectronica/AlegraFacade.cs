@@ -210,5 +210,10 @@ new AuthenticationHeaderValue("Basic", alegraOptions.Auth);
         {
             throw new NotImplementedException();
         }
+
+        public Task<string> getJsonCanastilla(Modelo.FacturaCanastilla facturaCanastilla, Guid estacio)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

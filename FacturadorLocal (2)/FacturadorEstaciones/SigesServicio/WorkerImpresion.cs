@@ -52,7 +52,7 @@ namespace SigesServicio
             var estacionFuente = new Guid(_infoEstacion.EstacionFuente);
 
 
-            Logger.Info(_infoEstacion.Razon);
+            Logger.Log(NLog.LogLevel.Error,_infoEstacion.Razon);
             ImpresionAutomatica = _infoEstacion.ImpresionAutomatica;
             impresionFormaDePagoOrdenDespacho = _infoEstacion.ImpresionFormaDePagoOrdenDespacho;
             var generaFacturaElectronica = _infoEstacion.GeneraFacturaElectronica;
@@ -60,7 +60,7 @@ namespace SigesServicio
 
             formas = _estacionesRepositorio.BuscarFormasPagosSiges();
 
-            Logger.Info("formas");
+            Logger.Log(NLog.LogLevel.Error,"formas");
             imprimiendo = 0;
             while (!stoppingToken.IsCancellationRequested)
             {
@@ -81,7 +81,7 @@ namespace SigesServicio
                             if (imprimiendo == 0)
                             {
                                 imprimiendo++;
-                                Logger.Info($"imprimirnedo {JsonConvert.SerializeObject(turnoimprimir)} ");
+                                Logger.Log(NLog.LogLevel.Error,$"imprimirnedo {JsonConvert.SerializeObject(turnoimprimir)} ");
                                 ImprimirTurno(turnoimprimir);
                                 turnoimprimir.impresa++;
 
@@ -132,8 +132,8 @@ namespace SigesServicio
                 {
 
                     imprimiendo = 0;
-                    Logger.Info("Error " + ex.Message);
-                    Logger.Info("Error " + ex.StackTrace);
+                    Logger.Log(NLog.LogLevel.Error,"Error " + ex.Message);
+                    Logger.Log(NLog.LogLevel.Error,"Error " + ex.StackTrace);
                     Thread.Sleep(1000);
                 }
 
@@ -174,8 +174,8 @@ namespace SigesServicio
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                Logger.Info("Error " + ex.Message);
-                Logger.Info("Error " + ex.StackTrace);
+                Logger.Log(NLog.LogLevel.Error,"Error " + ex.Message);
+                Logger.Log(NLog.LogLevel.Error,"Error " + ex.StackTrace);
                 Thread.Sleep(5000);
             }
         }
@@ -218,12 +218,12 @@ namespace SigesServicio
                 {
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Cierre :", turnosurtidor.Cierre.ToString()), false));
 
-                    Logger.Info("reporte " + JsonConvert.SerializeObject(reporteCierrePorTotal));
-                    Logger.Info("turno surtidor " + JsonConvert.SerializeObject(turnosurtidor));
+                    Logger.Log(NLog.LogLevel.Error,"reporte " + JsonConvert.SerializeObject(reporteCierrePorTotal));
+                    Logger.Log(NLog.LogLevel.Error,"turno surtidor " + JsonConvert.SerializeObject(turnosurtidor));
                     totalCantidad += turnosurtidor.Cierre.Value - turnosurtidor.Apertura;
                     totalVenta += (turnosurtidor.Cierre.Value - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio;
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Cantidad :", $"{turnosurtidor.Cierre - turnosurtidor.Apertura:F2}"), false));
-                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${(turnosurtidor.Cierre - turnosurtidor.Apertura)*turnosurtidor.Combustible.Precio:F2}"), false));
+                    lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${(turnosurtidor.Cierre - turnosurtidor.Apertura) * turnosurtidor.Combustible.Precio:F2}"), false));
 
                 }
 
@@ -238,7 +238,7 @@ namespace SigesServicio
                     lineasImprimirTurno.Add(new LineasImprimir($"Resumen por forma de pago", true));
                     lineasImprimirTurno.Add(new LineasImprimir(guiones.ToString(), false));
                     var groupForma = reporteCierrePorTotal.GroupBy(x => x.codigoFormaPago);
-                    Logger.Info("facturas turno " + JsonConvert.SerializeObject(groupForma));
+                    Logger.Log(NLog.LogLevel.Error,"facturas turno " + JsonConvert.SerializeObject(groupForma));
 
                     var cantidadTotalmenosEfectivo = 0d;
                     var ventaTotalmenosEfectivo = 0d;
@@ -269,7 +269,7 @@ namespace SigesServicio
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Descuento :", $"${totalVenta:F2}"), false));
                     lineasImprimirTurno.Add(new LineasImprimir(formatoTotales("Total :", $"${totalVenta:F2}"), false));
 
-                    
+
                 }
 
             }
@@ -308,7 +308,7 @@ namespace SigesServicio
                     if (_caraImpresoras.Any(x => x.Cara == factura.Cara))
                     {
 
-                        Logger.Info("Selecionando impresora " + _caraImpresoras.First(x => x.Cara == factura.Cara).Impresora.Trim());
+                        Logger.Log(NLog.LogLevel.Error,"Selecionando impresora " + _caraImpresoras.First(x => x.Cara == factura.Cara).Impresora.Trim());
                         pd.PrinterSettings.PrinterName = _caraImpresoras.First(x => x.Cara == factura.Cara).Impresora.Trim();
                     }
 
@@ -329,8 +329,8 @@ namespace SigesServicio
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                Logger.Info("Error " + ex.Message);
-                Logger.Info("Error " + ex.StackTrace);
+                Logger.Log(NLog.LogLevel.Error,"Error " + ex.Message);
+                Logger.Log(NLog.LogLevel.Error,"Error " + ex.StackTrace);
                 Thread.Sleep(5000);
             }
         }
@@ -361,16 +361,16 @@ namespace SigesServicio
                 do
                 {
                     infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, estacionFuente, _conexionEstacionRemota.getToken());
-                    Thread.Sleep(100);
-                } while (infoTemp == null || intentos++ < 3);
+                    Thread.Sleep(500);
+                } while (string.IsNullOrEmpty(infoTemp) || intentos++ < 3);
 
                 Console.WriteLine("info fac elec " + infoTemp);
-                Logger.Info("info fac elec " + infoTemp);
+                Logger.Log(NLog.LogLevel.Error,"info fac elec " + infoTemp);
             }
             catch (Exception ex)
             {
-                Logger.Info("info fac elec " + ex.Message);
-                Logger.Info("info fac elec " + ex.StackTrace);
+                Logger.Log(NLog.LogLevel.Error,"info fac elec " + ex.Message);
+                Logger.Log(NLog.LogLevel.Error,"info fac elec " + ex.StackTrace);
                 Console.WriteLine("info fac elec " + ex.Message);
                 Console.WriteLine("info fac elec " + ex.StackTrace);
             }
@@ -542,7 +542,7 @@ namespace SigesServicio
             lineasImprimir.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress ?? ""), false));
             lineasImprimir.Add(new LineasImprimir(".", true));
-if (!string.IsNullOrEmpty(infoTemp))
+            if (!string.IsNullOrEmpty(infoTemp))
             {
 
                 var facturaElectronica = infoTemp.Split(' ');
@@ -553,7 +553,7 @@ if (!string.IsNullOrEmpty(infoTemp))
         private IEnumerable<LineasImprimir> getPuntos(int ventaId)
         {
             var fidelizado = _estacionesRepositorio.getFidelizado(ventaId);
-            if(fidelizado != null)
+            if (fidelizado != null)
             {
                 fidelizado = _fidelizacion.GetFidelizados(fidelizado.Documento).Result != null ? _fidelizacion.GetFidelizados(fidelizado.Documento).Result.FirstOrDefault() : fidelizado;
                 if (fidelizado != null)
@@ -564,7 +564,7 @@ if (!string.IsNullOrEmpty(infoTemp))
                 }
             }
             return new List<LineasImprimir>() { new LineasImprimir("Usuario no fidelizado", false) };
-            
+
 
         }
 
@@ -587,9 +587,10 @@ if (!string.IsNullOrEmpty(infoTemp))
                 foreach (var linea in lineasImprimir)
                 {
 
-                    if (!string.IsNullOrEmpty(linea.qr)){
+                    if (!string.IsNullOrEmpty(linea.qr))
+                    {
 
-                        count = printLine(linea.qr, ev, count, leftMargin, topMargin, false, isQr:true);
+                        count = printLine(linea.qr, ev, count, leftMargin, topMargin, false, isQr: true);
                     }
                     else
                     {
@@ -615,8 +616,8 @@ if (!string.IsNullOrEmpty(infoTemp))
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                Logger.Info("Error " + ex.Message);
-                Logger.Info("Error " + ex.StackTrace);
+                Logger.Log(NLog.LogLevel.Error,"Error " + ex.Message);
+                Logger.Log(NLog.LogLevel.Error,"Error " + ex.StackTrace);
                 Thread.Sleep(5000);
             }
 
@@ -661,8 +662,8 @@ if (!string.IsNullOrEmpty(infoTemp))
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                Logger.Info("Error " + ex.Message);
-                Logger.Info("Error " + ex.StackTrace);
+                Logger.Log(NLog.LogLevel.Error,"Error " + ex.Message);
+                Logger.Log(NLog.LogLevel.Error,"Error " + ex.StackTrace);
                 Thread.Sleep(5000);
             }
 
@@ -779,7 +780,7 @@ if (!string.IsNullOrEmpty(infoTemp))
             }
         }
 
- private void GenerateQRCode(string content, int size)
+        private void GenerateQRCode(string content, int size)
         {
             QrEncoder encoder = new QrEncoder(ErrorCorrectionLevel.H);
             QrCode qrCode;
@@ -798,7 +799,7 @@ if (!string.IsNullOrEmpty(infoTemp))
             image.Save($"{AppContext.BaseDirectory}/file.bmp", ImageFormat.Bmp);
 
         }
-        
+
         private int printLine(string text, PrintPageEventArgs ev, int count, float leftMargin, float topMargin, bool center = false, bool isQr = false)
         {
             if (center)
@@ -832,7 +833,7 @@ if (!string.IsNullOrEmpty(infoTemp))
 
     public class LineasImprimir
     {
-        public LineasImprimir(string linea, bool centrada, string qr=null)
+        public LineasImprimir(string linea, bool centrada, string qr = null)
         {
             this.linea = linea;
             this.centrada = centrada;

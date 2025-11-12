@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -46,7 +46,7 @@ namespace ManejadorSurtidor
             {
                 var ventas = _estacionesRepositorio.getVentaSinSubirSICOM();
 
-                Logger.Log(NLog.LogLevel.Error, $"Subiendo. {ventas.Count} ventas a sicom. Ventas {JsonConvert.SerializeObject(ventas.Select(x => x.ventaId))}");
+                //Logger.Log(NLog.LogLevel.Error, $"Subiendo. {ventas.Count} ventas a sicom. Ventas {JsonConvert.SerializeObject(ventas.Select(x => x.ventaId))}");
                 if (ventas.Any(x => x.IButton != ""))
                 {
 
@@ -63,7 +63,7 @@ namespace ManejadorSurtidor
                             } else
                             {
 
-                                Logger.Log(NLog.LogLevel.Error, $"No Subida {venta.ventaId}");
+                                //Logger.Log(NLog.LogLevel.Error, $"No Subida {venta.ventaId}");
                             }
 
                         }

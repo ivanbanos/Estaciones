@@ -197,6 +197,7 @@
     <Compile Include="Models\Turno.cs" />
     <Compile Include="Models\Venta.cs" />
     <Compile Include="ProtocoloSiesa.cs" />
+  <Compile Include="ProtocoloSiesa_Marcador.cs" />
     <Compile Include="RequestEnviarFacturasCanastilla.cs" />
     <Compile Include="Service1.cs">
       <SubType>Component</SubType>

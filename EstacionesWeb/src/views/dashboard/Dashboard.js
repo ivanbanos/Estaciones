@@ -36,6 +36,11 @@ const Dashboard = () => {
     nit: '',
     direccion: '',
     telefono: '',
+    razon: '',
+    linea1: '',
+    linea2: '',
+    linea3: '',
+    linea4: '',
   })
   const estacionService = new EstacionService()
 
@@ -125,7 +130,17 @@ const Dashboard = () => {
       } else {
         toastRef.current?.addMessage('Estación creada exitosamente', 'success')
         setShowModal(false)
-        setNuevaEstacion({ nombre: '', nit: '', direccion: '', telefono: '' })
+        setNuevaEstacion({
+          nombre: '',
+          nit: '',
+          direccion: '',
+          telefono: '',
+          razon: '',
+          linea1: '',
+          linea2: '',
+          linea3: '',
+          linea4: '',
+        })
         fetchEstaciones() // Reload stations
       }
     } catch (error) {
@@ -139,7 +154,17 @@ const Dashboard = () => {
 
   const handleCloseModal = () => {
     setShowModal(false)
-    setNuevaEstacion({ nombre: '', nit: '', direccion: '', telefono: '' })
+    setNuevaEstacion({
+      nombre: '',
+      nit: '',
+      direccion: '',
+      telefono: '',
+      razon: '',
+      linea1: '',
+      linea2: '',
+      linea3: '',
+      linea4: '',
+    })
   }
 
   useEffect(() => {
@@ -323,6 +348,66 @@ const Dashboard = () => {
                 value={nuevaEstacion.telefono}
                 onChange={handleInputChange}
                 placeholder="Ingrese el teléfono (opcional)"
+              />
+            </div>
+
+            <div className="mb-3">
+              <CFormLabel htmlFor="razon">Razón Social</CFormLabel>
+              <CFormInput
+                type="text"
+                id="razon"
+                name="razon"
+                value={nuevaEstacion.razon}
+                onChange={handleInputChange}
+                placeholder="Ingrese la razón social (opcional)"
+              />
+            </div>
+
+            <div className="mb-3">
+              <CFormLabel htmlFor="linea1">Línea de encabezado 1</CFormLabel>
+              <CFormInput
+                type="text"
+                id="linea1"
+                name="linea1"
+                value={nuevaEstacion.linea1}
+                onChange={handleInputChange}
+                placeholder="Línea adicional 1 (opcional)"
+              />
+            </div>
+
+            <div className="mb-3">
+              <CFormLabel htmlFor="linea2">Línea de encabezado 2</CFormLabel>
+              <CFormInput
+                type="text"
+                id="linea2"
+                name="linea2"
+                value={nuevaEstacion.linea2}
+                onChange={handleInputChange}
+                placeholder="Línea adicional 2 (opcional)"
+              />
+            </div>
+
+            <div className="mb-3">
+              <CFormLabel htmlFor="linea3">Línea de encabezado 3</CFormLabel>
+              <CFormInput
+                type="text"
+                id="linea3"
+                name="linea3"
+                value={nuevaEstacion.linea3}
+                onChange={handleInputChange}
+                placeholder="Línea adicional 3 (opcional)"
+              />
+            </div>
+
+            <div className="mb-3">
+              <CFormLabel htmlFor="linea4">Línea de encabezado 4</CFormLabel>
+              <CFormInput
+                type="text"
+                id="linea4"
+                name="linea4"
+                value={nuevaEstacion.linea4}
+                onChange={handleInputChange}
+                placeholder="Línea adicional 4 (opcional)"
               />
             </div>
           </CForm>

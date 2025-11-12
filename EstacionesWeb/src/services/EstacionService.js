@@ -42,7 +42,8 @@ class EstacionService {
 
   async addOrUpdate(estacion) {
     try {
-      return await this.httpService.post(this.url, estacion)
+      // The API endpoint expects an array of estaciones
+      return await this.httpService.post(this.url, [estacion])
     } catch (error) {
       console.error('Error adding/updating estacion:', error)
       throw error

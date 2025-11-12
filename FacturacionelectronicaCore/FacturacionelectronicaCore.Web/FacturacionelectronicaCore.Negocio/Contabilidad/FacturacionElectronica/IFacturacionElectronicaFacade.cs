@@ -23,6 +23,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         Task<ResolucionElectronica> GetResolucionElectronica(string estacion);
 
         Task<string> getJson(Modelo.OrdenDeDespacho ordenDeDespachoEntity, Guid estacio);
+        Task<string> getJsonCanastilla(Modelo.FacturaCanastilla facturaCanastilla, Guid estacio);
         Task<string> ReenviarFactura(Repositorio.Entities.OrdenDeDespacho orden, Guid estacion);
     }
 }

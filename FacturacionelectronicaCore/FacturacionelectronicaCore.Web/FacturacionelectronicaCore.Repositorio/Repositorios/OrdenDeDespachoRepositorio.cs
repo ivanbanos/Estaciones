@@ -76,12 +76,12 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             {
                 paramList.Add("FechaInicial", fechaInicial);
 
-                filters.Add(Builders<OrdenesMongo>.Filter.Gte("FechaReporte", fechaInicial.Value.AddHours(-12)));
+                filters.Add(Builders<OrdenesMongo>.Filter.Gte("FechaReporte", fechaInicial.Value));
             }
             if (fechaFinal != null)
             {
                 paramList.Add("FechaFinal", fechaFinal);
-                filters.Add(Builders<OrdenesMongo>.Filter.Lte("FechaReporte", fechaFinal.Value.AddDays(1).AddHours(-12)));
+                filters.Add(Builders<OrdenesMongo>.Filter.Lte("FechaReporte", fechaFinal.Value.AddDays(1)));
             }
             if (!string.IsNullOrEmpty(identificacionTercero))
             {
@@ -113,12 +113,12 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                     {
                         paramList.Add("FechaInicial", fechaInicial);
 
-                        filters.Add(Builders<OrdenesMongo>.Filter.Gte("Fecha", fechaInicial.Value.AddHours(7)));
+                        filters.Add(Builders<OrdenesMongo>.Filter.Gte("Fecha", fechaInicial.Value));
                     }
                     if (fechaFinal != null)
                     {
                         paramList.Add("FechaFinal", fechaFinal);
-                        filters.Add(Builders<OrdenesMongo>.Filter.Lte("Fecha", fechaFinal.Value.AddDays(1).AddHours(7)));
+                        filters.Add(Builders<OrdenesMongo>.Filter.Lte("Fecha", fechaFinal.Value.AddDays(1)));
                     }
                     if (!string.IsNullOrEmpty(identificacionTercero))
                     {

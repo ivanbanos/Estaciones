@@ -9,6 +9,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FacturaCanastilla = FacturacionelectronicaCore.Repositorio.Entities.FacturaCanastilla;
+using Microsoft.Extensions.Options;
+using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
 
 namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
 {
@@ -16,11 +18,34 @@ namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
     {
         private readonly IFacturaCanastillaRepository _facturaCanastillaRepository;
         private readonly IValidadorGuidAFacturaElectronica _validadorGuidAFacturaElectronica;
+        private readonly Alegra _alegra;
 
-        public FacturaCanastillaNegocio(IFacturaCanastillaRepository facturaCanastillaRepository, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica)
+        public FacturaCanastillaNegocio(IFacturaCanastillaRepository facturaCanastillaRepository, IValidadorGuidAFacturaElectronica validadorGuidAFacturaElectronica, IOptions<Alegra> alegra)
         {
             _facturaCanastillaRepository = facturaCanastillaRepository;
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
+            _alegra = alegra.Value;
+        }
+
+        // Convert a nullable incoming DateTime by adding the configured hour offset from _alegra.ServerTimeOffsetHours.
+        // Behavior:
+        //  - If ServerTimeOffsetHours is null, returns the original value (no offset).
+        //  - Adds the configured number of hours (can be negative) to the provided DateTime.
+        private DateTime? ConvertToServerTime(DateTime? input)
+        {
+            if (!input.HasValue) return null;
+            if (_alegra == null || !_alegra.ServerTimeOffsetHours.HasValue) return input;
+
+            try
+            {
+                var offset = _alegra.ServerTimeOffsetHours.GetValueOrDefault(0);
+                return input.Value.AddHours(offset);
+            }
+            catch
+            {
+                // If anything goes wrong, fall back to original value
+                return input;
+            }
         }
         public async Task<IEnumerable<FacturaCanastilla>> GetDetalleFactura(string idFactura)
         {
@@ -34,7 +59,11 @@ namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
 
         public async Task<IEnumerable<FacturaCanastilla>> GetFacturas(DateTime? fechaInicial, DateTime? fechaFinal, string identificacionTercero, string nombreTercero, Guid estacion)
         {
-            return await _facturaCanastillaRepository.GetFacturas(fechaInicial, fechaFinal, identificacionTercero, nombreTercero, estacion);
+            // Normalize incoming search dates to the configured server timezone before hitting the repository.
+            var fechaInicialServer = ConvertToServerTime(fechaInicial);
+            var fechaFinalServer = ConvertToServerTime(fechaFinal);
+            
+            return await _facturaCanastillaRepository.GetFacturas(fechaInicialServer, fechaFinalServer, identificacionTercero, nombreTercero, estacion);
         }
 
 
@@ -56,7 +85,11 @@ namespace FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio
 
         public async Task<FacturaCanastillaReporte> GetFacturasReporte(DateTime? fechaInicial, DateTime? fechaFinal, string identificacion, string nombreTercero, Guid estacion)
         {
-            var facturas = await _facturaCanastillaRepository.GetFacturas(fechaInicial, fechaFinal, identificacion, nombreTercero, estacion);
+            // Normalize incoming search dates to the configured server timezone before hitting the repository.
+            var fechaInicialServer = ConvertToServerTime(fechaInicial);
+            var fechaFinalServer = ConvertToServerTime(fechaFinal);
+            
+            var facturas = await _facturaCanastillaRepository.GetFacturas(fechaInicialServer, fechaFinalServer, identificacion, nombreTercero, estacion);
             var detalleArticulos = new List<DetalleArticulo>();
             var cantidad = 0;
             var subtotal = 0d;

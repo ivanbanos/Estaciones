@@ -2,6 +2,7 @@
 using EnviadorInformacionService.Models;
 using FacturadorEstacionesRepositorio;
 using Newtonsoft.Json;
+using System.Net.Http;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -76,6 +77,13 @@ namespace EnviadorInformacionService
                             var infoTemp = "";
                             var facelec = "";
                             var consecutivo = "";
+                            var cantidadRedondeada = Math.Round((double)factura.Venta.CANTIDAD, 2);
+                            var precioCalculado = (cantidadRedondeada > 0)
+                                ? Math.Round(((double)factura.Venta.TOTAL + (double)factura.Venta.Descuento) / cantidadRedondeada, 2)
+                                : 0.0;
+                            factura.descuento = factura.Venta.Descuento;
+                            factura.total = (decimal)(cantidadRedondeada * precioCalculado) - factura.Venta.Descuento;
+                            factura.subtotal = (decimal)cantidadRedondeada * (decimal)precioCalculado;
 
                             if (factura.codigoFormaPago != 6)
                             {
@@ -100,12 +108,51 @@ namespace EnviadorInformacionService
 
                                     if (!string.IsNullOrEmpty(infoTemp))
                                     {
-                                        infoTemp = infoTemp.Replace("\n\r", " ");
+                                        // Normalize different newline sequences to spaces so splitting and regexes work reliably
+                                        infoTemp = infoTemp.Replace("\r\n", "$").Replace("\n", "$").Replace("\r", "$");
+                                        infoTemp = infoTemp.Replace("$$", "$");
+                                        //Logger.Info($"Info factura electrónica para factura {factura.ventaId}: {infoTemp}");
+                                        var facturaElectronica = infoTemp.Split('$');
 
-                                        var facturaElectronica = infoTemp.Split(' ');
+                                        // Use trimmed value and ignore case when matching invoice id (letters + digits)
+                                        var facturaIdForMatch = facturaElectronica.Length > 2 ? facturaElectronica[1].Trim() : string.Empty;
+                                        Match match = Regex.Match(facturaIdForMatch, @"^([A-Za-z]+)(\d+)$", RegexOptions.IgnoreCase);
+                                        facelec = facturaElectronica[3].Trim();
 
-                                        Match match = Regex.Match(facturaElectronica[2], @"^([A-Za-z]+)(\d+)$");
-                                        facelec = facturaElectronica[4];
+                                        // Extraer la fecha de emisión de la factura electrónica desde el texto raw (infoTemp)
+                                        // Busca el primer patrón dd/MM/yyyy HH:mm:ss y lo parsea. Si no existe, intenta usar facturaElectronica[6].
+                                        DateTime parsedFecha;
+                                        // Log facturaElectronica parts to help diagnose parsing issues
+                                        //Logger.Info($"facturaElectronica parts: count={facturaElectronica.Length}; [2]='{(facturaElectronica.Length>2?facturaElectronica[1]:"<missing>")}'; [4]='{(facturaElectronica.Length>4?facturaElectronica[3]:"<missing>")}'");
+                                        var dateMatch = Regex.Match(infoTemp, @"\b(\d{2}/\d{2}/\d{4}\s+\d{2}:\d{2}:\d{2})\b");
+                                        if (dateMatch.Success)
+                                        {
+                                            if (DateTime.TryParseExact(dateMatch.Groups[1].Value, "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedFecha))
+                                            {
+                                                factura.fecha = parsedFecha;
+                                            }
+                                            else
+                                            {
+                                                Logger.Warn($"No se pudo parsear la fecha encontrada en factura electrónica: {dateMatch.Groups[1].Value}");
+                                            }
+                                        }
+                                        else if (facturaElectronica.Length > 6)
+                                        {
+                                            if (DateTime.TryParseExact(facturaElectronica[5], "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out parsedFecha))
+                                            {
+                                                factura.fecha = parsedFecha;
+                                            }
+                                            else
+                                            {
+                                                Logger.Warn($"No se pudo parsear la fecha en posicion 5 de facturaElectronica: {facturaElectronica[5]}");
+                                            }
+                                        }
+                                        else
+                                        {
+                                            Logger.Warn("No se encontró fecha de emisión en factura electrónica; usando la fecha actual.");
+                                        }
+                                        // Log regex match result for the invoice number
+                                        //Logger.Info($"Regex on facturaElectronica[2] -> value='{(facturaElectronica.Length>2?facturaElectronica[1]:"<missing>")}', matchSuccess={match.Success}");
                                         if (match.Success)
                                         {
                                             string letras = match.Groups[1].Value;
@@ -118,53 +165,207 @@ namespace EnviadorInformacionService
                                             string auxiliarDescuento = ObtenerAuxiliarDescuento(factura.codigoFormaPago, factura.Venta.Combustible);
 
                                             // Obtener fecha de facturación desde Dataico
+                                            bool dataicoHasInfo = false;
                                             try
                                             {
+                                                Logger.Warn($"Intento de busqueda factura {facturaElectronica[1]}.");
                                                 string dataicoToken = ConfigurationManager.AppSettings["dataico_token"];
-                                                string url = $"https://api.dataico.com/dataico_api/v2/invoices?number={facturaElectronica[2]}";
-                                                using (var client = new System.Net.Http.HttpClient())
+                                                string url = $"https://api.dataico.com/dataico_api/v2/invoices?number={facturaElectronica[1]}";
+                                                int maxRetries = 2;
+                                                int retryCount = 0;
+                                                bool success = false;
+                                                System.Net.Http.HttpResponseMessage response = null;
+                                                while (retryCount < maxRetries && !success)
                                                 {
-                                                    client.DefaultRequestHeaders.Add("auth-token", dataicoToken);
-                                                    var response = client.GetAsync(url).Result;
-                                                    if (response.IsSuccessStatusCode)
+                                                    using (var client = new HttpClient())
+                                                    {
+                                                        try
+                                                        {
+                                                            var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.dataico.com/dataico_api/v2/invoices?number={facturaElectronica[1]}");
+                                                            request.Headers.Add("auth-token", dataicoToken);
+                                                            response = client.SendAsync(request).Result;
+                                                            if (response.IsSuccessStatusCode)
+                                                            {
+                                                                success = true;
+                                                                Logger.Info($"Éxito al obtener la fecha de facturación desde Dataico para factura {facturaElectronica[1]}.");
+                                                                
+                                                            }
+                                                            else
+                                                            {
+                                                                Logger.Warn($"Intento {retryCount + 1}: No se pudo obtener la fecha de facturación desde Dataico para factura {facturaElectronica[1]}. Código: {response.StatusCode}");
+                                                            }
+                                                        }
+                                                        catch (Exception exHttp)
+                                                        {
+                                                            Logger.Error($"Intento {retryCount + 1}: Error al llamar a Dataico para factura {facturaElectronica[1]}: {exHttp.Message}");
+                                                        }
+                                                    }
+                                                    retryCount++;
+                                                    if (!success && retryCount < maxRetries)
+                                                    {
+                                                        Thread.Sleep(1000); // Espera 1 segundo antes de reintentar
+                                                    }
+                                                    if (success && response != null)
                                                     {
                                                         var json = response.Content.ReadAsStringAsync().Result;
-                                                        dynamic obj = JsonConvert.DeserializeObject(json);
-                                                        // La fecha está en obj.invoice.issue_date
+                                                        //Logger.Info($"Respuesta de Dataico para factura {facturaElectronica[1]}: {json}");
+                                                        if (string.IsNullOrWhiteSpace(json))
+                                                        {
+                                                            Logger.Error($"Respuesta vacía de Dataico para factura {facturaElectronica[1]}");
+                                                            throw new Exception("Respuesta vacía de Dataico");
+                                                        }
+                                                        dynamic obj = null;
+                                                        try
+                                                        {
+                                                            obj = JsonConvert.DeserializeObject(json);
+                                                        }
+                                                        catch (Exception exJson)
+                                                        {
+                                                            Logger.Error($"Error deserializando JSON de Dataico: {exJson.Message}. JSON: {json}");
+                                                            throw;
+                                                        }
+                                                        if (obj == null || obj.invoice == null)
+                                                        {
+                                                            Logger.Error($"El objeto JSON de Dataico o la propiedad 'invoice' es null. JSON: {json}");
+                                                            // no data from Dataico for this invoice
+                                                            dataicoHasInfo = false;
+                                                            throw new Exception("El objeto JSON de Dataico o la propiedad 'invoice' es null");
+                                                        }
+                                                        dataicoHasInfo = true;
                                                         string fechaFacturacion = obj.invoice.issue_date;
-                                                        // Setear la fecha en la factura
-                                                        factura.fecha = DateTime.ParseExact(fechaFacturacion, "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture);
+                                                        // Extraer totales desde items y/o qrcode
+                                                        decimal total = 0, subtotal = 0, descuento = 0;
+                                                        try
+                                                        {
+                                                            // Sumar los totales de los items
+                                                            if (obj.invoice.items != null && obj.invoice.items.HasValues)
+                                                            {
+                                                                foreach (var item in obj.invoice.items)
+                                                                {
+                                                                    decimal itemTotal = 0;
+                                                                    decimal itemPrice = 0;
+                                                                    decimal itemQty = 0;
+                                                                    try { itemPrice = (decimal)item.price; } catch { }
+                                                                    try { itemQty = (decimal)item.quantity; } catch { }
+                                                                    itemTotal = itemPrice * itemQty;
+                                                                    subtotal += itemTotal;
+                                                                }
+                                                            }
+                                                            // Leer total desde qrcode si existe
+                                                            string qrcode = obj.invoice.qrcode;
+                                                            if (!string.IsNullOrWhiteSpace(qrcode))
+                                                            {
+                                                                // Buscar ValTolFac y ValFac
+                                                                var lines = qrcode.Split('\n');
+                                                                foreach (var line in lines)
+                                                                {
+                                                                    if (line.StartsWith("ValTolFac="))
+                                                                    {
+                                                                        var val = line.Substring("ValTolFac=".Length);
+                                                                        decimal.TryParse(val, NumberStyles.Any, CultureInfo.InvariantCulture, out total);
+                                                                    }
+                                                                    if (line.StartsWith("ValFac="))
+                                                                    {
+                                                                        var val = line.Substring("ValFac=".Length);
+                                                                        decimal.TryParse(val, NumberStyles.Any, CultureInfo.InvariantCulture, out subtotal);
+                                                                    }
+                                                                    if (line.StartsWith("ValOtroIm="))
+                                                                    {
+                                                                        var val = line.Substring("ValOtroIm=".Length);
+                                                                        decimal.TryParse(val, NumberStyles.Any, CultureInfo.InvariantCulture, out descuento);
+                                                                    }
+                                                                }
+                                                            }
+                                                            // Si no hay qrcode, intentar con los items
+                                                            if (total == 0 && subtotal > 0)
+                                                                total = subtotal;
+                                                        }
+                                                        catch (Exception exNum)
+                                                        {
+                                                            Logger.Error($"Error extrayendo totales de Dataico. Error: {exNum.Message}");
+                                                        }
+                                                        if (string.IsNullOrWhiteSpace(fechaFacturacion))
+                                                        {
+                                                            Logger.Error($"Campo issue_date vacío en respuesta de Dataico. JSON: {json}");
+                                                            throw new Exception("Campo issue_date vacío en respuesta de Dataico");
+                                                        }
+                                                        try
+                                                        {
+                                                            factura.fecha = DateTime.ParseExact(fechaFacturacion, "dd/MM/yyyy HH:mm:ss", CultureInfo.InvariantCulture);
+                                                        }
+                                                        catch (Exception exFecha)
+                                                        {
+                                                            Logger.Error($"Error parseando fecha de facturación '{fechaFacturacion}': {exFecha.Message}");
+                                                            throw;
+                                                        }
+                                                        if (descuento > 0){
+
+                                                            factura.descuento = descuento;
+                                                            factura.total = total;
+                                                            factura.subtotal = subtotal;
+                                                        } else{
+                                                            factura.total = total;
+                                                            factura.subtotal = factura.descuento + total;
+                                                        }
+
+                                                        if (auxiliarContable == null)
+                                                        {
+                                                         Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Venta.Combustible} no se envió no exite auxiliar contrable creado");
+                                                         }
+                                                        if (auxiliarCruce == null)
+                                                        {   
+                                                         Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Venta.Combustible} no se envió no exite auxiliar cruce creado");
+                                                        }
+                                                                          Logger.Info($"Factura {facturaElectronica[1]} Dataico: fecha={fechaFacturacion}, subtotal={subtotal}, total={total}, descuento={descuento}");
+                                        
                                                     }
                                                     else
                                                     {
-                                                        Logger.Warn($"No se pudo obtener la fecha de facturación desde Dataico para factura {facturaElectronica[2]}. Código: {response.StatusCode}");
+                                                        Logger.Warn($"No se pudo obtener la fecha de facturación desde Dataico para factura {facturaElectronica[1]} después de {maxRetries} intentos.");
                                                     }
                                                 }
                                             }
                                             catch (Exception ex)
                                             {
-                                                Logger.Error($"Error al obtener la fecha de facturación desde Dataico: {ex.Message}");
+                                                Logger.Error($"Error al obtener la fecha de facturación desde Dataico: {ex.Message}{ex.StackTrace}");
                                             }
 
-                                            if (auxiliarContable == null)
+                                            // Enviar la factura a Siesa SOLO si Dataico devolvió información válida
+                                            if (dataicoHasInfo)
                                             {
-                                                Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Venta.Combustible} no se envió no exite auxiliar contrable creado");
+                                                try
+                                                {
+                                                    Logger.Info($"Iniciando envío de factura - ID: {factura.ventaId}, Total: {factura.total}, Forma Pago: {factura.codigoFormaPago}, Combustible: {factura.Venta.Combustible}");
+                                                    _apiContabilidad.EnviarFactura(factura, facturaElectronica[1], numeros, auxiliarContable, auxiliarCruce, auxiliarDescuento);
+                                                    facturasEnviadas.Add(factura.ventaId);
+                                                    Logger.Info($"Factura enviada exitosamente - ID: {factura.ventaId}, Total: {factura.total}, Forma Pago: {factura.codigoFormaPago}, Combustible: {factura.Venta.Combustible}");
+                                                }
+                                                catch (Exception exSend)
+                                                {
+                                                    facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: {exSend.Message}");
+                                                    Logger.Warn($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: {exSend.Message}");
+                                                }
                                             }
-                                            if (auxiliarCruce == null)
+                                            else
                                             {
-                                                Logger.Info($"Factura {factura.ventaId} con forma de pago {factura.codigoFormaPago} y combustible {factura.Venta.Combustible} no se envió no exite auxiliar cruce creado");
+                                                facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: no hubo información de Dataico");
+                                                Logger.Warn($"No se envió factura {factura.ventaId} a Siesa porque Dataico no devolvió información.");
                                             }
-                                            Logger.Info($"Iniciando envío de factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Combustible: {factura.Venta.Combustible}");
-                                            _apiContabilidad.EnviarFactura(factura, facturaElectronica[2], numeros, auxiliarContable, auxiliarCruce, auxiliarDescuento);
-                                            //_apiContabilidad.EnviarRecibo(factura, facturaElectronica[2], numeros, _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, true), _estacionesRepositorio.ObtenerAuxiliarContable(factura.codigoFormaPago, factura.Venta.Combustible, true, false));
-                                            facturasEnviadas.Add(factura.ventaId);
-                                            Logger.Info($"Factura enviada exitosamente - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Combustible: {factura.Venta.Combustible}");
+
+                                        }
+                                        else
+                                        {
+                                            facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: no tiene factura electrónica");
+                                            Logger.Warn($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: no tiene factura electrónica");
+
                                         }
                                     }
                                     else
                                     {
 
-                                        facturasEnviadas.Add(factura.ventaId);
+                                        facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: no tiene factura electrónica");
+                                        Logger.Warn($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: no tiene factura electrónica");
+
                                     }
 
                                 }
@@ -228,5 +429,5 @@ namespace EnviadorInformacionService
             return ConfigurationManager.AppSettings["auxiliardescuento"];
         }
     }
-    
+
 }

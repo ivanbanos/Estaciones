@@ -3,6 +3,7 @@ using FacturacionelectronicaCore.Repositorio.Entities;
 using FacturacionelectronicaCore.Repositorio.Repositorios;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -24,14 +25,20 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         private readonly ResolucionNumber _resolucionNumber;
         private readonly IResolucionRepositorio _resolucionRepositorio;
         private static readonly SemaphoreSlim _globalSemaphore = new(1, 1);
+        private readonly IOrdenDeDespachoRepositorio _ordenDeDespachoRepositorio;
 
-        public FacturacionDataico(IOptions<Alegra> alegra, ResolucionNumber resolucionNumber, IResolucionRepositorio resolucionRepositorio)
+        public FacturacionDataico(IOptions<Alegra> alegra,
+        ResolucionNumber resolucionNumber,
+        IResolucionRepositorio resolucionRepositorio,
+        IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio)
         {
             alegraOptions = alegra.Value;
 
             _resolucionNumber = resolucionNumber;
 
             _resolucionRepositorio = resolucionRepositorio;
+
+            _ordenDeDespachoRepositorio = ordenDeDespachoRepositorio;
         }
 
         public async Task ActualizarTercero(Modelo.Tercero tercero, string idFacturacion)
@@ -45,13 +52,13 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             try
             {
                 var invoice = await GetFacturaDataico(factura, tercero, estacionGuid.ToString());
-                Console.WriteLine(JsonConvert.SerializeObject(invoice));
+                //Console.WriteLine(JsonConvert.SerializeObject(invoice));
                 var triedAgain = 0;
-                while (triedAgain++ < 2)
+                while (triedAgain++ < 1)
                 {
                     using (var client = new HttpClient())
                     {
-                        client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
+                        client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
                         client.DefaultRequestHeaders.Add("auth-token", alegraOptions.Token);
                         var path = $"{alegraOptions.Url}invoices";
                         var content = new StringContent(JsonConvert.SerializeObject(invoice, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
@@ -92,9 +99,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
                                 }
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             {
-                                throw new AlegraException(responseBody + ex.Message + JsonConvert.SerializeObject(invoice));
+                                throw new AlegraException(responseBody + ":" + JsonConvert.SerializeObject(invoice));
                             }
                         }
                         if (!responseBody.Contains("cufe"))
@@ -128,17 +135,17 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
                                 }
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             {
                                 return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
                             }
                         }
                         else
                         {
-                            Console.WriteLine(responseBody);
+                            //Console.WriteLine(responseBody);
                             var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
-                            Console.WriteLine(JsonConvert.SerializeObject(respuesta));
-                            Console.WriteLine(JsonConvert.SerializeObject(responseBody));
+                            //Console.WriteLine(JsonConvert.SerializeObject(respuesta));
+                            //Console.WriteLine(JsonConvert.SerializeObject(responseBody));
                             await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), int.Parse(invoice.invoice.number) + 1);
                             return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe;
                         }
@@ -345,9 +352,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 taxes = new List<TaxDataico>() { },
                 measuring_unit = "GL",
                 retentions = new List<RetentionDataico>() { },
-                original_price = (factura.Descuento > 0 && cantidadRedondeada > 0) ? (double?)(precioCalculado + ((double)factura.Descuento / cantidadRedondeada)) : null,
-                discount_rate = (decimal?)((factura.Descuento > 0 && factura.SubTotal > 0) ? Math.Round(factura.Descuento / (factura.SubTotal + factura.Descuento) * 100, 2) : (decimal?)null),
-                price = precioCalculado
+                original_price = (double?)((factura.Descuento > 0 && cantidadRedondeada > 0) ? precioCalculado + ((double)factura.Descuento / cantidadRedondeada) : (double?)null),
+                discount_rate = (factura.Descuento > 0 && factura.Total > 0) ? Math.Round(factura.Descuento / ((decimal)factura.Total + factura.Descuento) * 100, 2) : null,
+                price = (double)precioCalculado,
             });
 
             return new FacturaDataico()
@@ -479,278 +486,169 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         {
 
             await _globalSemaphore.WaitAsync();
+            var invoice = new FacturaDataico();
+            var respuestaFactura = string.Empty;
+            var wasParsed = false;
             try
             {
-                if (alegraOptions.ExcluirDireccion)
+                var ordenDeDespachoEntity = (await _ordenDeDespachoRepositorio.ObtenerOrdenDespachoPorIdVentaLocal(orden.IdVentaLocal, estacionGuid)).FirstOrDefault();
+                
+
+                Console.WriteLine(estacionGuid.ToString());
+                var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
+
+                // If the order has an error and idFacturaElectronica contains a previously built invoice JSON
+                // try to extract a FacturaDataico object from it and reuse it instead of rebuilding.
+
+                // if (ordenDeDespachoEntity != null && !string.IsNullOrEmpty(ordenDeDespachoEntity.idFacturaElectronica) &&
+                //     !ordenDeDespachoEntity.idFacturaElectronica.Contains("order_reference_mismatch"))
+                // {
+                //     var parsed = TryParseFacturaDataicoFromLog(ordenDeDespachoEntity.idFacturaElectronica);
+                //     if (parsed != null)
+                //     {
+                //         // If the parsed invoice contains an order_reference different from the current order IdVentaLocal,
+                //         // rebuild the invoice using GetFacturaDataico and use that instead (the parsed one likely belongs to another order)
+                //         var parsedOrderRef = parsed?.invoice?.order_reference;
+                //         Console.WriteLine($"Parsed order_reference: {parsedOrderRef}, Current order IdVentaLocal: {orden.IdVentaLocal}");
+                //         if (!string.IsNullOrEmpty(parsedOrderRef) && parsedOrderRef.Trim() != orden.IdVentaLocal.ToString())
+                //         {
+                //             invoice = await GetFacturaDataico(orden, tercero, estacionGuid.ToString(), resolucion);
+                //         }
+                //         else
+                //         {
+                //             invoice = parsed;
+                //             wasParsed = true;
+                //         }
+                //     }
+                //     else
+                //     {
+                //         invoice = await GetFacturaDataico(orden, tercero, estacionGuid.ToString(), resolucion);
+                //     }
+                // }
+                // else
+                // {
+                //     invoice = await GetFacturaDataico(orden, tercero, estacionGuid.ToString(), resolucion);
+                // }
+                 invoice = await GetFacturaDataico(orden, tercero, estacionGuid.ToString(), resolucion);
+                Console.WriteLine($"Factura: {invoice.invoice.order_reference}, {invoice.invoice.number} enviandose");
+
+                var shouldSend = true;
+                while (shouldSend)
                 {
-
-                    Console.WriteLine(estacionGuid.ToString());
-                    var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
-                    var invoice = await GetFacturaDataico(orden, tercero, estacionGuid.ToString(), resolucion);
-                    Console.WriteLine(JsonConvert.SerializeObject(invoice));
-                    var triedAgain = 0;
-                    while (triedAgain++ < 2)
+                    shouldSend = false;
+                    using (var client = new HttpClient())
                     {
+                        client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
+                        client.DefaultRequestHeaders.Add("auth-token", resolucion.token);
+                        var path = $"{alegraOptions.Url}invoices";
+                        var content = new StringContent(JsonConvert.SerializeObject(invoice, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
+                        content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+                        var response = client.PostAsync(path, content).Result;
+                        string responseBody = await response.Content.ReadAsStringAsync();
 
-                        using (var client = new HttpClient())
+                        respuestaFactura += responseBody;
+                        try
                         {
-                            client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
-                            client.DefaultRequestHeaders.Add("auth-token", resolucion.token);
-                            var path = $"{alegraOptions.Url}invoices";
-                            var content = new StringContent(JsonConvert.SerializeObject(invoice, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
-                            content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-                            var response = client.PostAsync(path, content).Result;
-                            string responseBody = await response.Content.ReadAsStringAsync();
+                            response.EnsureSuccessStatusCode();
+                        }
+                        catch (Exception)
+                        {
                             try
                             {
-                                response.EnsureSuccessStatusCode();
+                                var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
+                                if (respuestaError.errors.Any(x => x.path.Any(y => y.Contains("invoice"))))
+                                {
+                                    var error = respuestaError.errors.First(x => x.path.Any(y => y.Contains("invoice")));
+                                    if (error.error.Contains("Tiene que ser el siguiente"))
+                                    {
+                                        var numberpos = error.error.IndexOf('\'');
+                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
+                                        numberpos = error.error.IndexOf('\'', numberpos + 1);
+                                        var fin = error.error.IndexOf('\'', numberpos + 1);
+                                        var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
+                                        resolucion.numeroActual = Int32.Parse(number);
+                                        invoice.invoice.number = resolucion.numeroActual.ToString();
+                                        shouldSend = true;
+
+                                    }
+                                    else if (error.error.Contains("modificar"))
+                                    {
+
+                                        resolucion.numeroActual++;
+                                        invoice.invoice.number = resolucion.numeroActual.ToString();
+                                        shouldSend = true;
+
+                                    }
+                                    else
+                                    {
+                                        return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
+                                    }
+                                }
+                                else
+                                {
+                                    return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
+
+                                }
                             }
                             catch (Exception)
                             {
-                                try
-                                {
-                                    var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
-                                    if (respuestaError.errors.Any(x => x.path.Any(y => y.Contains("invoice"))))
-                                    {
-                                        var error = respuestaError.errors.First(x => x.path.Any(y => y.Contains("invoice")));
-                                        if (error.error.Contains("Tiene que ser el siguiente"))
-                                        {
-                                            var numberpos = error.error.IndexOf('\'');
-                                            numberpos = error.error.IndexOf('\'', numberpos + 1);
-                                            numberpos = error.error.IndexOf('\'', numberpos + 1);
-                                            var fin = error.error.IndexOf('\'', numberpos + 1);
-                                            var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
-                                            resolucion.numeroActual = Int32.Parse(number);
-                                            invoice.invoice.number = resolucion.numeroActual.ToString();
 
-                                        }
-                                        else if (error.error.Contains("modificar"))
-                                        {
-
-                                            resolucion.numeroActual++;
-                                            invoice.invoice.number = resolucion.numeroActual.ToString();
-
-                                        }
-                                        else
-                                        {
-                                            throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
-                                        }
-                                    }
-                                    else
-                                    {
-                                        throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
-
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-
-                                    return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
-                                }
-                            }
-                            if (!responseBody.Contains("cufe"))
-                            {
-
-                                try
-                                {
-                                    var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
-                                    if (respuestaError.errors.Any(x => x.path.Any(y => y.Contains("invoice"))))
-                                    {
-                                        var error = respuestaError.errors.First(x => x.path.Any(y => y.Contains("invoice")));
-                                        if (error.error.Contains("Tiene que ser el siguiente"))
-                                        {
-                                            var numberpos = error.error.IndexOf('\'');
-                                            numberpos = error.error.IndexOf('\'', numberpos + 1);
-                                            numberpos = error.error.IndexOf('\'', numberpos + 1);
-                                            var fin = error.error.IndexOf('\'', numberpos + 1);
-                                            var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
-                                            resolucion.numeroActual = Int32.Parse(number);
-                                        }
-                                        else if (error.error.Contains("modificar"))
-                                        {
-
-                                            resolucion.numeroActual++;
-                                        }
-                                        else
-                                        {
-                                            throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
-                                        }
-                                        invoice.invoice.number = resolucion.numeroActual.ToString();
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine(responseBody + JsonConvert.SerializeObject(invoice));
-                                        throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
-
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    Console.WriteLine(ex.Message);
-                                    Console.WriteLine(ex.StackTrace);
-                                    return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
-                                }
-                            }
-                            else
-                            {
-                                var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
-                                Console.WriteLine(JsonConvert.SerializeObject(respuesta));
-                                Console.WriteLine(JsonConvert.SerializeObject(responseBody));
-                                await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), int.Parse(invoice.invoice.number) + 1);
-                                return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe;
+                                return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
                             }
                         }
-                    }
-                }
-                else
-                {
-
-                    Console.WriteLine(estacionGuid.ToString());
-                    var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
-                    var invoice = await GetFacturaDataico(orden, tercero, estacionGuid.ToString(), resolucion);
-                    Console.WriteLine(JsonConvert.SerializeObject(invoice));
-                    var triedAgain = 0;
-                    while (triedAgain++ < 2)
-                    {
-
-                        using (var client = new HttpClient())
+                        if (shouldSend)
                         {
-                            client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
-                            client.DefaultRequestHeaders.Add("auth-token", resolucion.token);
-                            var path = $"{alegraOptions.Url}invoices";
-                            var content = new StringContent(JsonConvert.SerializeObject(invoice, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
-                            content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
-                            var response = client.PostAsync(path, content).Result;
-                            string responseBody = await response.Content.ReadAsStringAsync();
-                            try
-                            {
-                                response.EnsureSuccessStatusCode();
-                            }
-                            catch (Exception)
-                            {
-                                try
-                                {
-                                    var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
-                                    if (respuestaError.errors.Any(x => x.path.Any(y => y.Contains("invoice"))))
-                                    {
-                                        var error = respuestaError.errors.First(x => x.path.Any(y => y.Contains("invoice")));
-                                        if (error.error.Contains("Tiene que ser el siguiente"))
-                                        {
-                                            var numberpos = error.error.IndexOf('\'');
-                                            numberpos = error.error.IndexOf('\'', numberpos + 1);
-                                            numberpos = error.error.IndexOf('\'', numberpos + 1);
-                                            var fin = error.error.IndexOf('\'', numberpos + 1);
-                                            var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
-                                            resolucion.numeroActual = Int32.Parse(number);
-                                            invoice.invoice.number = resolucion.numeroActual.ToString();
-
-                                        }
-                                        else if (error.error.Contains("modificar"))
-                                        {
-
-                                            resolucion.numeroActual++;
-                                            invoice.invoice.number = resolucion.numeroActual.ToString();
-
-                                        }
-                                        else if (error.error.ToLower().Contains("ciudad"))
-                                        {
-
-                                            invoice.invoice.customer.city = null;
-                                            invoice.invoice.customer.department = null;
-                                            invoice.invoice.customer.address_line = null;
-                                            invoice.invoice.customer.country_code = null;
-
-                                        }
-                                        else
-                                        {
-                                            throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
-                                        }
-                                    }
-                                    else
-                                    {
-                                        throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
-
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-
-                                    return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
-                                }
-                            }
-                            if (!responseBody.Contains("cufe"))
-                            {
-
-                                try
-                                {
-                                    var respuestaError = JsonConvert.DeserializeObject<ErrorDataico>(responseBody);
-                                    if (respuestaError.errors.Any(x => x.path.Any(y => y.Contains("invoice"))))
-                                    {
-                                        var error = respuestaError.errors.First(x => x.path.Any(y => y.Contains("invoice")));
-                                        if (error.error.Contains("Tiene que ser el siguiente"))
-                                        {
-                                            var numberpos = error.error.IndexOf('\'');
-                                            numberpos = error.error.IndexOf('\'', numberpos + 1);
-                                            numberpos = error.error.IndexOf('\'', numberpos + 1);
-                                            var fin = error.error.IndexOf('\'', numberpos + 1);
-                                            var number = error.error.Substring(numberpos + 1, fin - numberpos - 1);
-                                            resolucion.numeroActual = Int32.Parse(number);
-
-                                        }
-                                        else if (error.error.Contains("modificar"))
-                                        {
-
-                                            resolucion.numeroActual++;
-
-                                        }
-                                        else if (error.error.ToLower().Contains("ciudad"))
-                                        {
-
-                                            invoice.invoice.customer.city = null;
-                                            invoice.invoice.customer.department = null;
-                                            invoice.invoice.customer.address_line = null;
-                                            invoice.invoice.customer.country_code = null;
-
-                                        }
-                                        else
-                                        {
-                                            throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
-                                        }
-                                        invoice.invoice.number = resolucion.numeroActual.ToString();
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine(responseBody + JsonConvert.SerializeObject(invoice));
-                                        throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
-
-                                    }
-                                }
-                                catch (Exception ex)
-                                {
-                                    Console.WriteLine(ex.Message);
-                                    Console.WriteLine(ex.StackTrace);
-                                    return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
-                                }
-                            }
-                            else
-                            {
-                                var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
-                                Console.WriteLine(JsonConvert.SerializeObject(respuesta));
-                                Console.WriteLine(JsonConvert.SerializeObject(responseBody));
-                                await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), int.Parse(invoice.invoice.number) + 1);
-                                return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe;
-                            }
+                            continue;
                         }
+                        var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
+                        // Console.WriteLine(JsonConvert.SerializeObject(respuesta));
+
+                        // Validate that the provider's order_reference matches our local order IdVentaLocal.
+                        try
+                        {
+                            var j = JObject.Parse(responseBody);
+                            var orderRef = j["order_reference"]?.ToString() ?? j["invoice"]?["order_reference"]?.ToString();
+                            if (!string.IsNullOrEmpty(orderRef) && orderRef != orden.IdVentaLocal.ToString())
+                            {
+                                if (resolucion.numeroActual <= int.Parse(invoice.invoice.number))
+                                {
+                                    await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), int.Parse(invoice.invoice.number) + 1);
+
+                                }
+                                Console.WriteLine($"Order reference mismatch: expected {orden.IdVentaLocal}, got {orderRef}");
+                                // Do not persist the resolution number if the response refers to a different order.
+                                return "error:order_reference_mismatch:" + responseBody + ":" + JsonConvert.SerializeObject(invoice);
+                            }
+
+                        }
+                        catch (Exception)
+                        {
+                            // If parsing fails, continue with the normal flow (we still have the typed respuesta object).
+                        }
+                        if (!wasParsed)
+                        {
+                            if (resolucion.numeroActual <= int.Parse(invoice.invoice.number))
+                            {
+                                await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), int.Parse(invoice.invoice.number) + 1);
+
+                            }
+
+                        }
+Console.WriteLine($"Factura creada, {respuesta.order_reference}, {respuesta.dian_status}, {respuesta.number}");
+                        
+                        return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe + ":" + respuestaFactura + ":" + JsonConvert.SerializeObject(invoice);
+
                     }
                 }
-                return "error:" + JsonConvert.SerializeObject("No se pudo procesar la factura");
+
+                return "error:" + JsonConvert.SerializeObject("No se pudo procesar la factura") + ":" + respuestaFactura;
 
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
-                throw new AlegraException(ex.Message);
+                return "error:" + ex.StackTrace + ":" + ex.Message + ":" + JsonConvert.SerializeObject(invoice) + ":" + respuestaFactura;
             }
             finally
             {
@@ -795,7 +693,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacion);
             using (var client = new HttpClient())
             {
-                client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
+                client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
                 client.DefaultRequestHeaders.Add("auth-token", resolucion.token);
                 var path = $"{alegraOptions.Url}numberings/invoice";
                 var response = client.GetAsync(path).Result;
@@ -810,8 +708,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 }
 
                 var respuesta = JsonConvert.DeserializeObject<ResolucionesDataico>(responseBody);
-                Console.WriteLine(JsonConvert.SerializeObject(respuesta));
-                Console.WriteLine(JsonConvert.SerializeObject(responseBody));
+                // Console.WriteLine(JsonConvert.SerializeObject(respuesta));
+                // Console.WriteLine(JsonConvert.SerializeObject(responseBody));
                 return new ResolucionElectronica(respuesta.numberings.First(x => x.prefix == resolucion.prefijo));
             }
         }
@@ -840,14 +738,76 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
             }
         }
 
+        /// <summary>
+        /// Try to extract a FacturaDataico JSON object from an error log string.
+        /// The log sometimes contains two JSON blobs; we look for the second one which starts with '{"actions":'.
+        /// </summary>
+        private FacturaDataico TryParseFacturaDataicoFromLog(string log)
+        {
+            if (string.IsNullOrEmpty(log)) return null;
+            try
+            {
+                var marker = "{\"actions\":";
+                var idx = log.IndexOf(marker, StringComparison.OrdinalIgnoreCase);
+                if (idx < 0)
+                {
+                    // fallback: if the log contains '{"invoice":' it may be the invoice object
+                    idx = log.IndexOf("{\"invoice\":", StringComparison.OrdinalIgnoreCase);
+                }
+                if (idx >= 0)
+                {
+                    var json = log.Substring(idx);
+                    // If there are two JSON objects concatenated, try to trim to the first complete object
+                    // A simple approach: try to deserialize; if it fails, attempt to find matching braces
+                    try
+                    {
+                        return JsonConvert.DeserializeObject<FacturaDataico>(json);
+                    }
+                    catch
+                    {
+                        // Try to find the end by counting braces
+                        int depth = 0;
+                        int end = -1;
+                        for (int i = 0; i < json.Length; i++)
+                        {
+                            if (json[i] == '{') depth++;
+                            else if (json[i] == '}') depth--;
+                            if (depth == 0)
+                            {
+                                end = i;
+                                break;
+                            }
+                        }
+                        if (end > 0)
+                        {
+                            var candidate = json.Substring(0, end + 1);
+                            try { return JsonConvert.DeserializeObject<FacturaDataico>(candidate); } catch { return null; }
+                        }
+                    }
+                }
+            }
+            catch (Exception) { }
+            return null;
+        }
+
         public async Task<string> getJson(Modelo.OrdenDeDespacho orden, Guid estacion)
         {
             var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacion.ToString());
 
             var factura = await GetFacturaDataico(orden, orden.Tercero, estacion.ToString(), resolucion);
 
-            Console.WriteLine(JsonConvert.SerializeObject(factura));
+            // Console.WriteLine(JsonConvert.SerializeObject(factura));
             return JsonConvert.SerializeObject(factura);
+
+        }
+        public async Task<string> getJsonCanastilla(Modelo.FacturaCanastilla factura, Guid estacion)
+        {
+            var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacion.ToString());
+
+            var facturaDataico = await GetFacturaDataico(factura, factura.terceroId, estacion.ToString(), resolucion);
+
+            //Console.WriteLine(JsonConvert.SerializeObject(facturaDataico));
+            return JsonConvert.SerializeObject(facturaDataico);
 
         }
 
@@ -859,14 +819,14 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 Console.WriteLine(estacionGuid.ToString());
                 var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
                 var invoice = await GetFacturaDataico(factura, tercero, estacionGuid.ToString(), resolucion);
-                Console.WriteLine(JsonConvert.SerializeObject(invoice));
+                //Console.WriteLine(JsonConvert.SerializeObject(invoice));
                 var triedAgain = 0;
-                while (triedAgain++ < 2)
+                while (triedAgain++ < 1)
                 {
 
                     using (var client = new HttpClient())
                     {
-                        client.Timeout = new TimeSpan(0, 0, 5, 0, 0);
+                        client.Timeout = new TimeSpan(0, 0, 1, 0, 0);
                         client.DefaultRequestHeaders.Add("auth-token", resolucion.token);
                         var path = $"{alegraOptions.Url}invoices";
                         var content = new StringContent(JsonConvert.SerializeObject(invoice, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore }));
@@ -925,9 +885,8 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
                                 }
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             {
-
                                 return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
                             }
                         }
@@ -962,23 +921,21 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                                 }
                                 else
                                 {
-                                    Console.WriteLine(responseBody + JsonConvert.SerializeObject(invoice));
+                                    //Console.WriteLine(responseBody + JsonConvert.SerializeObject(invoice));
                                     throw new AlegraException(responseBody + JsonConvert.SerializeObject(invoice));
 
                                 }
                             }
-                            catch (Exception ex)
+                            catch (Exception)
                             {
-                                Console.WriteLine(ex.Message);
-                                Console.WriteLine(ex.StackTrace);
                                 return "error:" + responseBody + JsonConvert.SerializeObject(invoice);
                             }
                         }
                         else
                         {
                             var respuesta = JsonConvert.DeserializeObject<RespuestaDataico>(responseBody);
-                            Console.WriteLine(JsonConvert.SerializeObject(respuesta));
-                            Console.WriteLine(JsonConvert.SerializeObject(responseBody));
+                            //Console.WriteLine(JsonConvert.SerializeObject(respuesta));
+                            //Console.WriteLine(JsonConvert.SerializeObject(responseBody));
                             await _resolucionRepositorio.SetFacturaelectronicaPorPRefijo(estacionGuid.ToString(), int.Parse(invoice.invoice.number) + 1);
                             return respuesta.dian_status + ":" + respuesta.number + ":" + respuesta.cufe;
                         }
@@ -1033,21 +990,29 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 var taxes = new List<TaxDataico>();
                 if (articulo.iva > 0)
                 {
-                    taxes.Add(new TaxDataico() { tax_rate = 19 });
+                    taxes.Add(new TaxDataico
+                    {
+                        tax_category = "IVA",
+                        tax_rate = 19,
+                        tax_amount = (double)articulo.iva,
+                        tax_description = "IVA",
+                        tax_base = (double)articulo.subtotal,
+                        base_amount = (double)articulo.subtotal
+                    });
+                    var item = new ItemDataico()
+                    {
+                        sku = "C" + articulo.Canastilla.CanastillaId.ToString(),
+                        price = (double)articulo.precio,
+                        original_price = (factura.descuento > 0) ? (double?)articulo.precio : null,
+                        description = articulo.Canastilla.descripcion,
+                        quantity = (double)articulo.cantidad,
+                        taxes = taxes,
+                        measuring_unit = "GL",
+                        retentions = new List<RetentionDataico>() { },
+                        discount_rate = (decimal?)((factura.descuento > 0 && factura.subtotal > 0) ? Math.Round((decimal)factura.descuento / (decimal)factura.subtotal * 100, 2) : (decimal?)null)
+                    };
+                    items.Add(item);
                 }
-                var item = new ItemDataico()
-                {
-                    sku = "C" + articulo.Canastilla.CanastillaId.ToString(),
-                    price = (double)articulo.precio,
-                    original_price = (factura.descuento > 0) ? (double?)articulo.precio : null,
-                    description = articulo.Canastilla.descripcion,
-                    quantity = (double)articulo.cantidad,
-                    taxes = taxes,
-                    measuring_unit = "GL",
-                    retentions = new List<RetentionDataico>() { },
-                    discount_rate = (decimal?)((factura.descuento > 0 && factura.subtotal > 0) ? Math.Round((decimal)factura.descuento / (decimal)factura.subtotal * 100, 2) : (decimal?)null)
-                };
-                items.Add(item);
             }
             return new FacturaDataico()
             {

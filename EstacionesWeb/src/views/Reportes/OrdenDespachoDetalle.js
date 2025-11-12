@@ -271,7 +271,10 @@ const OrdenDespachoDetalle = () => {
                   body: [
                     [
                       { text: 'Subtotal:', bold: true },
-                      { text: formatCurrency(orden.subTotal || 0), alignment: 'right' },
+                      {
+                        text: formatCurrency(orden.subTotal + orden.descuento || 0),
+                        alignment: 'right',
+                      },
                     ],
                     [
                       { text: 'Descuentos:', bold: true },
@@ -561,7 +564,10 @@ const OrdenDespachoDetalle = () => {
                   body: [
                     [
                       { text: 'Subtotal:', bold: true },
-                      { text: formatCurrency(orden.subTotal || 0), alignment: 'right' },
+                      {
+                        text: formatCurrency(orden.subTotal + orden.descuento || 0),
+                        alignment: 'right',
+                      },
                     ],
                     [
                       { text: 'Descuentos:', bold: true },
@@ -1024,7 +1030,9 @@ const OrdenDespachoDetalle = () => {
                     <td>
                       <strong>Subtotal:</strong>
                     </td>
-                    <td className="text-end">{formatCurrency(orden.subTotal)}</td>
+                    <td className="text-end">
+                      {formatCurrency(orden.subTotal + orden.descuento || 0)}
+                    </td>
                   </tr>
                   <tr>
                     <td>

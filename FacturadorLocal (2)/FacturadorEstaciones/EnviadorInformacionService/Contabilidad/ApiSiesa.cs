@@ -99,7 +99,7 @@ namespace EnviadorInformacionService.Contabilidad
                         F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimiento"].ToString(),
                         F351_ID_UN = ConfigurationManager.AppSettings["unidadnegocio"].ToString(),
                         F351_VALOR_CR = "0",
-                        F351_VALOR_DB = factura.Venta.TOTALCalculado.ToString("0.00", CultureInfo.InvariantCulture),
+                        F351_VALOR_DB = factura.total.ToString("0.00", CultureInfo.InvariantCulture),
                         F353_ID_SUCURSAL = ConfigurationManager.AppSettings["sucursal"].ToString(),
                         F353_CONSEC_DOCTO_CRUCE= ConfigurationManager.AppSettings["documentocruce"].ToString(),
                         F353_ID_TIPO_DOCTO_CRUCE=ConfigurationManager.AppSettings["documentorecibo"].ToString(),
@@ -143,7 +143,7 @@ namespace EnviadorInformacionService.Contabilidad
                         F351_ID_FE = ConfigurationManager.AppSettings["idfe"].ToString(),
                         F351_NRO_DOCTO_BANCO="",
                         F351_ID_UN = ConfigurationManager.AppSettings["unidadnegocio"].ToString(),
-                        F351_VALOR_CR = factura.Venta.TOTALCalculado.ToString("0.00", CultureInfo.InvariantCulture),
+                        F351_VALOR_CR = factura.total.ToString("0.00", CultureInfo.InvariantCulture),
                         F351_VALOR_DB = "0",
 
 
@@ -242,7 +242,7 @@ namespace EnviadorInformacionService.Contabilidad
                 F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocontableotros"].ToString(),
                 F351_ID_FE = "",
                 F351_VALOR_DB = "0",
-                F351_VALOR_CR = (factura.Venta.TOTALCalculado + factura.Venta.Descuento).ToString("0.00", CultureInfo.InvariantCulture),
+                F351_VALOR_CR = factura.subtotal.ToString("0.00", CultureInfo.InvariantCulture),
                 F351_BASE_GRAVABLE = "",
                 F351_DOCTO_BANCO = "",
                 F351_NRO_DOCTO_BANCO = "",
@@ -261,7 +261,7 @@ namespace EnviadorInformacionService.Contabilidad
                 F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociootros"].ToString(),
                 F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostootros"].ToString(),
                 F351_ID_FE = ConfigurationManager.AppSettings["idfeotros"].ToString(),
-                F351_VALOR_DB = factura.Venta.TOTALCalculado.ToString("0.00", CultureInfo.InvariantCulture),
+                F351_VALOR_DB = factura.total.ToString("0.00", CultureInfo.InvariantCulture),
                 F351_VALOR_CR = "0",
                 F351_BASE_GRAVABLE = "",
                 F351_DOCTO_BANCO = "CG",
@@ -283,7 +283,7 @@ namespace EnviadorInformacionService.Contabilidad
                     F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociodescuento"]?.ToString() ?? "03",
                     F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostodescuento"]?.ToString() ?? "",
                     F351_ID_FE = ConfigurationManager.AppSettings["idfedescuento"]?.ToString() ?? "1",
-                    F351_VALOR_DB = factura.Venta.Descuento.ToString("0.00", CultureInfo.InvariantCulture),
+                    F351_VALOR_DB = factura.descuento.ToString("0.00", CultureInfo.InvariantCulture),
                     F351_VALOR_CR = "",
                     F351_BASE_GRAVABLE = "1",
                     F351_DOCTO_BANCO = "",
@@ -330,11 +330,11 @@ namespace EnviadorInformacionService.Contabilidad
                 F351_ID_FE = consecutivo,
                 F351_NRO_DOCTO_BANCO="",
                 F351_ID_UN = ConfigurationManager.AppSettings["unidadnegocio"].ToString(),
-                F351_VALOR_CR = (factura.Venta.TOTALCalculado + factura.Venta.Descuento).ToString("0.00", CultureInfo.InvariantCulture),
+                F351_VALOR_CR = factura.subtotal.ToString("0.00", CultureInfo.InvariantCulture),
                 F351_VALOR_DB = "0",
             });
             // Movimiento de descuento si aplica
-            if (factura.Venta.Descuento > 0)
+            if (factura.descuento > 0)
             {
                 movimientos.Add(new Movimientocontable()
                 {
@@ -348,7 +348,7 @@ namespace EnviadorInformacionService.Contabilidad
                     F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociodescuento"]?.ToString() ?? "03",
                     F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostodescuento"]?.ToString() ?? "",
                     F351_ID_FE = ConfigurationManager.AppSettings["idfedescuento"]?.ToString() ?? "1",
-                    F351_VALOR_DB = factura.Venta.Descuento.ToString("0.00", CultureInfo.InvariantCulture),
+                    F351_VALOR_DB = factura.descuento.ToString("0.00", CultureInfo.InvariantCulture),
                     F351_VALOR_CR = "",
                     F351_BASE_GRAVABLE = "1",
                     F351_DOCTO_BANCO = "",
@@ -373,7 +373,7 @@ namespace EnviadorInformacionService.Contabilidad
                         F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocaja"].ToString(),
                         F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocaja"].ToString(),
                         F351_VALOR_CR = "0",
-                        F351_VALOR_DB = factura.Venta.TOTALCalculado.ToString("0.00", CultureInfo.InvariantCulture),
+                        F351_VALOR_DB = factura.total.ToString("0.00", CultureInfo.InvariantCulture),
                         F351_ID_FE =ConfigurationManager.AppSettings["idfe"].ToString(),
                         F358_COD_SEGURIDAD = "",
                         F358_FECHA_VCTO = factura.fecha.ToString("yyyyMMdd"),

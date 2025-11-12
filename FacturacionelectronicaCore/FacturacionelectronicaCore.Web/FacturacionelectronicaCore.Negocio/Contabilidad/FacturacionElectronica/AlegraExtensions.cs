@@ -27,7 +27,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                     break;
                 case "DATATICO":
                 case "DATAICO":
-                    services.AddSingleton<IFacturacionElectronicaFacade, FacturacionDataico>();
+                    services.AddScoped<IFacturacionElectronicaFacade, FacturacionDataico>();
                     break;
                 case "TITAN":
                     services.AddScoped<IFacturacionElectronicaFacade, FacturacionTitan>();

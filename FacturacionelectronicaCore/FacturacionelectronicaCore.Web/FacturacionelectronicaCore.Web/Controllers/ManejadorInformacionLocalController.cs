@@ -98,6 +98,12 @@ namespace FacturacionelectronicaCore.Web.Controllers
         => Ok(await _manejadorInformacionLocalNegocio.JsonFacturaElectronica(idVentaLocal, estacion));
 
 
+        [HttpGet("JsonFacturaElectronicaCanastilla/{idVentaLocal}/estacion/{estacion}")]
+        public async Task<ActionResult<string>> JsonFacturaElectronicaCanastilla(int idVentaLocal, Guid estacion)
+        => Ok(await _manejadorInformacionLocalNegocio.JsonFacturaElectronicaCanastilla(idVentaLocal, estacion));
+
+
+
         [HttpPost("AddFacturaCanastilla")]
         public async Task<ActionResult<int>> AddFacturaCanastilla(RequestfacturasCanastilla requestCambiarFechasReporte)
         => Ok(await _manejadorInformacionLocalNegocio.AddFacturaCanastilla(requestCambiarFechasReporte.facturas, requestCambiarFechasReporte.estacion));

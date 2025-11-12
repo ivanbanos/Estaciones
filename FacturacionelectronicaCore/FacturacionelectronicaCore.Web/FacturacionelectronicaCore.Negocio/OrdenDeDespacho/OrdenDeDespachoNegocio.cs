@@ -36,6 +36,27 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
         }
 
+        // Convert a nullable incoming DateTime by adding the configured hour offset from _alegra.ServerTimeOffsetHours.
+        // Behavior:
+        //  - If ServerTimeOffsetHours is null, returns the original value (no offset).
+        //  - Adds the configured number of hours (can be negative) to the provided DateTime.
+        private DateTime? ConvertToServerTime(DateTime? input)
+        {
+            if (!input.HasValue) return null;
+            if (_alegra == null || !_alegra.ServerTimeOffsetHours.HasValue) return input;
+
+            try
+            {
+                var offset = _alegra.ServerTimeOffsetHours.GetValueOrDefault(0);
+                return input.Value.AddHours(offset);
+            }
+            catch
+            {
+                // If anything goes wrong, fall back to original value
+                return input;
+            }
+        }
+
 
 
         /// <inheritdoc />
@@ -43,8 +64,12 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
         {
             try
             {
-                var ordenesDeDespacho = await _ordenDeDespachoRepositorio.GetOrdenesDeDespacho(filtroOrdenDeDespacho.FechaInicial,
-                        filtroOrdenDeDespacho.FechaFinal, filtroOrdenDeDespacho.Identificacion, filtroOrdenDeDespacho.NombreTercero, filtroOrdenDeDespacho.Estacion);
+                // Normalize incoming search dates to the configured server timezone before hitting the repository.
+                var fechaInicialServer = ConvertToServerTime(filtroOrdenDeDespacho.FechaInicial);
+                var fechaFinalServer = ConvertToServerTime(filtroOrdenDeDespacho.FechaFinal);
+
+                var ordenesDeDespacho = await _ordenDeDespachoRepositorio.GetOrdenesDeDespacho(fechaInicialServer,
+                        fechaFinalServer, filtroOrdenDeDespacho.Identificacion, filtroOrdenDeDespacho.NombreTercero, filtroOrdenDeDespacho.Estacion);
                 var ordenes = _mapper.Map<IEnumerable<Repositorio.Entities.OrdenDeDespacho>, IEnumerable<Modelo.OrdenDeDespacho>>(ordenesDeDespacho);
 
                 var nombresPorIdentificacion = new Dictionary<string, string>();
@@ -88,7 +113,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
                     factura.Fecha = factura.Fecha.ToLocalTime();
                 }
-                return ordenes.OrderBy(x => x.IdVentaLocal);
+                return ordenes.OrderByDescending(x => x.IdVentaLocal);
             }
             catch (Exception)
             {
@@ -264,8 +289,9 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
         public async Task<IEnumerable<Modelo.OrdenDeDespacho>> GetOrdenesSinFacturaElectronicaCreditoDirecto(FiltroBusqueda filtroOrdenDeDespacho)
         {
             var ordenesDeDespacho = await _ordenDeDespachoRepositorio.GetOrdenesDeDespacho(
-                filtroOrdenDeDespacho.FechaInicial,
-                filtroOrdenDeDespacho.FechaFinal,
+                // Normalize search dates to server timezone
+                ConvertToServerTime(filtroOrdenDeDespacho.FechaInicial),
+                ConvertToServerTime(filtroOrdenDeDespacho.FechaFinal),
                 filtroOrdenDeDespacho.Identificacion,
                 filtroOrdenDeDespacho.NombreTercero,
                 filtroOrdenDeDespacho.Estacion);
@@ -318,7 +344,10 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
 
         public async Task ReenviarFacturas(DateTime fechaInicial, DateTime fechaFinal, Guid estacion)
         {
-            var ordenes = await _ordenDeDespachoRepositorio.GetOrdenesDeDespacho(fechaInicial, fechaFinal, null, null, estacion);
+            // Normalize the provided range to server timezone before querying
+            var fechaInicialServer = ConvertToServerTime(fechaInicial);
+            var fechaFinalServer = ConvertToServerTime(fechaFinal);
+            var ordenes = await _ordenDeDespachoRepositorio.GetOrdenesDeDespacho(fechaInicialServer, fechaFinalServer, null, null, estacion);
 
             if (ordenes != null)
             {

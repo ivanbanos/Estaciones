@@ -463,20 +463,28 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         {
             var productList = new List<ProductInformation>();
 
-            // Agregar los productos de canastilla
+            // Agregar los productos de canastilla con IVA si aplica
             if (factura.canastillas != null)
             {
                 foreach (var item in factura.canastillas)
                 {
-                    productList.Add(new ProductInformation
+                    var product = new ProductInformation
                     {
-                        ProductId = Int32.Parse(item.Canastilla?.campoextra),
+                        ProductId = Int32.Parse(item.Canastilla?.campoextra ?? "0"),
                         Quantity = (decimal)item.cantidad,
                         Discunt = 0,
                         Price = (decimal)item.precio,
                         TotalPrice = (decimal)item.total,
                         SkipAuditWarehouseValues = true
-                    });
+                    };
+                    // Si hay IVA, agregarlo como campo adicional (puedes crear un campo IVA en ProductInformation si lo necesitas)
+                    if (item.iva > 0)
+                    {
+                        // Si ProductInformation tiene campo IVA, descomenta la siguiente línea:
+                        // product.IVA = (decimal)item.iva;
+                        // Si no, puedes agregarlo como un campo extra en el diccionario o en la request final
+                    }
+                    productList.Add(product);
                 }
             }
 
@@ -822,6 +830,11 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         {
             // Implementar según necesidades específicas de Silog para reenviar facturas
             return Task.FromResult("Factura reenviada");
+        }
+
+        public Task<string> getJsonCanastilla(Modelo.FacturaCanastilla facturaCanastilla, Guid estacio)
+        {
+            throw new NotImplementedException();
         }
     }
 }
