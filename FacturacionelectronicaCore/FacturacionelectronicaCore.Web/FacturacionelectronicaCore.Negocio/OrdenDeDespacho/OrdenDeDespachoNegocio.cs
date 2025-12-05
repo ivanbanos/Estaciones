@@ -111,7 +111,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                         factura.Descuento /= 10;
                     }
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
-                    factura.Fecha = factura.Fecha.ToLocalTime();
+                    factura.Fecha = factura.Fecha.AddHours(_alegra.ServerTimeOffsetHoursSearch ?? 0);
                 }
                 return ordenes.OrderByDescending(x => x.IdVentaLocal);
             }
@@ -317,7 +317,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 var ordenes = await _ordenDeDespachoRepositorio.ObtenerOrdenDespachoPorIdVentaLocal(idVentaLocal, estacion);
                 foreach (var orden in ordenes)
                 {
-                    if (orden != null && (_alegra.EnviaCreditos || (!orden.FormaDePago.ToLower().Contains("dir") && !orden.FormaDePago.ToLower().Contains("calibra") && !orden.FormaDePago.ToLower().Contains("puntos"))) && (string.IsNullOrEmpty(orden.idFacturaElectronica) || orden.idFacturaElectronica.StartsWith("error") || orden.idFacturaElectronica.Contains("Bad Request")))
+                    if (orden != null && (_alegra.EnviaCreditos || (!orden.FormaDePago.ToLower().Contains("dir") && !orden.FormaDePago.ToLower().Contains("calibra") && !orden.FormaDePago.ToLower().Contains("consum") && !orden.FormaDePago.ToLower().Contains("puntos"))) && (string.IsNullOrEmpty(orden.idFacturaElectronica) || orden.idFacturaElectronica.StartsWith("error") || orden.idFacturaElectronica.Contains("Bad Request")))
                     {
                         var ordenModelo = _mapper.Map<Repositorio.Entities.OrdenDeDespacho, Modelo.OrdenDeDespacho>(orden);
                         ordenModelo.Tercero = _mapper.Map<Repositorio.Entities.Tercero, Modelo.Tercero>(
@@ -444,7 +444,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                 {
                     ConsolidadoOrdenesAnuladas = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => orden.Estado == "Anulado" || orden.Estado == "Anulada" || orden.idFacturaElectronica != null)),
                     TotalDeOrdenes = !ordenes.Any() ? 0 : ordenes.Count(),
-                    ConsolidadosOrdenes = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes),
+                    ConsolidadosOrdenes = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => orden.Estado != "Anulado" && orden.Estado != "Anulada" && orden.idFacturaElectronica == null)),
                     consolidadoClienteOrdenes = !ordenes.Any() ? new List<ConsolidadoCliente>() : GetConsolidadosOrdenesCliente(ordenes),
                     TotalOrdenesAnuladas = !ordenes.Any() ? 0 : ordenes.Count(orden => orden.Estado == "Anulado" || orden.Estado == "Anulada" || orden.idFacturaElectronica != null),
                     ConsolidadoFormaPagoOrdenes = !ordenes.Any() ? new List<ConsolidadoFormaPago>() : GetConsolidadoFormaPagoOrdenes(ordenes),

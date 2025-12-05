@@ -22,7 +22,10 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
         public string Surtidor { get; set; }
         public string Cara { get; set; }
         public string Manguera { get; set; }
+        
+        [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
         public DateTime Fecha { get; set; }
+        
         public string Estado { get; set; }
         public string IdentificacionTercero { get; set; }
         public string FormaDePago { get; set; }
@@ -31,9 +34,14 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
         public int IdTerceroLocal { get; set; }
         public int IdEstacion { get; set; }
         public decimal SubTotal { get; set; }
+        
+        [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
         public DateTime FechaProximoMantenimiento { get; set; }
+        
         public string Vendedor { get; set; }
         public string idFacturaElectronica { get; set; }
+        
+        [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
         public DateTime FechaReporte { get; set; }
     }
 }

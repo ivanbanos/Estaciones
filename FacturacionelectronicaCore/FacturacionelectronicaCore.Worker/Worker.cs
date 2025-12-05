@@ -12,31 +12,23 @@ using FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica;
 using Microsoft.Extensions.Options;
 using FacturacionelectronicaCore.Negocio.FacturaCanastillaNegocio;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FacturacionelectronicaCore.Worker
 {
     public class Worker : BackgroundService
     {
         private readonly ILogger<Worker> _logger;
-        private readonly IOrdenDeDespachoNegocio _ordenDeDespachoNegocio;
-        private readonly FacturacionelectronicaCore.Negocio.Estacion.IEstacionNegocio _estacionNegocio;
-        private readonly FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal.IManejadorInformacionLocalNegocio _manejadorInformacionLocalNegocio;
-        private readonly IFacturaCanastillaNegocio _facturaCanastillaNegocio;
+        private readonly IServiceScopeFactory _scopeFactory;
         private readonly Alegra _alegraOptions;
 
         public Worker(
             ILogger<Worker> logger,
-            IOrdenDeDespachoNegocio ordenDeDespachoNegocio,
-            FacturacionelectronicaCore.Negocio.Estacion.IEstacionNegocio estacionNegocio,
-            FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal.IManejadorInformacionLocalNegocio manejadorInformacionLocalNegocio,
-            IFacturaCanastillaNegocio facturaCanastillaNegocio,
+            IServiceScopeFactory scopeFactory,
             IOptions<Alegra> alegra)
         {
             _logger = logger;
-            _ordenDeDespachoNegocio = ordenDeDespachoNegocio;
-            _estacionNegocio = estacionNegocio;
-            _manejadorInformacionLocalNegocio = manejadorInformacionLocalNegocio;
-            _facturaCanastillaNegocio = facturaCanastillaNegocio;
+            _scopeFactory = scopeFactory;
             _alegraOptions = alegra.Value;
         }
 
@@ -66,14 +58,22 @@ namespace FacturacionelectronicaCore.Worker
             {
                 // Initial delay to ensure all dependencies are ready
                 _logger.LogInformation("ProcessingLoop starting with 15-second initialization delay...");
-                await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
+                //await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
                 
                 while (!stoppingToken.IsCancellationRequested)
                 {
                 try
                 {
                     _logger.LogInformation("Starting processing cycle for orders and facturas canastilla...");
-                    var estaciones = await _estacionNegocio.GetEstaciones();
+                    
+                    // Create a scope for scoped services
+                    using var scope = _scopeFactory.CreateScope();
+                    var ordenDeDespachoNegocio = scope.ServiceProvider.GetRequiredService<IOrdenDeDespachoNegocio>();
+                    var estacionNegocio = scope.ServiceProvider.GetRequiredService<FacturacionelectronicaCore.Negocio.Estacion.IEstacionNegocio>();
+                    var manejadorInformacionLocalNegocio = scope.ServiceProvider.GetRequiredService<FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal.IManejadorInformacionLocalNegocio>();
+                    var facturaCanastillaNegocio = scope.ServiceProvider.GetRequiredService<IFacturaCanastillaNegocio>();
+                    
+                    var estaciones = await estacionNegocio.GetEstaciones();
                     foreach (var estacion in estaciones)
                     {
                         // Check for cancellation before processing each station
@@ -119,7 +119,7 @@ namespace FacturacionelectronicaCore.Worker
                                 Estacion = estacion.guid
                             };
 
-                            var ordenes = await _ordenDeDespachoNegocio.GetOrdenesDeDespacho(filtro);
+                            var ordenes = await ordenDeDespachoNegocio.GetOrdenesDeDespacho(filtro);
                             totalOrdenesEncontradas += ordenes?.Count() ?? 0;
 
                             var ordenesAReenviar = ordenes?
@@ -127,6 +127,7 @@ namespace FacturacionelectronicaCore.Worker
                                     // No factura registrada yet or previously marked as error
                                     string.IsNullOrEmpty(o.idFacturaElectronica)
                                     || o.idFacturaElectronica.StartsWith("error", StringComparison.OrdinalIgnoreCase)
+                                    || !o.idFacturaElectronica.Contains(":", StringComparison.OrdinalIgnoreCase)
                                     // Or the stored idFacturaElectronica contains an embedded provider invoice
                                     // and the local IdVentaLocal appears more than once -> suspicious payload
                                     || (o.idFacturaElectronica != null
@@ -136,9 +137,13 @@ namespace FacturacionelectronicaCore.Worker
                                     || o.idFacturaElectronica.IndexOf(o.IdVentaLocal.ToString(), StringComparison.OrdinalIgnoreCase) < 0)
                                     )
                                 )
+                                // Exclude orders with "Error al gestionar la persona" error
+                                && !(o.idFacturaElectronica?.Contains("Error al gestionar la persona", StringComparison.OrdinalIgnoreCase) ?? false)
+                                 && !(o.idFacturaElectronica?.Contains("Ya existe una factura con este nroCruce", StringComparison.OrdinalIgnoreCase) ?? false)
+                                //
                                 // Exclude Crédito Directo payments (trim + case-insensitive)
                                 && !(o.FormaDePago?.Trim().Equals("Crédito Directo", StringComparison.OrdinalIgnoreCase) ?? false)
-                                && (_alegraOptions.EnviaCreditos || (!(o.FormaDePago?.ToLower().Contains("dir") ?? false) && !(o.FormaDePago?.ToLower().Contains("calibra") ?? false) && !(o.FormaDePago?.ToLower().Contains("puntos") ?? false))))
+                                && (_alegraOptions.EnviaCreditos || (!(o.FormaDePago?.ToLower().Contains("dir") ?? false) && !(o.FormaDePago?.ToLower().Contains("calibra") ?? false) && !(o.FormaDePago?.ToLower().Contains("consum") ?? false) && !(o.FormaDePago?.ToLower().Contains("puntos") ?? false))))
                                 .Take(20) // Limit per month to avoid overwhelming the system
                                 .ToList();
 
@@ -146,11 +151,11 @@ namespace FacturacionelectronicaCore.Worker
                             {
                                 totalOrdenesReenviadas += ordenesAReenviar.Count;
                                 _logger.LogInformation($"Estación: {estacion.Nombre} ({estacion.guid}) - Mes {fechaInicial:MM/yyyy} - Reenviando {JsonConvert.SerializeObject(ordenesAReenviar.Select(o => o.IdVentaLocal))} órdenes a facturación...");
-                                await _manejadorInformacionLocalNegocio.EnviarOrdenesDespacho(ordenesAReenviar, estacion.guid);
+                                await manejadorInformacionLocalNegocio.EnviarOrdenesDespacho(ordenesAReenviar, estacion.guid);
                             }
 
                             // Process facturas canastilla for the same month
-                            var facturas = await _facturaCanastillaNegocio.GetFacturas(fechaInicial, fechaFinal, null, null, estacion.guid);
+                            var facturas = await facturaCanastillaNegocio.GetFacturas(fechaInicial, fechaFinal, null, null, estacion.guid);
                             totalCanastillasEncontradas += facturas?.Count() ?? 0;
 
                             var facturasAReenviar = facturas?
@@ -169,7 +174,7 @@ namespace FacturacionelectronicaCore.Worker
                                 )
                                 // Exclude Crédito Directo payments (trim + case-insensitive)
                                 && !(f.codigoFormaPago?.Descripcion?.Trim().Equals("Crédito Directo", StringComparison.OrdinalIgnoreCase) ?? false)
-                                && (_alegraOptions.EnviaCreditos || (!(f.codigoFormaPago?.Descripcion?.ToLower().Contains("dir") ?? false) && !(f.codigoFormaPago?.Descripcion?.ToLower().Contains("calibra") ?? false) && !(f.codigoFormaPago?.Descripcion?.ToLower().Contains("puntos") ?? false))))
+                                && (_alegraOptions.EnviaCreditos || (!(f.codigoFormaPago?.Descripcion?.ToLower().Contains("dir") ?? false) && !(f.codigoFormaPago?.Descripcion?.ToLower().Contains("calibra") ?? false) && !(f.codigoFormaPago?.Descripcion?.ToLower().Contains("consum") ?? false) && !(f.codigoFormaPago?.Descripcion?.ToLower().Contains("puntos") ?? false))))
                                 .Take(20) // Limit per month to avoid overwhelming the system
                                 .ToList();
 
@@ -179,7 +184,7 @@ namespace FacturacionelectronicaCore.Worker
                                 var facturasModelo = facturasAReenviar.Select(f => ConvertToModel(f)).ToList();
                                 totalCanastillasReenviadas += facturasAReenviar.Count;
                                 _logger.LogInformation($"Estación: {estacion.Nombre} ({estacion.guid}) - Mes {fechaInicial:MM/yyyy} - Reenviando {JsonConvert.SerializeObject(facturasAReenviar.Select(f => f.consecutivo))} facturas canastilla a facturación...");
-                                await _manejadorInformacionLocalNegocio.AddFacturaCanastilla(facturasModelo, estacion.guid);
+                                await manejadorInformacionLocalNegocio.AddFacturaCanastilla(facturasModelo, estacion.guid);
                             }
 
                             // Small delay between months to avoid overwhelming the system
@@ -200,8 +205,8 @@ namespace FacturacionelectronicaCore.Worker
                     _logger.LogError(ex, "Error al obtener órdenes de despacho y facturas canastilla por estación");
                 }
 
-                _logger.LogInformation("Processing cycle completed (orders and canastillas). Waiting 5 minutes before next cycle...");
-                await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                _logger.LogInformation("Processing cycle completed (orders and canastillas). Waiting 1 minutes before next cycle...");
+                await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
             }
             catch (OperationCanceledException)

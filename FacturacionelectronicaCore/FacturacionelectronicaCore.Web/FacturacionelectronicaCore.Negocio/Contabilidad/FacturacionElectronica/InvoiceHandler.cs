@@ -10,7 +10,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 {
     public class InvoiceHandler
     {
-        public async Task<ResponseInvoice> CrearFatura(Invoice invoice, Alegra alegra)
+        public async Task<string> CrearFatura(Invoice invoice, Alegra alegra)
         {
 
             using (var client = new HttpClient())
@@ -23,16 +23,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
                 var response = client.PostAsync(path, content).Result;
                 string responseBody = await response.Content.ReadAsStringAsync();
-                try
-                {
-                    response.EnsureSuccessStatusCode();
-                }
-                catch (Exception)
-                {
-                    throw new AlegraException(responseBody);
-                }
+                
+                
 
-                return JsonConvert.DeserializeObject<ResponseInvoice>(responseBody);
+                return responseBody;
             }
 
         }

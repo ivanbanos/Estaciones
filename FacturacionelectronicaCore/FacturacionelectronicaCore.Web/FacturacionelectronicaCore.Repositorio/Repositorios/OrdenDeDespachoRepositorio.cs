@@ -131,7 +131,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
                         filters.Add(Builders<OrdenesMongo>.Filter.Eq("NombreTercero", nombreTercero));
                     }
                     facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "ordenes", filters);
-                    facturas = facturasMongo.Where(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower());
+                    facturas = facturasMongo.Where(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower() && x.FechaReporte < DateTime.Now.AddYears(-10));
 
                 }
                 return facturas;

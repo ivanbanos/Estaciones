@@ -271,6 +271,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                         var response = await client.PostAsync(alegraOptions.Url + "output", content);
 
                         responseBody = await response.Content.ReadAsStringAsync();
+                        
                         var responsesilog = JsonConvert.DeserializeObject<RespuestaSilog>(responseBody);
                         // Verificar si la respuesta contiene "Factura generada exitosamente"
                         if (responseBody.Contains("Factura generada exitosamente"))
@@ -315,12 +316,15 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<string> GenerarFacturaElectronica(List<Modelo.OrdenDeDespacho> ordenes, Modelo.Tercero tercero, IEnumerable<Item> items)
         {
-            var invoice = await invoiceHandler.CrearFatura(ordenes.ConvertirAInvoice(tercero, items), alegraOptions);
+            var responseBody = await invoiceHandler.CrearFatura(ordenes.ConvertirAInvoice(tercero, items), alegraOptions);
+            var invoice = JsonConvert.DeserializeObject<ResponseInvoice>(responseBody);
             return invoice.numberTemplate.prefix + invoice.numberTemplate.number + ":" + invoice.id;
         }
+        
         public async Task<string> GenerarFacturaElectronica(List<Modelo.Factura> facturas, Modelo.Tercero tercero, IEnumerable<Item> items)
         {
-            var invoice = await invoiceHandler.CrearFatura(facturas.ConvertirAInvoice(tercero, items), alegraOptions);
+            var responseBody = await invoiceHandler.CrearFatura(facturas.ConvertirAInvoice(tercero, items), alegraOptions);
+            var invoice = JsonConvert.DeserializeObject<ResponseInvoice>(responseBody);
             return invoice.numberTemplate.prefix + invoice.numberTemplate.number + ":" + invoice.id;
         }
 

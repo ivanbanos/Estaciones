@@ -32,7 +32,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             factura.Id = MongoDB.Bson.ObjectId.GenerateNewId().ToString();
             factura.IdEstacion = estacion.ToString();
             var filter = Builders<FacturaCanastilla>.Filter.Eq("FacturasCanastillaId", factura.FacturasCanastillaId);
-            var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaCanastilla>(_repositorioConfig.Cliente, "FacturasCanastillaId", filter);
+            var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaCanastilla>(_repositorioConfig.Cliente, "facturasCanastillas", filter);
             if (!facturasMongo.Any(x => x.IdEstacion.ToLower() == estacion.ToString().ToLower()))
             {
                 factura.Guid = Guid.NewGuid().ToString();

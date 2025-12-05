@@ -658,7 +658,9 @@ Console.WriteLine($"Factura creada, {respuesta.order_reference}, {respuesta.dian
 
         public async Task<string> GenerarFacturaElectronica(List<Modelo.OrdenDeDespacho> ordenes, Modelo.Tercero tercero, IEnumerable<Item> items)
         {
-            var invoice = await invoiceHandler.CrearFatura(ordenes.ConvertirAInvoice(tercero, items), alegraOptions);
+            
+            var responseBody = await invoiceHandler.CrearFatura(ordenes.ConvertirAInvoice(tercero, items), alegraOptions);
+            var invoice = JsonConvert.DeserializeObject<ResponseInvoice>(responseBody);
             return invoice.numberTemplate.prefix + invoice.numberTemplate.number + ":" + invoice.id;
         }
         public async Task<string> GenerarFacturaElectronica(List<Modelo.Factura> facturas, Modelo.Tercero tercero, IEnumerable<Item> items)

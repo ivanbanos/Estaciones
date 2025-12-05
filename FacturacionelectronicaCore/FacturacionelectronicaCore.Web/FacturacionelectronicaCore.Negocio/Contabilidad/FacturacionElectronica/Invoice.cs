@@ -16,7 +16,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
     public class ItemInvoice
     {
-        public int id { get; set; }
+        public string id { get; set; }
         public int price { get; set; }
         public string quantity { get; set; }
         public string description { get; set; }
@@ -28,7 +28,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
     {
         public string numberDeliveryOrder { get; set; }
 
-        public int id {  get; set; }
+        public string id {  get; set; }
         public string date { get; set; }
         public string dueDate { get; set; }
         public string client { get; set; }

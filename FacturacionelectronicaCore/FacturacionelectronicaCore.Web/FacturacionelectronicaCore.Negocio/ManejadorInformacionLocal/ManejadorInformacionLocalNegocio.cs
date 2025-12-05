@@ -98,7 +98,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                         x.FormaDePago = (x.FormaDePago ?? "Efectivo");
                         if ((_alegra.EnviaTodo || x.Fecha > DateTime.Now.AddMonths(-1)
                             || (_alegra.EnviaMes && DateTime.Now.AddMonths(-1) < x.Fecha))
-                            && (_alegra.EnviaCreditos || (!x.FormaDePago.ToLower().Contains("dir") && !x.FormaDePago.ToLower().Contains("calibra") && !x.FormaDePago.ToLower().Contains("puntos"))))
+                            && (_alegra.EnviaCreditos || (!x.FormaDePago.ToLower().Contains("dir") && !x.FormaDePago.ToLower().Contains("calibra") && !x.FormaDePago.ToLower().Contains("consum") && !x.FormaDePago.ToLower().Contains("puntos"))))
                         {
                            
 
@@ -376,20 +376,95 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                 {
                                     idFactruraElectronica = "error:Tercero no está apto para facturación electrónica";
                                 }
-                                var response = await _alegraFacade.GenerarFacturaElectronica(factura, tercero, estacion);
+                                else
+                                {
+                                    // Retry mechanism for newly created terceros in Alegra
+                                    var maxRetries = 3;
+                                    var retryDelay = 3000; // 3 seconds
+                                    
+                                    for (int attempt = 1; attempt <= maxRetries; attempt++)
+                                    {
+                                        try
+                                        {
+                                            var response = await _alegraFacade.GenerarFacturaElectronica(factura, tercero, estacion);
+                                            
+                                            // If response contains specific errors related to tercero not found, retry
+                                            if (response != null && 
+                                                (response.Contains("Producto canastilla no creado") || 
+                                                 response.Contains("contact not found") ||
+                                                 response.Contains("tercero") ||
+                                                 (response.StartsWith("error:") && attempt < maxRetries)))
+                                            {
+                                                Console.WriteLine($"Canastilla attempt {attempt} failed for tercero {tercero.Identificacion}: {response}. Retrying in {retryDelay}ms...");
+                                                await Task.Delay(retryDelay);
+                                                continue;
+                                            }
+                                            
+                                            idFactruraElectronica = response;
+                                            break;
+                                        }
+                                        catch (Exception ex) when (attempt < maxRetries)
+                                        {
+                                            Console.WriteLine($"Canastilla attempt {attempt} failed for tercero {tercero.Identificacion}: {ex.Message}. Retrying in {retryDelay}ms...");
+                                            await Task.Delay(retryDelay);
+                                        }
+                                    }
+                                    
+                                    // If still null after retries, try one final attempt
+                                    if (string.IsNullOrEmpty(idFactruraElectronica))
+                                    {
+                                        idFactruraElectronica = await _alegraFacade.GenerarFacturaElectronica(factura, tercero, estacion);
+                                    }
+                                }
+                                
                                 await Task.Delay(2000);
-                                idFactruraElectronica = response;
                                 factura.idFacturaElectronica = idFactruraElectronica;
                             }
                             else
                             {
                                 if ((factura.fecha > DateTime.Now.AddMonths(-1)
                                     || (_alegra.EnviaMes && DateTime.Now.AddMonths(-1) < factura.fecha))
-                                    && (_alegra.EnviaCreditos || (!factura.codigoFormaPago.Descripcion.ToLower().Contains("dir") && !factura.codigoFormaPago.Descripcion.ToLower().Contains("calibra") && !factura.codigoFormaPago.Descripcion.ToLower().Contains("puntos"))))
+                                    && (_alegra.EnviaCreditos || (!factura.codigoFormaPago.Descripcion.ToLower().Contains("dir") && !factura.codigoFormaPago.Descripcion.ToLower().Contains("calibra") && !factura.codigoFormaPago.Descripcion.ToLower().Contains("consum") && !factura.codigoFormaPago.Descripcion.ToLower().Contains("puntos"))))
                                 {
-                                    var response = await _alegraFacade.GenerarFacturaElectronica(factura, factura.terceroId, estacion);
+                                    // Retry mechanism for newly created terceros in Alegra
+                                    var maxRetries = 3;
+                                    var retryDelay = 3000; // 3 seconds
+                                    
+                                    for (int attempt = 1; attempt <= maxRetries; attempt++)
+                                    {
+                                        try
+                                        {
+                                            var response = await _alegraFacade.GenerarFacturaElectronica(factura, factura.terceroId, estacion);
+                                            
+                                            // If response contains specific errors related to tercero not found, retry
+                                            if (response != null && 
+                                                (response.Contains("Producto canastilla no creado") || 
+                                                 response.Contains("contact not found") ||
+                                                 response.Contains("tercero") ||
+                                                 (response.StartsWith("error:") && attempt < maxRetries)))
+                                            {
+                                                Console.WriteLine($"Canastilla direct tercero attempt {attempt} failed: {response}. Retrying in {retryDelay}ms...");
+                                                await Task.Delay(retryDelay);
+                                                continue;
+                                            }
+                                            
+                                            idFactruraElectronica = response;
+                                            break;
+                                        }
+                                        catch (Exception ex) when (attempt < maxRetries)
+                                        {
+                                            Console.WriteLine($"Canastilla direct tercero attempt {attempt} failed: {ex.Message}. Retrying in {retryDelay}ms...");
+                                            await Task.Delay(retryDelay);
+                                        }
+                                    }
+                                    
+                                    // If still null after retries, try one final attempt
+                                    if (string.IsNullOrEmpty(idFactruraElectronica))
+                                    {
+                                        idFactruraElectronica = await _alegraFacade.GenerarFacturaElectronica(factura, factura.terceroId, estacion);
+                                    }
+                                    
                                     await Task.Delay(2000);
-                                    idFactruraElectronica = response;
                                     factura.idFacturaElectronica = idFactruraElectronica;
                                 }
                             }
@@ -527,8 +602,11 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             {
                 terceros = terceros.Where(x => !string.IsNullOrEmpty(x.Identificacion) && !string.IsNullOrEmpty(x.DescripcionTipoIdentificacion));
                 await _terceroRepositorio.AddOrUpdate(_mapper.Map<IEnumerable<TerceroInput>>(terceros));
+                
                 if (_alegra.Proveedor == "ALEGRA")
                 {
+                    var newTercerosCreated = false;
+                    
                     foreach (var tercero in terceros)
                     {
                         if (tercero.idFacturacion != null)
@@ -539,7 +617,15 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                         {
                             var idFacturacion = await _alegraFacade.GenerarTercero(tercero);
                             await _terceroRepositorio.SetIdFacturacion(tercero.Guid, idFacturacion);
+                            newTercerosCreated = true;
                         }
+                    }
+                    
+                    // If new terceros were created, add a delay to allow Alegra to process them
+                    if (newTercerosCreated)
+                    {
+                        Console.WriteLine("New terceros created in Alegra. Waiting 5 seconds for processing...");
+                        await Task.Delay(5000); // 5 second delay
                     }
                 }
             }
@@ -572,8 +658,40 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                         return "error:Tercero no está apto para facturación electrónica";
                     }
                     ordenDeDespacho.Tercero = tercero;
-                    var response = await _alegraFacade.GenerarFacturaElectronica(ordenDeDespacho, ordenDeDespacho.Tercero, estacion);
-                    return response;
+                    
+                    // Retry mechanism for newly created terceros in Alegra
+                    var maxRetries = 3;
+                    var retryDelay = 3000; // 3 seconds
+                    
+                    for (int attempt = 1; attempt <= maxRetries; attempt++)
+                    {
+                        try
+                        {
+                            var response = await _alegraFacade.GenerarFacturaElectronica(ordenDeDespacho, ordenDeDespacho.Tercero, estacion);
+                            
+                            // If response contains specific errors related to tercero not found, retry
+                            if (response != null && 
+                                (response.Contains("Combustible no creado") || 
+                                 response.Contains("contact not found") ||
+                                 response.Contains("tercero") ||
+                                 (response.StartsWith("error:") && attempt < maxRetries)))
+                            {
+                                Console.WriteLine($"Attempt {attempt} failed for tercero {tercero.Identificacion}: {response}. Retrying in {retryDelay}ms...");
+                                await Task.Delay(retryDelay);
+                                continue;
+                            }
+                            
+                            return response;
+                        }
+                        catch (Exception ex) when (attempt < maxRetries)
+                        {
+                            Console.WriteLine($"Attempt {attempt} failed for tercero {tercero.Identificacion}: {ex.Message}. Retrying in {retryDelay}ms...");
+                            await Task.Delay(retryDelay);
+                        }
+                    }
+                    
+                    // Final attempt without retry
+                    return await _alegraFacade.GenerarFacturaElectronica(ordenDeDespacho, ordenDeDespacho.Tercero, estacion);
                 }
                 return $"error:Tercero {ordenDeDespacho.Identificacion} no encontrado";
             }

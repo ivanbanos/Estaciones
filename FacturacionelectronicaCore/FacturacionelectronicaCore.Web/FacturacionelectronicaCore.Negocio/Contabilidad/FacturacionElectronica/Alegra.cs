@@ -70,8 +70,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
         // If not specified (null), defaults to 2 months ago.
         // Format: "yyyy-MM-dd" or "yyyy-MM-ddTHH:mm:ss"
         public DateTime? WorkerStartDate { get; set; }
-
-
+        public int? ServerTimeOffsetHoursSearch { get; set; }
     }
 
     public class EstacionCombustibles

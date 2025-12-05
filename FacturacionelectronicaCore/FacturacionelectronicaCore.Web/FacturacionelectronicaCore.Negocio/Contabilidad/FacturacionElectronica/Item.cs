@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -12,10 +13,29 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
     public class Price
     {
-        public int idPriceList { get; set; }
+        [JsonConverter(typeof(SafeStringConverter))]
+        public string idPriceList { get; set; }
         public string name { get; set; }
         public string type { get; set; }
+        [JsonConverter(typeof(SafeStringConverter))]
         public string price { get; set; }
+    }
+
+    // Custom JsonConverter to safely handle GUID/ID conversions
+    public class SafeStringConverter : JsonConverter<string>
+    {
+        public override void WriteJson(JsonWriter writer, string value, JsonSerializer serializer)
+        {
+            writer.WriteValue(value);
+        }
+
+        public override string ReadJson(JsonReader reader, Type objectType, string existingValue, bool hasExistingValue, JsonSerializer serializer)
+        {
+            if (reader.Value == null)
+                return null;
+
+            return reader.Value.ToString();
+        }
     }
 
     public class Inventory
@@ -25,7 +45,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
     public class Item
     {
-        public int id { get; set; }
+        public string id { get; set; }
         public Category category { get; set; }
         public bool hasNoIvaDays { get; set; }
         public string name { get; set; }
