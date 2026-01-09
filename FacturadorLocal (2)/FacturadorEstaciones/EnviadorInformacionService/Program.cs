@@ -44,16 +44,16 @@ namespace EnviadorInformacionService
             //var enviadorDeInformacion = new EnviadorDeInformacion();
             //enviadorDeInformacion.EnviarInformacion();
 
-            var protocoloSiesa_Marcador = new ProtocoloSiesa_Marcador();
-            protocoloSiesa_Marcador.RunOnce();
-            // ServiceBase[] ServicesToRun;
-            // ServicesToRun = new ServiceBase[]
-            // {
-            //     new Service1()
-            // };
-            // ServiceBase.Run(ServicesToRun);
-            //var service = new Service1();
-            //service.OnStart(null);
+            // var protocoloSiesa_Marcador = new ProtocoloSiesa_Marcador();
+            // protocoloSiesa_Marcador.RunOnce();
+            ServiceBase[] ServicesToRun;
+            ServicesToRun = new ServiceBase[]
+            {
+                new Service1()
+            };
+            ServiceBase.Run(ServicesToRun);
+            var service = new Service1();
+            service.OnStart(null);
         }
 
 

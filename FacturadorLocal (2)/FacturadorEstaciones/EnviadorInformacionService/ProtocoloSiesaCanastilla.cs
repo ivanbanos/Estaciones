@@ -36,7 +36,7 @@ namespace EnviadorInformacionService
                     var facturasCanastilla = _estacionesRepositorio.BuscarFacturasCanastillaNoEnviadasSiesa();
 
                     // Procesar terceros primero
-                    var terceros = facturasCanastilla.Select(x => x.Tercero)
+                    var terceros = facturasCanastilla.Select(x => x.terceroId)
                         .Where(x => x != null)
                         .GroupBy(t => t.terceroId)
                         .Select(g => g.First())
@@ -145,7 +145,7 @@ namespace EnviadorInformacionService
                                 facturaCanastilla.FacturasCanastillaId,
                                 facturaCanastilla.consecutivo,
                                 facturaCanastilla.fecha,
-                                facturaCanastilla.Tercero,
+                                Tercero = facturaCanastilla.terceroId,
                                 facturaCanastilla.codigoFormaPago,
                                 Detalle = detalle,
                                 Subtotal = subtotal,

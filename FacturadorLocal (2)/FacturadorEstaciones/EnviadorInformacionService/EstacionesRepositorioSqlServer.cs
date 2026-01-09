@@ -323,7 +323,7 @@ namespace FacturadorEstacionesRepositorio
         /// </summary>
         /// <param name="facturaCanastillaId">ID de la factura canastilla</param>
         /// <returns>Lista de detalles de la factura canastilla</returns>
-        public IEnumerable<FacturaCanastillaDetalle> getFacturaCanatillaDetalle(int facturaCanastillaId)
+        public IEnumerable<CanastillaFactura> getFacturaCanatillaDetalle(int facturaCanastillaId)
         {
             var parameters = new Dictionary<string, object>
             {

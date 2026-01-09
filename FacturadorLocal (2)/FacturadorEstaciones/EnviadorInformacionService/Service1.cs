@@ -21,6 +21,8 @@ namespace EnviadorInformacionService
         private Thread impresionThread;
         private readonly ProtocoloSiesa protocoloSiesa;
         private Thread siesaThread;
+        private readonly ProtocoloSiesaCanastilla protocoloSiesaCanastilla;
+        private Thread siesaCanastillaThread;
         private readonly ICanastillaService canastillaService;
         private Thread canastillaServiceThread;
         private Thread canastillaWebServiceThread;
@@ -31,6 +33,7 @@ namespace EnviadorInformacionService
             // enviadorDeInformacion = new EnviadorDeInformacion();
             // impresionService = new ImpresionService();
             protocoloSiesa = new ProtocoloSiesa();
+            protocoloSiesaCanastilla = new ProtocoloSiesaCanastilla();
             // canastillaService = new CanastillaService();
         }
 
@@ -60,8 +63,10 @@ namespace EnviadorInformacionService
                 // canastillaServiceThread.Start();
                 // canastillaWebServiceThread = new Thread(new ThreadStart(canastillaService.WebCanastilla));
                 // canastillaWebServiceThread.Start();
-                siesaThread = new Thread(new ThreadStart(protocoloSiesa.Ejecutar));
-                siesaThread.Start();
+                // siesaThread = new Thread(new ThreadStart(protocoloSiesa.Ejecutar));
+                // siesaThread.Start();
+                siesaCanastillaThread = new Thread(new ThreadStart(protocoloSiesaCanastilla.Ejecutar));
+                siesaCanastillaThread.Start();
 
             }
             catch (Exception ex)
