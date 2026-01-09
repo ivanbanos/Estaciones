@@ -28,9 +28,14 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         private async Task AgregarAMongo(Guid estacion, OrdenDeDespacho factura)
         {
-            var filter = Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", factura.IdVentaLocal);
-            var facturasMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", filter);
-            if (!facturasMongo.Any(x => x.EstacionGuid == estacion.ToString()))
+            var filters = new List<FilterDefinition<OrdenesMongo>>
+            {
+                Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", factura.IdVentaLocal),
+                Builders<OrdenesMongo>.Filter.Eq("EstacionGuid", estacion.ToString())
+            };
+            var combinedFilter = Builders<OrdenesMongo>.Filter.And(filters);
+            var facturasMongo = await _mongoHelper.GetFilteredDocuments<OrdenesMongo>(_repositorioConfig.Cliente, "ordenes", combinedFilter);
+            if (!facturasMongo.Any())
             {
                 var facturaMongo = new OrdenesMongo(factura);
                 facturaMongo.guid = Guid.NewGuid().ToString();
@@ -40,7 +45,7 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             }
             else
             {
-                var facturaMongo = facturasMongo.First(x => x.EstacionGuid == estacion.ToString());
+                var facturaMongo = facturasMongo.First();
                 var filterGuid = Builders<OrdenesMongo>.Filter.Eq("_id", facturaMongo.guid);
                 var update = Builders<OrdenesMongo>.Update
                     .Set(x => x.Identificacion, factura.Identificacion)
@@ -72,16 +77,43 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             List<FilterDefinition<OrdenesMongo>> filters = new List<FilterDefinition<OrdenesMongo>>();
 
             var paramList = new DynamicParameters();
+            
+            // Definir fecha mínima válida (ej: año 2000) para detectar FechaReporte sin inicializar
+            var fechaMinimaValida = new DateTime(2000, 1, 1);
+            
             if (fechaInicial != null)
             {
                 paramList.Add("FechaInicial", fechaInicial);
 
-                filters.Add(Builders<OrdenesMongo>.Filter.Gte("FechaReporte", fechaInicial.Value));
+                // (FechaReporte >= fechaMinimaValida AND FechaReporte >= fechaInicial) OR (FechaReporte < fechaMinimaValida AND Fecha >= fechaInicial)
+                var fechaFilter = Builders<OrdenesMongo>.Filter.Or(
+                    Builders<OrdenesMongo>.Filter.And(
+                        Builders<OrdenesMongo>.Filter.Gte("FechaReporte", fechaMinimaValida),
+                        Builders<OrdenesMongo>.Filter.Gte("FechaReporte", fechaInicial.Value)
+                    ),
+                    Builders<OrdenesMongo>.Filter.And(
+                        Builders<OrdenesMongo>.Filter.Lt("FechaReporte", fechaMinimaValida),
+                        Builders<OrdenesMongo>.Filter.Gte("Fecha", fechaInicial.Value)
+                    )
+                );
+                filters.Add(fechaFilter);
             }
             if (fechaFinal != null)
             {
                 paramList.Add("FechaFinal", fechaFinal);
-                filters.Add(Builders<OrdenesMongo>.Filter.Lte("FechaReporte", fechaFinal.Value.AddDays(1)));
+                
+                // (FechaReporte >= fechaMinimaValida AND FechaReporte <= fechaFinal+1) OR (FechaReporte < fechaMinimaValida AND Fecha <= fechaFinal+1)
+                var fechaFilter = Builders<OrdenesMongo>.Filter.Or(
+                    Builders<OrdenesMongo>.Filter.And(
+                        Builders<OrdenesMongo>.Filter.Gte("FechaReporte", fechaMinimaValida),
+                        Builders<OrdenesMongo>.Filter.Lte("FechaReporte", fechaFinal.Value.AddDays(1))
+                    ),
+                    Builders<OrdenesMongo>.Filter.And(
+                        Builders<OrdenesMongo>.Filter.Lt("FechaReporte", fechaMinimaValida),
+                        Builders<OrdenesMongo>.Filter.Lte("Fecha", fechaFinal.Value.AddDays(1))
+                    )
+                );
+                filters.Add(fechaFilter);
             }
             if (!string.IsNullOrEmpty(identificacionTercero))
             {
@@ -263,19 +295,14 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
 
         public async Task<IEnumerable<OrdenDeDespacho>> ObtenerOrdenDespachoPorIdVentaLocal(int idVentaLocal, Guid estacion)
         {
-            List<FilterDefinition<OrdenesMongo>> filters = new List<FilterDefinition<OrdenesMongo>>();
-
-            var paramList = new DynamicParameters();
-
-            paramList.Add("idVentaLocal", idVentaLocal);
-            filters.Add(Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", idVentaLocal));
+            List<FilterDefinition<OrdenesMongo>> filters = new List<FilterDefinition<OrdenesMongo>>
+            {
+                Builders<OrdenesMongo>.Filter.Eq("IdVentaLocal", idVentaLocal),
+                Builders<OrdenesMongo>.Filter.Eq("EstacionGuid", estacion.ToString())
+            };
 
             var facturasMongo = await _mongoHelper.GetFilteredDocuments(_repositorioConfig.Cliente, "ordenes", filters);
-            if (facturasMongo.Any(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower()))
-            {
-                return facturasMongo.Where(x => x.EstacionGuid.ToLower() == estacion.ToString().ToLower());
-            }
-            return new List<OrdenesMongo>();
+            return facturasMongo;
             //else
             //{
             //    var facturas = await _sqlHelper.GetsAsync<OrdenDeDespacho>(StoredProcedures.GetOrdenesDeDespacho, paramList);

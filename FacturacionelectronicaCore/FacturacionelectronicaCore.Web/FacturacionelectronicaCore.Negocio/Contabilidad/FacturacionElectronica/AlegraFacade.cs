@@ -56,79 +56,54 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<string> GenerarFacturaElectronica(Modelo.OrdenDeDespacho orden, Modelo.Tercero tercero, Guid estacionGuid)
         {
-            logger.Info($"[GenerarFacturaElectronica] Starting invoice generation for Order: {orden?.Combustible}, Estacion: {estacionGuid}, Tercero: {tercero?.Identificacion}");
-
             try
             {
-                logger.Debug($"[GenerarFacturaElectronica] Getting resolution for estacion: {estacionGuid}");
                 var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
-                logger.Debug($"[GenerarFacturaElectronica] Resolution found: {resolucion != null}, Token available: {!string.IsNullOrEmpty(resolucion?.token)}");
-
                 var option = new Alegra() { Url = alegraOptions.Url, Token = resolucion?.token ?? alegraOptions.Token, Correo = resolucion?.correo ?? alegraOptions.Correo };
-                logger.Debug($"[GenerarFacturaElectronica] Alegra options configured - URL: {option.Url}, Email: {option.Correo}");
 
-                logger.Info($"[GenerarFacturaElectronica] Getting item for combustible: {orden.Combustible}");
                 var item = await GetItem(orden.Combustible, option);
                 if (item == null)
                 {
-                    logger.Warn($"[GenerarFacturaElectronica] Item not found for combustible: {orden.Combustible}");
                     return $"error:Combustible no creado:{orden.Combustible}";
                 }
-                logger.Debug($"[GenerarFacturaElectronica] Item found - ID: {item.id}, Name: {item.name}");
 
-                logger.Info($"[GenerarFacturaElectronica] Looking up tercero by identification: {tercero.Identificacion?.Trim()}");
                 var id = 0;
                 var contacts = await GetTerceroByIdentification(tercero.Identificacion.Trim(), estacionGuid);
-                logger.Debug($"[GenerarFacturaElectronica] Found {contacts?.Count()} existing contacts");
 
                 if (!contacts.Any())
                 {
                     try
                     {
-                        logger.Info($"[GenerarFacturaElectronica] Creating new contact for tercero: {tercero.Identificacion}");
                         var contact = tercero.ConvertirAContact();
-                        logger.Debug($"[GenerarFacturaElectronica] Contact object: {JsonConvert.SerializeObject(contact)}");
                         Console.WriteLine(JsonConvert.SerializeObject(contact));
 
                         id = await contactsHandler.CrearCliente(contact, option);
-                        logger.Info($"[GenerarFacturaElectronica] Contact created successfully with ID: {id}");
-
                         contacts = await GetTerceroByIdentification(tercero.Identificacion.Trim(), estacionGuid);
-                        logger.Debug($"[GenerarFacturaElectronica] Re-fetched contacts count: {contacts?.Count()}");
                     }
                     catch (Exception ex)
                     {
-                        logger.Error(ex, $"[GenerarFacturaElectronica] Error creating contact for tercero {tercero.Identificacion}: {ex.Message}");
                         return "error:" + JsonConvert.SerializeObject(contacts) + ":" + JsonConvert.SerializeObject(orden.ConvertirAInvoice(item)) + ":" + JsonConvert.SerializeObject(tercero.ConvertirAContact()) + ":" + ex.Message + ":" + ex.StackTrace;
                     }
                 }
 
                 id = contacts?.First()?.id ?? 0;
-                logger.Debug($"[GenerarFacturaElectronica] Using contact ID: {id}");
-
                 var invoice = null as ResponseInvoice;
-                logger.Info($"[GenerarFacturaElectronica] Creating invoice with contact ID: {id}");
                 var invoiceRequest = orden.ConvertirAInvoice(item, id);
                 var responseBody = string.Empty;
                 try
                 {
-                    logger.Debug($"[GenerarFacturaElectronica] Invoice request data: {JsonConvert.SerializeObject(invoiceRequest)}");
-
                     responseBody = await invoiceHandler.CrearFatura(invoiceRequest, option);
                     invoice = JsonConvert.DeserializeObject<ResponseInvoice>(responseBody);
-                    logger.Info($"[GenerarFacturaElectronica] Invoice created successfully - Number: {invoice?.numberTemplate?.prefix}{invoice?.numberTemplate?.number}, CUFE: {invoice?.stamp?.cufe}");
 
                     return "Ok:" + invoice?.numberTemplate?.prefix + invoice?.numberTemplate?.number + ":" + invoice?.stamp?.cufe + ":"+responseBody+":" + JsonConvert.SerializeObject(invoice) + ":" + JsonConvert.SerializeObject(orden.ConvertirAInvoice(item)) + ":" + JsonConvert.SerializeObject(tercero.ConvertirAContact());
                 }
                 catch (Exception ex)
                 {
-                    logger.Error(ex, $"[GenerarFacturaElectronica] Error creating invoice: {ex.Message}");
                     return "error:" + JsonConvert.SerializeObject(invoiceRequest) + ":" + responseBody + ":" + JsonConvert.SerializeObject(orden.ConvertirAInvoice(item, id)) + ":" + JsonConvert.SerializeObject(tercero.ConvertirAContact()) + JsonConvert.SerializeObject(contacts) + ":" + ex.Message + ":" + ex.StackTrace;
                 }
             }
             catch (Exception ex)
             {
-                logger.Error(ex, $"[GenerarFacturaElectronica] Unexpected error in invoice generation: {ex.Message}");
                 return $"error:Unexpected error:{ex.Message}:{ex.StackTrace}";
             }
         }
@@ -150,7 +125,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 {
                     response.EnsureSuccessStatusCode();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
 
                 }
@@ -159,7 +134,7 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
                     return JsonConvert.DeserializeObject<IEnumerable<TerceroResponse>>(responseBody);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     return new List<TerceroResponse>()
                     {
@@ -239,8 +214,6 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<string> GenerarFacturaElectronica(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid)
         {
-            logger.Info($"[GenerarFacturaElectronica] Starting canastilla invoice generation for Factura: {factura?.consecutivo}, Estacion: {estacionGuid}, Tercero: {tercero?.Identificacion}");
-
             try
             {
                 // Check if payment form should be excluded (similar to Silog implementation)
@@ -249,87 +222,76 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                      factura.codigoFormaPago.Descripcion.ToLower().Contains("puntos") ||
                      factura.codigoFormaPago.Descripcion.ToLower().Contains("asumidos")))
                 {
-                    logger.Warn($"[GenerarFacturaElectronica] Canastilla invoice skipped due to payment form: {factura.codigoFormaPago.Descripcion}");
                     return null;
                 }
 
-                logger.Debug($"[GenerarFacturaElectronica] Getting resolution for estacion: {estacionGuid}");
                 var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
-                logger.Debug($"[GenerarFacturaElectronica] Resolution found: {resolucion != null}, Token available: {!string.IsNullOrEmpty(resolucion?.token)}");
-
                 var option = new Alegra() { Url = alegraOptions.Url, Token = resolucion?.token ?? alegraOptions.Token, Correo = resolucion?.correo ?? alegraOptions.Correo };
-                logger.Debug($"[GenerarFacturaElectronica] Alegra options configured - URL: {option.Url}, Email: {option.Correo}");
 
                 // Get items for all canastilla products
-                logger.Info($"[GenerarFacturaElectronica] Getting items for {factura.canastillas?.Count} canastilla products");
                 var items = new List<Item>();
 
                 foreach (var canastillaItem in factura.canastillas)
                 {
-                    logger.Debug($"[GenerarFacturaElectronica] Getting item for canastilla product: {canastillaItem.Canastilla.descripcion}");
                     var item = await GetItem(canastillaItem.Canastilla.descripcion, option);
                     if (item == null)
                     {
-                        logger.Warn($"[GenerarFacturaElectronica] Item not found for canastilla product: {canastillaItem.Canastilla.descripcion}");
-                        return $"error:Producto canastilla no creado:{canastillaItem.Canastilla.descripcion}";
+                        // Item doesn't exist, create it
+                        var tax = canastillaItem.Canastilla.iva > 0 ? "4" : null;
+                        item = await itemHandler.AddItem(
+                            canastillaItem.Canastilla.descripcion,
+                            canastillaItem.Canastilla.descripcion,
+                            canastillaItem.Canastilla.guid.ToString(),
+                            (decimal)canastillaItem.Canastilla.precio,
+                            tax,
+                            option
+                        );
+                        
+                        // Get the item again to ensure it was created
+                        item = await GetItem(canastillaItem.Canastilla.descripcion, option);
+                        if (item == null)
+                        {
+                            return $"error:No se pudo crear el producto canastilla:{canastillaItem.Canastilla.descripcion}";
+                        }
                     }
                     items.Add(item);
-                    logger.Debug($"[GenerarFacturaElectronica] Item found - ID: {item.id}, Name: {item.name}");
                 }
 
-                logger.Info($"[GenerarFacturaElectronica] Looking up tercero by identification: {tercero.Identificacion?.Trim()}");
                 var id = 0;
                 var contacts = await GetTerceroByIdentification(tercero.Identificacion.Trim(), estacionGuid);
-                logger.Debug($"[GenerarFacturaElectronica] Found {contacts?.Count()} existing contacts");
 
                 if (!contacts.Any())
                 {
                     try
                     {
-                        logger.Info($"[GenerarFacturaElectronica] Creating new contact for tercero: {tercero.Identificacion}");
                         var contact = tercero.ConvertirAContact();
-                        logger.Debug($"[GenerarFacturaElectronica] Contact object: {JsonConvert.SerializeObject(contact)}");
-
                         id = await contactsHandler.CrearCliente(contact, option);
-                        logger.Info($"[GenerarFacturaElectronica] Contact created successfully with ID: {id}");
-
                         contacts = await GetTerceroByIdentification(tercero.Identificacion.Trim(), estacionGuid);
-                        logger.Debug($"[GenerarFacturaElectronica] Re-fetched contacts count: {contacts?.Count()}");
                     }
                     catch (Exception ex)
                     {
-                        logger.Error(ex, $"[GenerarFacturaElectronica] Error creating contact for tercero {tercero.Identificacion}: {ex.Message}");
                         return "error:" + JsonConvert.SerializeObject(contacts) + ":" + JsonConvert.SerializeObject(factura.ConvertirAInvoice(tercero, items)) + ":" + JsonConvert.SerializeObject(tercero.ConvertirAContact()) + ":" + ex.Message + ":" + ex.StackTrace;
                     }
                 }
 
                 id = contacts?.First()?.id ?? 0;
-                logger.Debug($"[GenerarFacturaElectronica] Using contact ID: {id}");
-
                 var invoice = null as ResponseInvoice;
-
-                logger.Info($"[GenerarFacturaElectronica] Creating canastilla invoice with contact ID: {id} and {items.Count} items");
                 var invoiceRequest = factura.ConvertirAInvoice(tercero, items, id);
                 var responseBody = string.Empty;
                 try
                 {
-                    logger.Debug($"[GenerarFacturaElectronica] Invoice request data: {JsonConvert.SerializeObject(invoiceRequest)}");
-
                     responseBody = await invoiceHandler.CrearFatura(invoiceRequest, option);
                     invoice = JsonConvert.DeserializeObject<ResponseInvoice>(responseBody);
-                    logger.Info($"[GenerarFacturaElectronica] Canastilla invoice created successfully - Number: {invoice?.numberTemplate?.prefix}{invoice?.numberTemplate?.number}, CUFE: {invoice?.stamp?.cufe}");
 
                     return "Ok:" + invoice?.numberTemplate?.prefix + invoice?.numberTemplate?.number + ":" + invoice?.stamp?.cufe + ":" + JsonConvert.SerializeObject(invoice) + ":" + JsonConvert.SerializeObject(factura.ConvertirAInvoice(tercero, items)) + ":" + JsonConvert.SerializeObject(tercero.ConvertirAContact());
                 }
                 catch (Exception ex)
                 {
-                    logger.Error(ex, $"[GenerarFacturaElectronica] Error creating canastilla invoice: {ex.Message}");
                     return "error:" + JsonConvert.SerializeObject(invoiceRequest) + ":" + JsonConvert.SerializeObject(factura.ConvertirAInvoice(tercero, items, id)) + ":" + JsonConvert.SerializeObject(tercero.ConvertirAContact()) + JsonConvert.SerializeObject(contacts) + ":" + ex.Message + ":" + ex.StackTrace;
                 }
             }
             catch (Exception ex)
             {
-                logger.Error(ex, $"[GenerarFacturaElectronica] Unexpected error in canastilla invoice generation: {ex.Message}");
                 return $"error:Unexpected error:{ex.Message}:{ex.StackTrace}";
             }
         }
@@ -346,8 +308,6 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<string> getJsonCanastilla(Modelo.FacturaCanastilla facturaCanastilla, Guid estacio)
         {
-            logger.Info($"[getJsonCanastilla] Generating JSON for canastilla factura: {facturaCanastilla?.consecutivo}, Estacion: {estacio}");
-
             try
             {
                 var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacio.ToString());
@@ -358,6 +318,23 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 foreach (var canastillaItem in facturaCanastilla.canastillas)
                 {
                     var item = await GetItem(canastillaItem.Canastilla.descripcion, option);
+                    if (item == null)
+                    {
+                        // Item doesn't exist, create it
+                        var tax = canastillaItem.Canastilla.iva > 0 ? "4" : null;
+                        item = await itemHandler.AddItem(
+                            canastillaItem.Canastilla.descripcion,
+                            canastillaItem.Canastilla.descripcion,
+                            canastillaItem.Canastilla.guid.ToString(),
+                            (decimal)canastillaItem.Canastilla.precio,
+                            tax,
+                            option
+                        );
+                        
+                        // Get the item again to ensure it was created
+                        item = await GetItem(canastillaItem.Canastilla.descripcion, option);
+                    }
+                    
                     if (item != null)
                     {
                         items.Add(item);
@@ -368,12 +345,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 var tercero = facturaCanastilla.terceroId;
                 var invoiceRequest = facturaCanastilla.ConvertirAInvoice(tercero, items);
 
-                logger.Debug($"[getJsonCanastilla] Generated JSON for canastilla factura");
                 return JsonConvert.SerializeObject(invoiceRequest, Formatting.Indented);
             }
             catch (Exception ex)
             {
-                logger.Error(ex, $"[getJsonCanastilla] Error generating JSON for canastilla factura: {ex.Message}");
                 return $"error:Error generating JSON:{ex.Message}:{ex.StackTrace}";
             }
         }
