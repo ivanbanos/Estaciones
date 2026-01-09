@@ -318,6 +318,22 @@ namespace FacturadorEstacionesRepositorio
             return facturasEnviar.FirstOrDefault();
         }
 
+        /// <summary>
+        /// Obtiene el detalle de una factura canastilla
+        /// </summary>
+        /// <param name="facturaCanastillaId">ID de la factura canastilla</param>
+        /// <returns>Lista de detalles de la factura canastilla</returns>
+        public IEnumerable<FacturaCanastillaDetalle> getFacturaCanatillaDetalle(int facturaCanastillaId)
+        {
+            var parameters = new Dictionary<string, object>
+            {
+                {"@FacturaCanastillaId", facturaCanastillaId }
+            };
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaCanatillaDetalle", parameters);
+            var detalle = _convertidor.ConvertirFacturaCanastillaDEtalle(dt);
+            return detalle;
+        }
+
         internal object ActualizarResolucionCanastilla(object resolucionRemota)
         {
             throw new NotImplementedException();
@@ -992,6 +1008,45 @@ DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetFidel
             DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "GetFacturasCanastillaIslaTurno", parameters);
             var facturas = _convertidor.ConvertirFacturaCanastilla(dt);
             return facturas?.ToList() ?? new List<FacturaCanastilla>();
+        }
+
+        /// <summary>
+        /// Busca facturas canastilla no enviadas a Siesa.
+        /// </summary>
+        /// <returns>Lista de facturas canastilla</returns>
+        public IEnumerable<FacturaCanastilla> BuscarFacturasCanastillaNoEnviadasSiesa()
+        {
+            var dataSet = LoadDataSetFromStoredProc(_connectionString.Facturacion, "getFacturaCanastillaSinEnviarSiesa", null);
+
+            if (dataSet.Tables.Count == 0)
+            {
+                return new List<FacturaCanastilla>();
+            }
+
+            var facturas = _convertidor.ConvertirFacturaCanastilla(dataSet.Tables[0]);
+            return facturas;
+        }
+
+        /// <summary>
+        /// Marca facturas canastilla como enviadas a Siesa.
+        /// </summary>
+        /// <param name="facturas">IDs de facturas canastilla</param>
+        public void ActualizarFacturasCanastillaEnviadasSiesa(IEnumerable<int> facturas)
+        {
+            var ventasIds = new DataTable();
+            ventasIds.Columns.Add("ventaId", typeof(int));
+
+            foreach (var factura in facturas)
+            {
+                ventasIds.Rows.Add(factura);
+            }
+
+            var parameters = new Dictionary<string, object>
+            {
+                {"@facturas", ventasIds }
+            };
+
+            DataTable dt = LoadDataTableFromStoredProc(_connectionString.Facturacion, "ActualizarEnviadasSiesaCanastilla", parameters);
         }
     }
 }
