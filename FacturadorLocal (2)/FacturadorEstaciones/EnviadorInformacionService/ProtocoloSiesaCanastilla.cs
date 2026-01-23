@@ -19,6 +19,11 @@ namespace EnviadorInformacionService
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly IConexionEstacionRemota _conexionEstacionRemota = new ConexionEstacionRemota();
+        
+        // Control de rate limiting: máximo 25 facturas por minuto
+        private static readonly int MAX_FACTURAS_POR_MINUTO = 25;
+        private static readonly Queue<DateTime> facturasTimestamps = new Queue<DateTime>();
+        private static readonly object rateLimitLock = new object();
 
         public void Ejecutar()
         {
@@ -170,6 +175,9 @@ namespace EnviadorInformacionService
 
                             Logger.Info($"Factura canastilla {facturaCanastilla.FacturasCanastillaId} - Subtotal: {subtotal}, IVA: {totalIva}, Total: {total}");
 
+                            // Control de rate limiting
+                            WaitForRateLimit();
+                            
                             // Aquí se haría el envío a Siesa
                             // Por ahora lo dejamos como placeholder - debes implementar el envío real basado en tu ApiSiesa
                             bool enviado = EnviarFacturaCanastillaASiesa(facturaParaSiesa, _apiContabilidad);
@@ -239,6 +247,9 @@ namespace EnviadorInformacionService
                     {
                         decimal valorItem = (decimal)(item.cantidad * item.Canastilla.precio);
                         
+                        // Obtener auxiliar según tiene IVA o no
+                        string auxiliarItem = ConfigurationManager.AppSettings[facturaCanastilla.TieneIva ? "auxiliarcanastillaconiva" : "auxiliarcanastillasiniva"];
+                        
                         // Movimiento del producto/servicio
                         movimientosContables.Add(new
                         {
@@ -246,7 +257,7 @@ namespace EnviadorInformacionService
                             F350_ID_CO = config.CentroOperacionesDocumento,
                             F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"],
                             F350_CONSEC_DOCTO = consecutivo,
-                            F351_ID_AUXILIAR = ObtenerAuxiliarCanastilla(item.Canastilla.descripcion, facturaCanastilla.TieneIva),
+                            F351_ID_AUXILIAR = auxiliarItem,
                             F351_ID_TERCERO = facturaCanastilla.Tercero.identificacion.ToString(),
                             F351_ID_CO_MOV = config.CentroOperacionesDocumento,
                             F351_ID_UN = ConfigurationManager.AppSettings["unidadnegocio"],
@@ -497,29 +508,45 @@ namespace EnviadorInformacionService
         }
 
         /// <summary>
-        /// Obtiene el auxiliar contable según el producto de canastilla
+        /// Controla el rate limiting para no exceder 25 facturas por minuto
         /// </summary>
-        private string ObtenerAuxiliarCanastilla(string descripcion, bool tieneIva)
+        private void WaitForRateLimit()
         {
-            // Lógica para determinar el auxiliar según el tipo de producto
-            // Puedes personalizar esto según tus necesidades contables
-            
-            var auxiliarKey = $"auxiliarcanastilla_{descripcion.ToLower().Trim()}";
-            var auxiliar = ConfigurationManager.AppSettings[auxiliarKey];
-            
-            if (!string.IsNullOrEmpty(auxiliar))
+            lock (rateLimitLock)
             {
-                return auxiliar;
-            }
-            
-            // Auxiliar por defecto según si tiene IVA o no
-            if (tieneIva)
-            {
-                return ConfigurationManager.AppSettings["auxiliarcanastillaconiva"] ?? "41359501";
-            }
-            else
-            {
-                return ConfigurationManager.AppSettings["auxiliarcanastillasiniva"] ?? "41359502";
+                DateTime now = DateTime.Now;
+                DateTime oneMinuteAgo = now.AddMinutes(-1);
+
+                // Eliminar timestamps antiguos (fuera de la ventana de 1 minuto)
+                while (facturasTimestamps.Count > 0 && facturasTimestamps.Peek() < oneMinuteAgo)
+                {
+                    facturasTimestamps.Dequeue();
+                }
+
+                // Si ya alcanzamos el límite, esperar hasta que la factura más antigua salga de la ventana
+                if (facturasTimestamps.Count >= MAX_FACTURAS_POR_MINUTO)
+                {
+                    DateTime oldestTimestamp = facturasTimestamps.Peek();
+                    TimeSpan waitTime = oldestTimestamp.AddMinutes(1).AddSeconds(1) - now;
+                    
+                    if (waitTime.TotalSeconds > 0)
+                    {
+                        int waitSeconds = (int)Math.Ceiling(waitTime.TotalSeconds);
+                        Logger.Warn($"⏳ Límite de {MAX_FACTURAS_POR_MINUTO} facturas/minuto alcanzado. Esperando {waitSeconds} segundos...");
+                        Thread.Sleep(waitTime);
+                        
+                        // Limpiar timestamps antiguos después de esperar
+                        now = DateTime.Now;
+                        oneMinuteAgo = now.AddMinutes(-1);
+                        while (facturasTimestamps.Count > 0 && facturasTimestamps.Peek() < oneMinuteAgo)
+                        {
+                            facturasTimestamps.Dequeue();
+                        }
+                    }
+                }
+
+                // Registrar el nuevo timestamp
+                facturasTimestamps.Enqueue(now);
             }
         }
     }

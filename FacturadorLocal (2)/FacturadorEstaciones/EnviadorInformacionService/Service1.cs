@@ -63,10 +63,10 @@ namespace EnviadorInformacionService
                 // canastillaServiceThread.Start();
                 // canastillaWebServiceThread = new Thread(new ThreadStart(canastillaService.WebCanastilla));
                 // canastillaWebServiceThread.Start();
-                // siesaThread = new Thread(new ThreadStart(protocoloSiesa.Ejecutar));
-                // siesaThread.Start();
-                siesaCanastillaThread = new Thread(new ThreadStart(protocoloSiesaCanastilla.Ejecutar));
-                siesaCanastillaThread.Start();
+                siesaThread = new Thread(new ThreadStart(protocoloSiesa.Ejecutar));
+                siesaThread.Start();
+                // siesaCanastillaThread = new Thread(new ThreadStart(protocoloSiesaCanastilla.Ejecutar));
+                // siesaCanastillaThread.Start();
 
             }
             catch (Exception ex)
@@ -87,6 +87,7 @@ namespace EnviadorInformacionService
                 // envioThread.Abort();
                 // impresionThread.Abort();
                 //enviadorProsoftThread.Abort();
+                //siesaCanastillaThread.Abort();
                 siesaThread.Abort();
                 // canastillaServiceThread.Abort(); canastillaWebServiceThread.Abort();    
             }

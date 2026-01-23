@@ -19,6 +19,12 @@ namespace EnviadorInformacionService
     {
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         private readonly IConexionEstacionRemota _conexionEstacionRemota = new ConexionEstacionRemota();
+        
+        // Control de rate limiting: máximo 25 facturas por minuto
+        private static readonly int MAX_FACTURAS_POR_MINUTO = 25;
+        private static readonly Queue<DateTime> facturasTimestamps = new Queue<DateTime>();
+        private static readonly object rateLimitLock = new object();
+        
         public void Ejecutar()
         {
 
@@ -335,6 +341,8 @@ namespace EnviadorInformacionService
                                             {
                                                 try
                                                 {
+                                                    // Control de rate limiting
+                                                    WaitForRateLimit();
                                                     Logger.Info($"Iniciando envío de factura - ID: {factura.ventaId}, Total: {factura.total}, Forma Pago: {factura.codigoFormaPago}, Combustible: {factura.Venta.Combustible}");
                                                     _apiContabilidad.EnviarFactura(factura, facturaElectronica[1], numeros, auxiliarContable, auxiliarCruce, auxiliarDescuento);
                                                     facturasEnviadas.Add(factura.ventaId);
@@ -427,6 +435,49 @@ namespace EnviadorInformacionService
                 return valor;
             // Si no existe, usar el general
             return ConfigurationManager.AppSettings["auxiliardescuento"];
+        }
+        
+        /// <summary>
+        /// Controla el rate limiting para no exceder 25 facturas por minuto
+        /// </summary>
+        private void WaitForRateLimit()
+        {
+            lock (rateLimitLock)
+            {
+                DateTime now = DateTime.Now;
+                DateTime oneMinuteAgo = now.AddMinutes(-1);
+
+                // Eliminar timestamps antiguos (fuera de la ventana de 1 minuto)
+                while (facturasTimestamps.Count > 0 && facturasTimestamps.Peek() < oneMinuteAgo)
+                {
+                    facturasTimestamps.Dequeue();
+                }
+
+                // Si ya alcanzamos el límite, esperar hasta que la factura más antigua salga de la ventana
+                if (facturasTimestamps.Count >= MAX_FACTURAS_POR_MINUTO)
+                {
+                    DateTime oldestTimestamp = facturasTimestamps.Peek();
+                    TimeSpan waitTime = oldestTimestamp.AddMinutes(1).AddSeconds(1) - now;
+                    
+                    if (waitTime.TotalSeconds > 0)
+                    {
+                        int waitSeconds = (int)Math.Ceiling(waitTime.TotalSeconds);
+                        Logger.Warn($"⏳ Límite de {MAX_FACTURAS_POR_MINUTO} facturas/minuto alcanzado. Esperando {waitSeconds} segundos...");
+                        Thread.Sleep(waitTime);
+                        
+                        // Limpiar timestamps antiguos después de esperar
+                        now = DateTime.Now;
+                        oneMinuteAgo = now.AddMinutes(-1);
+                        while (facturasTimestamps.Count > 0 && facturasTimestamps.Peek() < oneMinuteAgo)
+                        {
+                            facturasTimestamps.Dequeue();
+                        }
+                    }
+                }
+
+                // Registrar el nuevo timestamp
+                facturasTimestamps.Enqueue(now);
+            }
         }
     }
 

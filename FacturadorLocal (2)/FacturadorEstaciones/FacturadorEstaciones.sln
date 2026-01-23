@@ -33,6 +33,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "energiaEnrutaPrueba", "ener
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "proyectoPruebas", "proyectoPruebas\proyectoPruebas.csproj", "{E51104F4-A2A7-434E-8596-D1A489A15642}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataicoToSiesa", "DataicoToSiesa\DataicoToSiesa.csproj", "{8D9E5B2A-3C4F-4A5D-8E9F-1B2C3D4E5F6A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -161,6 +163,14 @@ Global
 		{E51104F4-A2A7-434E-8596-D1A489A15642}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E51104F4-A2A7-434E-8596-D1A489A15642}.Release|x86.ActiveCfg = Release|Any CPU
 		{E51104F4-A2A7-434E-8596-D1A489A15642}.Release|x86.Build.0 = Release|Any CPU
+		{8D9E5B2A-3C4F-4A5D-8E9F-1B2C3D4E5F6A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D9E5B2A-3C4F-4A5D-8E9F-1B2C3D4E5F6A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D9E5B2A-3C4F-4A5D-8E9F-1B2C3D4E5F6A}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8D9E5B2A-3C4F-4A5D-8E9F-1B2C3D4E5F6A}.Debug|x86.Build.0 = Debug|Any CPU
+		{8D9E5B2A-3C4F-4A5D-8E9F-1B2C3D4E5F6A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D9E5B2A-3C4F-4A5D-8E9F-1B2C3D4E5F6A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D9E5B2A-3C4F-4A5D-8E9F-1B2C3D4E5F6A}.Release|x86.ActiveCfg = Release|Any CPU
+		{8D9E5B2A-3C4F-4A5D-8E9F-1B2C3D4E5F6A}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

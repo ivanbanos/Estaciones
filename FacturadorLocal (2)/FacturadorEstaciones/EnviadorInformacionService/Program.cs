@@ -52,8 +52,7 @@ namespace EnviadorInformacionService
                 new Service1()
             };
             ServiceBase.Run(ServicesToRun);
-            var service = new Service1();
-            service.OnStart(null);
+            
         }
 
 
