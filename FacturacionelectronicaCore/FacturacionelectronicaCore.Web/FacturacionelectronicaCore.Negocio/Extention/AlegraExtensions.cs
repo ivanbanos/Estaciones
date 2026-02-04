@@ -25,6 +25,9 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 case "SILOG":
                     services.AddScoped<IFacturacionElectronicaFacade, FacturacionSilog>();
                     break;
+                case "SILOG2":
+                    services.AddScoped<IFacturacionElectronicaFacade, FacturacionSilog2>();
+                    break;
                 case "DATATICO":
                 case "DATAICO":
                     services.AddScoped<IFacturacionElectronicaFacade, FacturacionDataico>();
