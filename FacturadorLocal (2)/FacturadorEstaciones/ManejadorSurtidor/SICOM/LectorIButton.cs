@@ -11,58 +11,132 @@ namespace ManejadorSurtidor.SICOM
 {
     public class LectorIButton
     {
-        private SerialPort serialPort1;
-        private string resultado;
-        private bool leido;
-        private int cant;
         private readonly Logger _logger = NLog.LogManager.GetCurrentClassLogger();
 
         public async Task<string> leerBoton(string puerto, int surtidorNumero, bool caraPAr, Logger _logger)
         {
-            resultado = "";
-            cant = 0;
+            var resultado = new StringBuilder();
+            var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+
             System.ComponentModel.IContainer components = null;
             components = new System.ComponentModel.Container();
-            serialPort1 = new SerialPort(components);
-            serialPort1.PortName = puerto;
-            serialPort1.BaudRate = 9600;
-            serialPort1.Encoding = Encoding.GetEncoding(28591);
-            //serialPort1.Encoding = Encoding.Default;
-            serialPort1.Parity = Parity.None;
-            serialPort1.DataBits = 8;
-            serialPort1.StopBits = StopBits.One;
-            serialPort1.ReceivedBytesThreshold = 10;
-            serialPort1.RtsEnable = true;
-            serialPort1.Handshake = Handshake.None;
-            serialPort1.DataReceived += new SerialDataReceivedEventHandler(DataReceiverHandler);
-            //serialPort1.WriteTimeout = 500;
-            //serialPort1.ReadTimeout = 500;
-           while (!serialPort1.IsOpen)
+            using var serialPort = new SerialPort(components)
             {
-                serialPort1.Open();
-            }
-            
-            serialPort1.ReceivedBytesThreshold = 10;
-            _logger.Log(NLog.LogLevel.Info, $"Leyendo boton ");
-            string trama = GetTrama(surtidorNumero, caraPAr);
-            await EnviarTramaAsync(trama);
-            serialPort1.Close();
+                PortName = puerto,
+                BaudRate = 9600,
+                Encoding = Encoding.GetEncoding(28591),
+                Parity = Parity.None,
+                DataBits = 8,
+                StopBits = StopBits.One,
+                ReceivedBytesThreshold = 10,
+                RtsEnable = true,
+                Handshake = Handshake.None,
+                ReadTimeout = 2000,
+                WriteTimeout = 2000
+            };
+
+            SerialDataReceivedEventHandler handler = (sender, args) =>
+            {
+                try
+                {
+                    var sp = (SerialPort)sender;
+                    if (sp.BytesToRead <= 0)
+                    {
+                        return;
+                    }
+
+                    string intdata = sp.ReadExisting();
+                    byte[] response = Encoding.GetEncoding(28591).GetBytes(intdata);
+                    string hexString = BitConverter.ToString(response);
+
+                    var chunk = hexString
+                        .Replace("4e-42-", "", StringComparison.OrdinalIgnoreCase)
+                        .Replace("4E-42-", "", StringComparison.OrdinalIgnoreCase);
+
+                    lock (resultado)
+                    {
+                        resultado.Append(chunk);
+                        var clean = resultado.ToString().Replace("-", "");
+                        if (clean.Length >= 16)
+                        {
+                            tcs.TrySetResult(resultado.ToString());
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Log(NLog.LogLevel.Info, $"Error Leyendo boton {ex.Message}");
+                    _logger.Log(NLog.LogLevel.Info, $"Error Leyendo boton {ex.StackTrace}");
+                }
+            };
+
             try
             {
-                var codigos = resultado.Split("-");
-                var iButton = "";
-                for(int i=0; i < 8; i++)
+                serialPort.DataReceived += handler;
+
+                if (!serialPort.IsOpen)
                 {
-                    iButton = codigos[i]+iButton;
+                    serialPort.Open();
+                }
+
+                _logger.Log(NLog.LogLevel.Info, "Leyendo boton");
+                string trama = GetTrama(surtidorNumero, caraPAr);
+                if (string.IsNullOrWhiteSpace(trama))
+                {
+                    _logger.Log(NLog.LogLevel.Info, "Trama vacia para lectura de boton");
+                    return "fail";
+                }
+
+                var intentos = 0;
+                while (!tcs.Task.IsCompleted && intentos++ < 3)
+                {
+                    byte[] tramaByte = FromHex(trama);
+                    serialPort.Write(tramaByte, 0, tramaByte.Length);
+                    await Task.WhenAny(tcs.Task, Task.Delay(2000));
+                }
+
+                if (!tcs.Task.IsCompleted)
+                {
+                    _logger.Log(NLog.LogLevel.Info, "Timeout leyendo boton");
+                    return "fail";
+                }
+
+                var resultadoFinal = await tcs.Task;
+                var codigos = resultadoFinal.Split("-", StringSplitOptions.RemoveEmptyEntries);
+                if (codigos.Length < 8)
+                {
+                    _logger.Log(NLog.LogLevel.Info, "Lectura de boton incompleta");
+                    return "fail";
+                }
+
+                var iButton = "";
+                for (int i = 0; i < 8; i++)
+                {
+                    iButton = codigos[i] + iButton;
                 }
                 _logger.Log(NLog.LogLevel.Info, $"Leyendo boton {iButton}");
                 return iButton;
             }
-            catch (Exception ex) {
-
+            catch (Exception ex)
+            {
                 _logger.Log(NLog.LogLevel.Info, $"Error Leyendo boton {ex.Message}");
                 _logger.Log(NLog.LogLevel.Info, $"Error Leyendo boton {ex.StackTrace}");
                 return "fail";
+            }
+            finally
+            {
+                try
+                {
+                    serialPort.DataReceived -= handler;
+                    if (serialPort.IsOpen)
+                    {
+                        serialPort.Close();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Log(NLog.LogLevel.Info, $"Error cerrando puerto de boton {ex.Message}");
+                }
             }
         }
 
@@ -115,20 +189,6 @@ namespace ManejadorSurtidor.SICOM
             return "";
         }
 
-        private async Task EnviarTramaAsync(string trama)
-        {
-            leido = false;
-            var count = 0;
-            while (!leido && count++ < 7)
-            {
-
-                byte[] tramaByte = FromHex(trama);
-                //_logger.LogInformation( $"Enviando trama {trama}");
-                serialPort1.Write(tramaByte, 0, tramaByte.Length); //ENVIO DE LA TRAMA
-                Thread.Sleep(2000);
-            }
-        }
-
         public byte[] FromHex(string hex)
         {
             hex = hex.Replace("-", "");
@@ -138,46 +198,6 @@ namespace ManejadorSurtidor.SICOM
                 raw[i] = Convert.ToByte(hex.Substring(i * 2, 2), 16);
             }
             return raw;
-        }
-        public void DataReceiverHandler(object sender,
-            SerialDataReceivedEventArgs e)
-        {
-            resultado = "";
-            try
-            {
-                SerialPort sp = (SerialPort)sender;
-
-                cant = 0;
-                while (resultado.ToLower().Contains("4e-42") || resultado.Length < 16)
-                {
-                    if (sp.BytesToRead > 0)
-                    {
-                        string intdata = sp.ReadExisting();
-                        // _logger.LogInformation( $"Buffer {sp.ReadBufferSize}");
-
-                        byte[] response = Encoding.GetEncoding(28591).GetBytes(intdata);
-                        string hexString = BitConverter.ToString(response);
-
-                        resultado += hexString;
-
-                        resultado = resultado.Replace("4e-42-", "");
-                        resultado = resultado.Replace("4E-42-", "");
-                        _logger.Log(NLog.LogLevel.Info, $"Leyendo boton {resultado}");
-                        if (resultado.Length >= 16)
-                        {
-                            leido = true;
-                        }
-                    }
-                    Thread.Sleep(250);
-                }
-            }catch(Exception ex)
-            {
-
-                _logger.Log(NLog.LogLevel.Info, $"Error Leyendo boton {ex.Message}");
-                _logger.Log(NLog.LogLevel.Info, $"Error Leyendo boton {ex.StackTrace}");
-            }
-           
-            
         }
     }
 }

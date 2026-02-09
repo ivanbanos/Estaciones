@@ -31,7 +31,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
         private readonly Alegra _alegra;
 
         // In-memory cache to track orders being processed or sent (IdVentaLocal)
-        private static readonly ConcurrentDictionary<int, bool> _ordenesEnviadasCache = new ConcurrentDictionary<int, bool>();
+        private static readonly ConcurrentDictionary<string, bool> _ordenesEnviadasCache = new ConcurrentDictionary<string, bool>();
 
         public ManejadorInformacionLocalNegocio(ITerceroRepositorio tercerosRepositorio, IMapper mapper, IResolucionRepositorio resolucionRepositorio,
                 IOrdenDeDespachoRepositorio ordenDeDespachoRepositorio,
@@ -61,8 +61,9 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
             Console.WriteLine("EnviaCreditos " + _alegra.EnviaCreditos);
             foreach (var x in ordenDeDespachos)
             {
-                // In-memory cache check to prevent duplicate sends in this app instance
-                if (!_ordenesEnviadasCache.TryAdd(x.IdVentaLocal, true))
+                // In-memory cache check to prevent duplicate sends in this app instance (per station)
+                var cacheKey = $"{estacion}:{x.IdVentaLocal}";
+                if (!_ordenesEnviadasCache.TryAdd(cacheKey, true))
                 {
                     // Already being processed or sent in this instance, skip
                     continue;
@@ -196,7 +197,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                 {
                     // Remove from cache after processing (success or fail)
                     bool removed;
-                    _ordenesEnviadasCache.TryRemove(x.IdVentaLocal, out removed);
+                    _ordenesEnviadasCache.TryRemove(cacheKey, out removed);
                 }
             }
         }

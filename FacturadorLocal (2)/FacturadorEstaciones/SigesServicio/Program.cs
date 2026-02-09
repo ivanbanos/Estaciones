@@ -48,9 +48,9 @@ try
         services.Configure<InformacionCuenta>(options => hostContext.Configuration.GetSection("InformacionCuenta").Bind(options));
 
         services.AddSingleton<IConexionEstacionRemota, ConexionEstacionRemota>();
-        // services.AddHostedService<WorkerImpresion>();
-        // services.AddHostedService<SubirVentasWorker>();
-        // services.AddHostedService<ObtenerVehiculosWorker>();
+        services.AddHostedService<WorkerImpresion>();
+        services.AddHostedService<SubirVentasWorker>();
+        services.AddHostedService<ObtenerVehiculosWorker>();
         // services.AddHostedService<CanastillaWorker>();
         services.AddHostedService<FacturasWorker>();
         //services.AddHostedService<SiesaWorker>();

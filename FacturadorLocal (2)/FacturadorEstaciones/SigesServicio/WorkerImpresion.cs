@@ -94,18 +94,36 @@ namespace SigesServicio
                             Thread.Sleep(1000);
                         }
                         var factura = _estacionesRepositorio.getFacturasImprimir();
+                        
+                        if (factura != null)
+                        {
+                            Logger.Log(NLog.LogLevel.Info, $"Factura recuperada - VentaId: {factura.ventaId}, Impresa: {factura.impresa}, ImpresionAutomatica: {ImpresionAutomatica}");
+                        }
+                        
                         if (imprimiendo == 0 && factura != null
                             && ((factura.impresa == 0 && ImpresionAutomatica) || factura.impresa <= -1))
                         {
-
+                            Logger.Log(NLog.LogLevel.Info, $"Iniciando impresion de factura VentaId: {factura.ventaId}");
 
                             while (true)
                             {
                                 if (imprimiendo == 0)
                                 {
                                     imprimiendo++;
-                                    Imprimir(factura);
-                                    factura.impresa++;
+                                    try
+                                    {
+                                        Imprimir(factura);
+                                        factura.impresa++;
+                                        Logger.Log(NLog.LogLevel.Info, $"Factura VentaId: {factura.ventaId} impresa exitosamente");
+                                    }
+                                    catch (Exception exImprimir)
+                                    {
+                                        Logger.Log(NLog.LogLevel.Error, $"Error imprimiendo factura VentaId: {factura.ventaId} - {exImprimir.Message}");
+                                        Logger.Log(NLog.LogLevel.Error, exImprimir.StackTrace);
+                                        imprimiendo = 0;
+                                        factura.impresa++; // Mark as attempted to avoid infinite loop
+                                        break;
+                                    }
                                 }
                                 else
                                 {
@@ -117,6 +135,10 @@ namespace SigesServicio
                                 }
                             }
                             Thread.Sleep(1000);
+                        }
+                        else if (factura == null)
+                        {
+                            Logger.Log(NLog.LogLevel.Debug, "No hay facturas pendientes de imprimir");
                         }
 
 
@@ -291,47 +313,69 @@ namespace SigesServicio
 
         private void Imprimir(FacturaSiges factura)
         {
+            Logger.Log(NLog.LogLevel.Info, $"Iniciando Imprimir - VentaId: {factura.ventaId}, Cara: {factura.Cara}");
             _factura = factura;
 
-            getLineasImprimir();
+            try
+            {
+                Logger.Log(NLog.LogLevel.Info, "Generando lineas de impresion");
+                getLineasImprimir();
+                Logger.Log(NLog.LogLevel.Info, $"Lineas generadas: {lineasImprimir?.Count ?? 0}");
+            }
+            catch (Exception exLineas)
+            {
+                Logger.Log(NLog.LogLevel.Error, $"Error generando lineas de impresion - {exLineas.Message}");
+                Logger.Log(NLog.LogLevel.Error, exLineas.StackTrace);
+                imprimiendo = 0;
+                throw;
+            }
+
             //imprimir
             try
             {
-
-                try
+                printFont = new Font("Console", 9);
+                PrintDocument pd = new PrintDocument();
+                pd.PrintPage += new PrintPageEventHandler(pd_PrintPageOnly);
+                pd.DefaultPageSettings.Margins.Bottom = 20;
+                
+                // Print the document.
+                if (_caraImpresoras.Any(x => x.Cara == factura.Cara))
                 {
-                    printFont = new Font("Console", 9);
-                    PrintDocument pd = new PrintDocument();
-                    pd.PrintPage += new PrintPageEventHandler(pd_PrintPageOnly);
-                    pd.DefaultPageSettings.Margins.Bottom = 20;
-                    // Print the document.
-                    if (_caraImpresoras.Any(x => x.Cara == factura.Cara))
-                    {
-
-                        Logger.Log(NLog.LogLevel.Error,"Selecionando impresora " + _caraImpresoras.First(x => x.Cara == factura.Cara).Impresora.Trim());
-                        pd.PrinterSettings.PrinterName = _caraImpresoras.First(x => x.Cara == factura.Cara).Impresora.Trim();
-                    }
-
-                    pd.Print();
-
+                    var impresora = _caraImpresoras.First(x => x.Cara == factura.Cara).Impresora.Trim();
+                    Logger.Log(NLog.LogLevel.Info, $"Seleccionando impresora: {impresora} para Cara: {factura.Cara}");
+                    pd.PrinterSettings.PrinterName = impresora;
                 }
-                catch (Exception ex)
+                else
                 {
-
-                    printFont = new Font("Console", 9);
-                    PrintDocument pd = new PrintDocument();
-                    pd.PrintPage += new PrintPageEventHandler(pd_PrintPageOnly);
-                    pd.DefaultPageSettings.Margins.Bottom = 20;
-                    pd.Print();
-
+                    Logger.Log(NLog.LogLevel.Warn, $"No se encontro impresora configurada para Cara: {factura.Cara}, usando impresora por defecto");
                 }
+
+                Logger.Log(NLog.LogLevel.Info, $"Enviando a imprimir en: {pd.PrinterSettings.PrinterName}");
+                pd.Print();
+                Logger.Log(NLog.LogLevel.Info, "Documento enviado a impresora exitosamente");
             }
             catch (Exception ex)
             {
-                imprimiendo = 0;
-                Logger.Log(NLog.LogLevel.Error,"Error " + ex.Message);
-                Logger.Log(NLog.LogLevel.Error,"Error " + ex.StackTrace);
-                Thread.Sleep(5000);
+                Logger.Log(NLog.LogLevel.Error, $"Error en impresion primaria - {ex.Message}");
+                Logger.Log(NLog.LogLevel.Error, ex.StackTrace);
+                
+                try
+                {
+                    Logger.Log(NLog.LogLevel.Warn, "Intentando impresion con impresora por defecto");
+                    printFont = new Font("Console", 9);
+                    PrintDocument pd = new PrintDocument();
+                    pd.PrintPage += new PrintPageEventHandler(pd_PrintPageOnly);
+                    pd.DefaultPageSettings.Margins.Bottom = 20;
+                    pd.Print();
+                    Logger.Log(NLog.LogLevel.Info, "Impresion por defecto exitosa");
+                }
+                catch (Exception exFallback)
+                {
+                    imprimiendo = 0;
+                    Logger.Log(NLog.LogLevel.Error, $"Error en impresion por defecto - {exFallback.Message}");
+                    Logger.Log(NLog.LogLevel.Error, exFallback.StackTrace);
+                    throw;
+                }
             }
         }
 
@@ -357,22 +401,43 @@ namespace SigesServicio
             var infoTemp = "";
             try
             {
+                Logger.Log(NLog.LogLevel.Info, $"Obteniendo info factura electronica - VentaId: {_factura.ventaId}");
                 var intentos = 0;
                 do
                 {
-                    infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, estacionFuente, _conexionEstacionRemota.getToken());
+                    try
+                    {
+                        var token = _conexionEstacionRemota.getToken();
+                        Logger.Log(NLog.LogLevel.Debug, $"Token obtenido, intento {intentos + 1}/3");
+                        infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, estacionFuente, token);
+                        
+                        if (!string.IsNullOrEmpty(infoTemp))
+                        {
+                            Logger.Log(NLog.LogLevel.Info, $"Info factura electronica obtenida: {infoTemp}");
+                        }
+                        else
+                        {
+                            Logger.Log(NLog.LogLevel.Warn, $"Info factura electronica vacia en intento {intentos + 1}");
+                        }
+                    }
+                    catch (Exception exIntento)
+                    {
+                        Logger.Log(NLog.LogLevel.Warn, $"Error en intento {intentos + 1} obteniendo factura electronica: {exIntento.Message}");
+                    }
+                    
                     Thread.Sleep(500);
-                } while (string.IsNullOrEmpty(infoTemp) || intentos++ < 3);
+                    intentos++;
+                } while (string.IsNullOrEmpty(infoTemp) && intentos < 3);
 
-                Console.WriteLine("info fac elec " + infoTemp);
-                Logger.Log(NLog.LogLevel.Error,"info fac elec " + infoTemp);
+                if (string.IsNullOrEmpty(infoTemp))
+                {
+                    Logger.Log(NLog.LogLevel.Warn, "No se pudo obtener info factura electronica despues de 3 intentos");
+                }
             }
             catch (Exception ex)
             {
-                Logger.Log(NLog.LogLevel.Error,"info fac elec " + ex.Message);
-                Logger.Log(NLog.LogLevel.Error,"info fac elec " + ex.StackTrace);
-                Console.WriteLine("info fac elec " + ex.Message);
-                Console.WriteLine("info fac elec " + ex.StackTrace);
+                Logger.Log(NLog.LogLevel.Error, $"Error obteniendo info factura electronica - {ex.Message}");
+                Logger.Log(NLog.LogLevel.Error, ex.StackTrace);
             }
             if (!string.IsNullOrEmpty(infoTemp))
             {
@@ -552,26 +617,51 @@ namespace SigesServicio
 
         private IEnumerable<LineasImprimir> getPuntos(int ventaId)
         {
-            var fidelizado = _estacionesRepositorio.getFidelizado(ventaId);
-            if (fidelizado != null)
+            try
             {
-                fidelizado = _fidelizacion.GetFidelizados(fidelizado.Documento).Result != null ? _fidelizacion.GetFidelizados(fidelizado.Documento).Result.FirstOrDefault() : fidelizado;
+                Logger.Log(NLog.LogLevel.Debug, $"Obteniendo puntos fidelizacion - VentaId: {ventaId}");
+                var fidelizado = _estacionesRepositorio.getFidelizado(ventaId);
+                
                 if (fidelizado != null)
                 {
-                    return new List<LineasImprimir>() {
-                    new LineasImprimir(formatoTotales("Fidelizado:", fidelizado.Nombre??fidelizado.Documento), false)
-                , new LineasImprimir(formatoTotales("Puntos:", fidelizado.Puntos.ToString()), false)};
+                    Logger.Log(NLog.LogLevel.Debug, $"Fidelizado encontrado: {fidelizado.Documento}");
+                    
+                    try
+                    {
+                        var fidelizadoRemoto = _fidelizacion.GetFidelizados(fidelizado.Documento).Result;
+                        fidelizado = fidelizadoRemoto != null ? fidelizadoRemoto.FirstOrDefault() : fidelizado;
+                    }
+                    catch (Exception exFid)
+                    {
+                        Logger.Log(NLog.LogLevel.Warn, $"Error obteniendo fidelizado remoto: {exFid.Message}");
+                    }
+                    
+                    if (fidelizado != null)
+                    {
+                        Logger.Log(NLog.LogLevel.Info, $"Puntos fidelizacion: {fidelizado.Puntos}");
+                        return new List<LineasImprimir>() {
+                            new LineasImprimir(formatoTotales("Fidelizado:", fidelizado.Nombre??fidelizado.Documento), false),
+                            new LineasImprimir(formatoTotales("Puntos:", fidelizado.Puntos.ToString()), false)
+                        };
+                    }
                 }
+                
+                Logger.Log(NLog.LogLevel.Debug, "Usuario no fidelizado");
+                return new List<LineasImprimir>() { new LineasImprimir("Usuario no fidelizado", false) };
             }
-            return new List<LineasImprimir>() { new LineasImprimir("Usuario no fidelizado", false) };
-
-
+            catch (Exception ex)
+            {
+                Logger.Log(NLog.LogLevel.Error, $"Error obteniendo puntos - {ex.Message}");
+                Logger.Log(NLog.LogLevel.Error, ex.StackTrace);
+                return new List<LineasImprimir>() { new LineasImprimir("Usuario no fidelizado", false) };
+            }
         }
 
         private void pd_PrintPageOnly(object sender, PrintPageEventArgs ev)
         {
             try
             {
+                Logger.Log(NLog.LogLevel.Debug, $"Iniciando pd_PrintPageOnly - VentaId: {_factura.ventaId}");
 
                 float yPos = 0;
                 int count = 0;
@@ -584,20 +674,28 @@ namespace SigesServicio
                 {
                     _infoEstacion.CaracteresPorPagina = fonSizeInches * sizePaper / 100;
                 }
+                
+                Logger.Log(NLog.LogLevel.Debug, $"Imprimiendo {lineasImprimir?.Count ?? 0} lineas");
+                
                 foreach (var linea in lineasImprimir)
                 {
-
-                    if (!string.IsNullOrEmpty(linea.qr))
+                    try
                     {
-
-                        count = printLine(linea.qr, ev, count, leftMargin, topMargin, false, isQr: true);
+                        if (!string.IsNullOrEmpty(linea.qr))
+                        {
+                            count = printLine(linea.qr, ev, count, leftMargin, topMargin, false, isQr: true);
+                        }
+                        else
+                        {
+                            count = printLine(linea.linea, ev, count, leftMargin, topMargin, linea.centrada);
+                        }
                     }
-                    else
+                    catch (Exception exLinea)
                     {
-
-                        count = printLine(linea.linea, ev, count, leftMargin, topMargin, linea.centrada);
+                        Logger.Log(NLog.LogLevel.Error, $"Error imprimiendo linea: {linea.linea} - {exLinea.Message}");
                     }
                 }
+                
                 count = printLine(" ", ev, count, leftMargin, topMargin, false);
                 count = printLine(" ", ev, count, leftMargin, topMargin, false);
                 if (line != null)
@@ -605,8 +703,18 @@ namespace SigesServicio
                 else
                     ev.HasMorePages = false;
 
-
-                _estacionesRepositorio.SetFacturaImpresa(_factura.ventaId);
+                try
+                {
+                    Logger.Log(NLog.LogLevel.Debug, $"Marcando factura como impresa - VentaId: {_factura.ventaId}");
+                    _estacionesRepositorio.SetFacturaImpresa(_factura.ventaId);
+                    Logger.Log(NLog.LogLevel.Info, $"Factura marcada como impresa - VentaId: {_factura.ventaId}");
+                }
+                catch (Exception exDb)
+                {
+                    Logger.Log(NLog.LogLevel.Error, $"Error actualizando estado de factura en BD - {exDb.Message}");
+                    Logger.Log(NLog.LogLevel.Error, exDb.StackTrace);
+                }
+                
                 imprimiendo--;
                 if (line != null)
                     ev.HasMorePages = true;
@@ -616,9 +724,9 @@ namespace SigesServicio
             catch (Exception ex)
             {
                 imprimiendo = 0;
-                Logger.Log(NLog.LogLevel.Error,"Error " + ex.Message);
-                Logger.Log(NLog.LogLevel.Error,"Error " + ex.StackTrace);
-                Thread.Sleep(5000);
+                Logger.Log(NLog.LogLevel.Error, $"Error en pd_PrintPageOnly - {ex.Message}");
+                Logger.Log(NLog.LogLevel.Error, ex.StackTrace);
+                throw;
             }
 
         }

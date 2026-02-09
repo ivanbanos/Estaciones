@@ -1044,7 +1044,7 @@ namespace FacturadorEstacionesRepositorio
             DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetVentaFidelizarAutomatica",
                                         new Dictionary<string, object>{
 
-                    {"@ventaId", id }
+                    {"@idManguera", id }
                                         });
             return _convertidor.ConvertirPuntos(dt).FirstOrDefault();
         }

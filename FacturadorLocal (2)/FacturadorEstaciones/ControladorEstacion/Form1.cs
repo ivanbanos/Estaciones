@@ -9,13 +9,14 @@ namespace ControladorEstacion
     {
         private readonly IEstacionesRepositorio _estacionesRepositorio;
         private readonly InfoEstacion _infoEstacion;
+        private IMessagesReceiver _messageReceiver;
 
         public Form1(IEstacionesRepositorio estacionesRepositorio, IOptions<InfoEstacion> infoEstacion)
         {
             _estacionesRepositorio = estacionesRepositorio;
             InitializeComponent();
             _infoEstacion = infoEstacion.Value;
-            //var messageReceiver = new RabbitMQMessagesReceiver(infoEstacion);
+            _messageReceiver = new RabbitMQMessagesReceiver(infoEstacion);
             var surtidores = _estacionesRepositorio.GetSurtidoresSiges();
             var surtidoresComponets = new List<Surtidor>();
             var posActual = 0;
@@ -26,7 +27,7 @@ namespace ControladorEstacion
                 newSurtidor.Location = new System.Drawing.Point(131, 208 + (209 * posActual));
                 newSurtidor.Name = surtidor.Descripcion;
                 this.Controls.Add(newSurtidor);
-                //messageReceiver.Subscribe(newSurtidor);
+                (_messageReceiver as IObservable<string>)?.Subscribe(newSurtidor);
                 newSurtidor.BringToFront();
                 posActual++;
             }

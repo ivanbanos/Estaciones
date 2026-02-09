@@ -11,35 +11,38 @@ using System.Threading.Tasks;
 
 namespace ControladorEstacion.Messages
 {
-    public class RabbitMQMessagesReceiver : IObservable<Mensaje>
+    public class RabbitMQMessagesReceiver : IObservable<Mensaje>, IDisposable
     {
         List<IObserver<Mensaje>> observers = new List<IObserver<Mensaje>>();
-        EventingBasicConsumer consumer;
+        AsyncEventingBasicConsumer consumer;
+        private IConnection _connection;
+        private IChannel _channel;
+        
         public RabbitMQMessagesReceiver()
         {
             var factory = new ConnectionFactory() { HostName = "LAPTOP-7BMLM7UO", UserName = "siges", Password = "siges", Port = Protocols.DefaultProtocol.DefaultPort };
-            var connection = factory.CreateConnection();
-            var channel = connection.CreateModel();
+            _connection = factory.CreateConnectionAsync().Result;
+            _channel = _connection.CreateChannelAsync().Result;
             
-                channel.QueueDeclare(queue: "controlador",
+            _channel.QueueDeclareAsync(queue: "controlador",
                                      durable: true,
                                      exclusive: false,
                                      autoDelete: false,
-                                     arguments: null);
+                                     arguments: null).Wait();
 
-                consumer = new EventingBasicConsumer(channel);
-                consumer.Received += (model, ea) =>
+            consumer = new AsyncEventingBasicConsumer(_channel);
+            consumer.ReceivedAsync += async (model, ea) =>
+            {
+                var body = ea.Body.ToArray();
+                var mensaje = JsonConvert.DeserializeObject<Mensaje>(Encoding.UTF8.GetString(body));
+                foreach (var observer in observers)
                 {
-                    var body = ea.Body.ToArray();
-                    var mensaje = JsonConvert.DeserializeObject<Mensaje>(Encoding.UTF8.GetString(body));
-                    foreach (var observer in observers)
-                    {
-                        observer.OnNext(mensaje);
-                    }
-                };
-                channel.BasicConsume(queue: "controlador",
+                    observer.OnNext(mensaje);
+                }
+            };
+            _channel.BasicConsumeAsync(queue: "controlador",
                                      autoAck: true,
-                                     consumer: consumer);
+                                     consumer: consumer).Wait();
         }
 
         public IDisposable Subscribe(IObserver<Mensaje> observer)
@@ -50,6 +53,19 @@ namespace ControladorEstacion.Messages
                 observers.Add(observer);
             }
             return new Unsubscriber<Mensaje>(observers, observer);
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                _channel?.Dispose();
+                _connection?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error disposing RabbitMQ resources: {ex.Message}");
+            }
         }
 
         internal class Unsubscriber<Mensaje> : IDisposable

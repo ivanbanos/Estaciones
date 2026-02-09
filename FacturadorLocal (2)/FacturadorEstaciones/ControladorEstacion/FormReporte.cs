@@ -3,6 +3,8 @@ using FacturadorAPI.Application.Queries.Reportes.Objetos;
 using FacturadorEstacionesRepositorio;
 using Modelo;
 using System.Text;
+using PuppeteerSharp;
+using PuppeteerSharp.Media;
 
 namespace ControladorEstacion
 {
@@ -195,12 +197,11 @@ namespace ControladorEstacion
 
                 var pageReporte = File.ReadAllText("FormatoReporte.html");
                 pageReporte = pageReporte.Replace("{body}", reporteText.ToString());
-                ChromePdfRenderer renderer = new ChromePdfRenderer();
-
-                PdfDocument pdf = renderer.RenderHtmlAsPdf(pageReporte);
                 
-
-                pdf.SaveAs($"{_infoEstacion.Reportes}/reporte-{tipoReporte}-{this.dateTimePicker1.Value.ToString("dd-MM-yyyy")}-{this.dateTimePicker2.Value.ToString("dd-MM-yyyy")}.pdf");
+                // Generate PDF using PuppeteerSharp
+                var outputPath = $"{_infoEstacion.Reportes}/reporte-{tipoReporte}-{this.dateTimePicker1.Value.ToString("dd-MM-yyyy")}-{this.dateTimePicker2.Value.ToString("dd-MM-yyyy")}.pdf";
+                GeneratePdfAsync(pageReporte, outputPath).Wait();
+                
                 MessageBox.Show("Reporte generado con exito");
                 this.Close();
             }
@@ -211,6 +212,26 @@ namespace ControladorEstacion
 
             }
 
+        }
+
+        private async Task GeneratePdfAsync(string htmlContent, string outputPath)
+        {
+            var browserFetcher = new BrowserFetcher();
+            await browserFetcher.DownloadAsync();
+            
+            await using var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            {
+                Headless = true
+            });
+            
+            await using var page = await browser.NewPageAsync();
+            await page.SetContentAsync(htmlContent);
+            
+            await page.PdfAsync(outputPath, new PdfOptions
+            {
+                Format = PaperFormat.A4,
+                PrintBackground = true
+            });
         }
     }
 }

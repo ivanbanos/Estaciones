@@ -59,7 +59,7 @@ namespace ManejadorSurtidor
                             {
 
                                 _estacionesRepositorio.actualizarVentaSubidaSicom(venta.ventaId);
-                                Logger.Log(NLog.LogLevel.Error, $"Subida {venta.ventaId}");
+                                //Logger.Log(NLog.LogLevel.Error, $"Subida {venta.ventaId}");
                             } else
                             {
 

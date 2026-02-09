@@ -12,6 +12,7 @@ using ManejadorSurtidor.SICOM;
 using ManejadorSurtidor.Messages;
 using System;
 using ControladorEstacion.Messages;
+using FactoradorEstacionesModelo.Siges;
 
 namespace ManejadorSurtidor
 {
@@ -62,9 +63,43 @@ namespace ManejadorSurtidor
             var surtidores = _estacionesRepositorio.GetSurtidoresSiges();
 
             _logger.Log(NLog.LogLevel.Info, $"Caras {JsonConvert.SerializeObject(surtidores)}");
-            List<Task> tasks = new List<Task>();
-            tasks.AddRange(surtidores.GroupBy(x => x.Puerto).Select(x => new OperadorCara(_logger, x.ToList(), _estacionesRepositorio, _options, _sicomConection, _messageProducer, _fidelizacion, _islas).OperarCara(stoppingToken)));
-            Task.WaitAll(tasks.ToArray());
+
+            var tasks = surtidores
+                .GroupBy(x => x.Puerto)
+                .Select(group => RunOperadorCaraLoop(group.ToList(), stoppingToken))
+                .ToList();
+
+            await Task.WhenAll(tasks);
+        }
+
+        private async Task RunOperadorCaraLoop(List<SurtidorSiges> surtidores, CancellationToken stoppingToken)
+        {
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
+                {
+                    var operador = new OperadorCara(_logger, surtidores, _estacionesRepositorio, _options, _sicomConection, _messageProducer, _fidelizacion, _islas);
+                    await operador.OperarCara(stoppingToken);
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.Log(NLog.LogLevel.Error, $"OperadorCara stopped unexpectedly. Restarting. Error: {ex.Message}");
+                    _logger.Log(NLog.LogLevel.Error, ex.StackTrace ?? string.Empty);
+                }
+
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+            }
         }
 
         public void OnCompleted()

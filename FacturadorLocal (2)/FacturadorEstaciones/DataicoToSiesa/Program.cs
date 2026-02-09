@@ -335,7 +335,7 @@ namespace DataicoToSiesa
                         // Detectar si es combustible (EXTRA, CORRIENTE, DIESEL, ACPM, GNV, etc.)
                         if (tipoCombustible == null && (
                             descripcion.Contains("EXTRA") || 
-                            descripcion.Contains("CORRIENTE") || 
+                            descripcion.Contains("dotENTE") || 
                             descripcion.Contains("DIESEL") || 
                             descripcion.Contains("ACPM") || 
                             descripcion.Contains("GNV")))
@@ -487,15 +487,36 @@ namespace DataicoToSiesa
                 
                 if (esCombustible)
                 {
-                    // Para combustible, usar configuración específica por tipo de combustible
-                    // Normalizar nombre de combustible para búsqueda en configuración
-                    string combustibleKey = tipoCombustible.ToLower().Trim();
+                    // Para combustible, determinar tipo específico usando la misma lógica de detección
+                    string combustibleKey = "combustible"; // Default
+                    string tipoCombustibleUpper = tipoCombustible.ToUpper().Trim();
                     
-                    // Intentar obtener auxiliares específicos para este combustible
+                    if (tipoCombustibleUpper.Contains("CORRIENTE"))
+                    {
+                        combustibleKey = "corriente";
+                    }
+                    else if (tipoCombustibleUpper.Contains("EXTRA"))
+                    {
+                        combustibleKey = "extra";
+                    }
+                    else if (tipoCombustibleUpper.Contains("DIESEL"))
+                    {
+                        combustibleKey = "diesel";
+                    }
+                    else if (tipoCombustibleUpper.Contains("ACPM"))
+                    {
+                        combustibleKey = "acpm";
+                    }
+                    else if (tipoCombustibleUpper.Contains("GNV"))
+                    {
+                        combustibleKey = "gnv";
+                    }
+                    
+                    // Intentar obtener auxiliar específico para este tipo de combustible
                     auxiliarContable = ConfigurationManager.AppSettings[$"auxiliar{combustibleKey}"] 
                         ?? ConfigurationManager.AppSettings["auxiliarcombustible"];
                     
-                    Logger.Info($"Combustible detectado: {tipoCombustible}, usando auxiliar: {auxiliarContable}");
+                    Logger.Info($"Combustible detectado: {tipoCombustible}, tipo: {combustibleKey}, usando auxiliar: {auxiliarContable}");
                 }
                 else
                 {
@@ -718,7 +739,7 @@ namespace DataicoToSiesa
 
                 contentString = JsonConvert.SerializeObject(requestContent, Formatting.Indented);
 
-                Logger.Info($"Enviando factura {factura.NumeroFactura} a Siesa. JSON:\n{contentString}");
+                Logger.Info($"Enviando factura {factura.NumeroFactura} a Siesa.");
 
                 // Enviar a Siesa
                 var urlSiesa = ConfigurationManager.AppSettings["urlsiesa"];
@@ -836,26 +857,97 @@ namespace DataicoToSiesa
                     return null;
                 }
 
-                using (var connection = new SqlConnection(_connectionStringFacturacion))
+                // Retry logic for connection failures
+                int maxRetries = 3;
+                int retryDelayMs = 2000;
+                
+                for (int attempt = 1; attempt <= maxRetries; attempt++)
                 {
-                    connection.Open();
-                    
-                    using (var command = new SqlCommand("ObtenerTercero", connection))
+                    try
                     {
-                        command.CommandType = CommandType.StoredProcedure;
-                        command.Parameters.AddWithValue("@identificacion", identificacion.Trim());
+                        Logger.Debug($"Intentando conectar a BD para tercero {identificacion.Trim()} - Intento {attempt}/{maxRetries}");
                         
-                        using (var adapter = new SqlDataAdapter(command))
+                        using (var connection = new SqlConnection(_connectionStringFacturacion))
                         {
-                            var dataTable = new DataTable();
-                            adapter.Fill(dataTable);
+                            Logger.Debug($"Abriendo conexión a: {connection.DataSource}");
+                            connection.Open();
+                            Logger.Debug("Conexión abierta exitosamente");
                             
-                            if (dataTable.Rows.Count > 0)
+                            using (var command = new SqlCommand("ObtenerTercero", connection))
                             {
-                                var terceros = _convertidor.ConvertirTercero(dataTable);
-                                return terceros?.FirstOrDefault();
+                                command.CommandType = CommandType.StoredProcedure;
+                                command.CommandTimeout = 30; // 30 segundos timeout
+                                command.Parameters.AddWithValue("@identificacion", identificacion.Trim());
+                                
+                                using (var adapter = new SqlDataAdapter(command))
+                                {
+                                    var dataTable = new DataTable();
+                                    adapter.Fill(dataTable);
+                                    
+                                    Logger.Debug($"Consulta ejecutada - Filas retornadas: {dataTable.Rows.Count}");
+                                    
+                                    if (dataTable.Rows.Count > 0)
+                                    {
+                                        var terceros = _convertidor.ConvertirTercero(dataTable);
+                                        var tercero = terceros?.FirstOrDefault();
+                                        if (tercero != null)
+                                        {
+                                            Logger.Info($"Tercero encontrado: {tercero.Nombre} - {identificacion.Trim()}");
+                                        }
+                                        return tercero;
+                                    }
+                                }
                             }
                         }
+                        
+                        Logger.Info($"No se encontró tercero con identificación {identificacion.Trim()}");
+                        return null;
+                    }
+                    catch (SqlException sqlEx)
+                    {
+                        Logger.Warn($"Error SQL en intento {attempt}/{maxRetries}: {sqlEx.Message}");
+                        Logger.Debug($"SQL Error Number: {sqlEx.Number}, State: {sqlEx.State}, Class: {sqlEx.Class}");
+                        
+                        // Errores comunes de conexión que ameritan retry
+                        if (attempt < maxRetries && (
+                            sqlEx.Number == -1 ||      // Network error
+                            sqlEx.Number == -2 ||      // Timeout
+                            sqlEx.Number == 53 ||      // Network path not found
+                            sqlEx.Number == 64 ||      // Error in opening connection
+                            sqlEx.Number == 233 ||     // Connection initialization error
+                            sqlEx.Number == 10053 ||   // Transport-level error
+                            sqlEx.Number == 10054 ||   // Connection forcibly closed
+                            sqlEx.Number == 11001))    // Host not found
+                        {
+                            Logger.Warn($"Error de conexión transiente detectado. Reintentando en {retryDelayMs}ms...");
+                            Thread.Sleep(retryDelayMs);
+                            retryDelayMs *= 2; // Exponential backoff
+                            continue;
+                        }
+                        
+                        // Si no es un error transiente o ya agotamos los intentos, lanzar
+                        throw;
+                    }
+                    catch (InvalidOperationException invOpEx) when (invOpEx.Message.Contains("Error de instancia"))
+                    {
+                        Logger.Error($"Error de instancia SQL Server en intento {attempt}/{maxRetries}");
+                        Logger.Error($"Connection String (sin contraseña): {SanitizeConnectionString(_connectionStringFacturacion)}");
+                        Logger.Error($"Mensaje: {invOpEx.Message}");
+                        Logger.Error("Posibles causas:");
+                        Logger.Error("  1. SQL Server no está en ejecución");
+                        Logger.Error("  2. Nombre de instancia incorrecto en connection string");
+                        Logger.Error("  3. SQL Server Browser service no está en ejecución");
+                        Logger.Error("  4. Firewall bloqueando el puerto SQL Server");
+                        
+                        if (attempt < maxRetries)
+                        {
+                            Logger.Warn($"Reintentando en {retryDelayMs}ms...");
+                            Thread.Sleep(retryDelayMs);
+                            retryDelayMs *= 2;
+                            continue;
+                        }
+                        
+                        throw;
                     }
                 }
                 
@@ -864,7 +956,27 @@ namespace DataicoToSiesa
             catch (Exception ex)
             {
                 Logger.Error(ex, $"Error obteniendo tercero con identificación {identificacion}");
+                Logger.Error($"Tipo de excepción: {ex.GetType().Name}");
+                Logger.Error($"Connection String (sin contraseña): {SanitizeConnectionString(_connectionStringFacturacion)}");
                 return null;
+            }
+        }
+        
+        /// <summary>
+        /// Remueve información sensible del connection string para logging seguro
+        /// </summary>
+        static string SanitizeConnectionString(string connectionString)
+        {
+            try
+            {
+                var builder = new SqlConnectionStringBuilder(connectionString);
+                builder.Password = "***";
+                builder.UserID = builder.UserID?.Length > 0 ? "***" : builder.UserID;
+                return builder.ConnectionString;
+            }
+            catch
+            {
+                return "Error parseando connection string";
             }
         }
     }

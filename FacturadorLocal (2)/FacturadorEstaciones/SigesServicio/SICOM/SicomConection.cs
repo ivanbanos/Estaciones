@@ -51,13 +51,13 @@ namespace ManejadorSurtidor.SICOM
                     response.EnsureSuccessStatusCode();
                     string responseBody = await response.Content.ReadAsStringAsync();
 
-                    Logger.Log(NLog.LogLevel.Info, $"Sicom respuesta {responseBody}");
+                    //Logger.Log(NLog.LogLevel.Info, $"Sicom respuesta {responseBody}");
                     var chipResponse = JsonConvert.DeserializeObject<VehiculoSuic>(responseBody);
                     return chipResponse;
                 } catch(Exception ex)
                 {
 
-                    Logger.Log(NLog.LogLevel.Error, $"Sicom error {ex.Message}");
+                    //Logger.Log(NLog.LogLevel.Error, $"Sicom error {ex.Message}");
                     return null;
                 }
             }
@@ -85,21 +85,21 @@ namespace ManejadorSurtidor.SICOM
 
                     var json = JsonConvert.SerializeObject(person);
 
-                    Logger.Log(NLog.LogLevel.Info, $"Enviando {json}");
+                    //Logger.Log(NLog.LogLevel.Info, $"Enviando {json}");
                     var data = new StringContent(json, Encoding.UTF8, "application/json");
 
                     var response = await client.PostAsync(uri, data);
                     response.EnsureSuccessStatusCode();
                     string responseBody = await response.Content.ReadAsStringAsync();
 
-                    Logger.Log(NLog.LogLevel.Info, $"Sicom respuesta {responseBody}");
+                    //Logger.Log(NLog.LogLevel.Info, $"Sicom respuesta {responseBody}");
                     //var chipResponse = JsonConvert.DeserializeObject<ChipResponse>(responseBody);
                     return true;
                 }
                 catch (Exception ex)
                 {
 
-                    Logger.Log(NLog.LogLevel.Error, $"Sicom error {ex.Message}");
+                    //Logger.Log(NLog.LogLevel.Error, $"Sicom error {ex.Message}");
                     return false;
                 }
             }
@@ -133,7 +133,7 @@ namespace ManejadorSurtidor.SICOM
                 catch (Exception ex)
                 {
 
-                    Logger.Log(NLog.LogLevel.Error, $"Sicom error {ex.Message}");
+                    //Logger.Log(NLog.LogLevel.Error, $"Sicom error {ex.Message}");
                     return "Fail";
                 }
             }

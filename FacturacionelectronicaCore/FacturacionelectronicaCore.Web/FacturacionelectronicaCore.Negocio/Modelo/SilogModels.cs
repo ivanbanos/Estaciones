@@ -57,7 +57,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
 
     public class ProductInformation
     {
-        public int ProductId { get; set; }
+        public string ProductId { get; set; }
         public decimal Quantity { get; set; }
         public decimal Discunt { get; set; }
         public decimal Price { get; set; }

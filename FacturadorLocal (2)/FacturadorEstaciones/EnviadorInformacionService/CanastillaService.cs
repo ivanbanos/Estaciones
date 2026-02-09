@@ -313,21 +313,20 @@ namespace EnviadorInformacionService
                         infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronicaCanastilla(_factura.FacturasCanastillaId, estacionFuente, _conexionEstacionRemota.getToken());
                         if (!string.IsNullOrEmpty(infoTemp))
                         {
-                            continue;
+                            break;
                         }
-                        else
+
+                        if (!_factura.enviada)
                         {
-                            if (!_factura.enviada)
+                            var ok = _conexionEstacionRemota.EnviarFacturasCanastilla(new List<FacturaCanastilla> { _factura }, estacionFuente, _conexionEstacionRemota.getToken());
+                            if (ok)
                             {
-                                var ok = _conexionEstacionRemota.EnviarFacturasCanastilla(new List<FacturaCanastilla> { _factura }, estacionFuente, _conexionEstacionRemota.getToken());
-                                if (ok)
-                                {
-                                    _estacionesRepositorio.ActuralizarFacturasEnviadosCanastilla(new List<int> { _factura.FacturasCanastillaId });
-                                }
+                                _estacionesRepositorio.ActuralizarFacturasEnviadosCanastilla(new List<int> { _factura.FacturasCanastillaId });
                             }
                         }
+
                         Thread.Sleep(5000);
-                    } while (infoTemp == null || intentos++ < 3);
+                    } while (string.IsNullOrEmpty(infoTemp) && intentos++ < 3);
 
                     Console.WriteLine("info fac elec " + infoTemp);
                     Logger.Info("info fac elec " + infoTemp);
