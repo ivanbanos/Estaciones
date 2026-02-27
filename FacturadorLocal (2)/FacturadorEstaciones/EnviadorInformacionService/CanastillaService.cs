@@ -209,10 +209,8 @@ namespace EnviadorInformacionService
 
                     var consecutivo = 0;// _conexionEstacionRemota.ObtenerParaImprimir(estacionFuente, token);
 
-                    Logger.Error("Factura Encontrada" + consecutivo);
                     if (consecutivo != 0)
                     {
-                        Logger.Error("Factura Encontrada");
                         var facturaReal = _estacionesRepositorio.BuscarFacturaCanastillaPorConsecutivo(consecutivo);
                         facturaReal.impresa = 0 - vecesImpresionCanastilla;
                         while (facturaReal.impresa != 0)
@@ -369,6 +367,10 @@ namespace EnviadorInformacionService
 
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Isla : ", _factura.Isla + ""), false));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendedor : ", _factura.Empleado?.Trim() + ""), false));
+            if (!string.IsNullOrWhiteSpace(_factura.Placa))
+            {
+                lineasImprimir.Add(new LineasImprimir(formatoTotales("Placa : ", _factura.Placa.Trim()), false));
+            }
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             if (_infoEstacion.ImpresionPDA)
             {

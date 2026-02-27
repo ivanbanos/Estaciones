@@ -306,6 +306,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                     fc.terceroId.tipoIdentificacionS = dr.Field<string>("descripcion");
                     fc.Empleado = dr.Field<string>("Vendedor");
                     fc.Isla = dr.Field<string>("isla");
+                    fc.Placa = dr.IsNull("placa") ? string.Empty : dr.Field<string>("placa");
 
 
                     return fc;

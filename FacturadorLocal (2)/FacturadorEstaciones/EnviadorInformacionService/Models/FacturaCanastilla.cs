@@ -27,5 +27,6 @@ namespace EnviadorInformacionService.Models
 		public Guid IdEstacion { get; set; }
         public string Isla { get; set; }
         public string Empleado { get; set; }
+		public string Placa { get; set; }
     }
 }
