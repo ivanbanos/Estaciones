@@ -35,5 +35,6 @@ namespace ReporteFacturas
         public string Linea4 { get; set; }
         public bool ImpresionPDA { get; set; }
         public bool Rifa { get; set; }
+        public decimal MontoMinimoRifa { get; set; } = 10000m;
     }
 }

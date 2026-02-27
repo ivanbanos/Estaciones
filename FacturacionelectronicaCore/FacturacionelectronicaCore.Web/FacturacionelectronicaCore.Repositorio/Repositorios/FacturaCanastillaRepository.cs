@@ -33,20 +33,25 @@ namespace FacturacionelectronicaCore.Repositorio.Repositorios
             factura.IdEstacion = estacion.ToString();
             var filter = Builders<FacturaCanastilla>.Filter.Eq("FacturasCanastillaId", factura.FacturasCanastillaId);
             var facturasMongo = await _mongoHelper.GetFilteredDocuments<FacturaCanastilla>(_repositorioConfig.Cliente, "facturasCanastillas", filter);
-            if (!facturasMongo.Any(x => x.IdEstacion.ToLower() == estacion.ToString().ToLower()))
+            var facturaExistente = facturasMongo.FirstOrDefault(x => x.IdEstacion.ToLower() == estacion.ToString().ToLower());
+            if (facturaExistente == null)
             {
                 factura.Guid = Guid.NewGuid().ToString();
                 await _mongoHelper.CreateDocument(_repositorioConfig.Cliente, "facturasCanastillas", factura);
+                return 0;
             }
-            else
-            {
 
-                var facturaMongo = facturasMongo.First();
-                var filterGuid = Builders<FacturaMongo>.Filter.Eq("_id", facturaMongo.Guid);
-                var update = Builders<FacturaMongo>.Update
-                    .Set(x => x.idFacturaElectronica, factura.idFacturaElectronica);
-                await _mongoHelper.UpdateDocument(_repositorioConfig.Cliente, "facturasCanastillas", filterGuid, update);
+            if (string.IsNullOrEmpty(factura.idFacturaElectronica))
+            {
+                factura.idFacturaElectronica = facturaExistente.idFacturaElectronica;
             }
+
+            factura.Id = facturaExistente.Id;
+            factura.Guid = string.IsNullOrEmpty(factura.Guid) ? facturaExistente.Guid : factura.Guid;
+            factura.IdEstacion = facturaExistente.IdEstacion;
+
+            var filterId = Builders<FacturaCanastilla>.Filter.Eq("_id", new ObjectId(facturaExistente.Id));
+            await _mongoHelper.ReplaceDocument(_repositorioConfig.Cliente, "facturasCanastillas", filterId, factura);
             return 0;
         }
 

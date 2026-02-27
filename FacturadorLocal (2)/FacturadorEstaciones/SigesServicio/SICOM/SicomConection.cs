@@ -127,7 +127,14 @@ namespace ManejadorSurtidor.SICOM
 
                     //_logger.LogInformation( $"Sicom respuesta {responseBody}");
 
-                    File.WriteAllText(_infoEstacion.ArchivoSiCOM+"SUIC.txt", responseBody);
+                    var suicFilePath = GetSuicFilePath();
+                    var suicDirectory = Path.GetDirectoryName(suicFilePath);
+                    if (!string.IsNullOrWhiteSpace(suicDirectory))
+                    {
+                        Directory.CreateDirectory(suicDirectory);
+                    }
+
+                    File.WriteAllText(suicFilePath, responseBody);
                     return responseBody;
                 }
                 catch (Exception ex)
@@ -137,6 +144,22 @@ namespace ManejadorSurtidor.SICOM
                     return "Fail";
                 }
             }
+        }
+
+        private string GetSuicFilePath()
+        {
+            var configuredPath = _infoEstacion.ArchivoSiCOM;
+            var basePath = string.IsNullOrWhiteSpace(configuredPath)
+                ? AppContext.BaseDirectory
+                : configuredPath;
+
+            if (!Path.IsPathRooted(basePath))
+            {
+                basePath = Path.Combine(AppContext.BaseDirectory, basePath);
+            }
+
+            var fullDirectory = Path.GetFullPath(basePath);
+            return Path.Combine(fullDirectory, "SUIC.txt");
         }
 
     }

@@ -231,6 +231,11 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
                 // Get items for all canastilla products
                 var items = new List<Item>();
 
+                if (factura.canastillas == null || !factura.canastillas.Any())
+                {
+                    return "error:Factura canastilla sin artículos (items vacíos)";
+                }
+
                 foreach (var canastillaItem in factura.canastillas)
                 {
                     var item = await GetItem(canastillaItem.Canastilla.descripcion, option);
@@ -315,6 +320,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
                 // Get items for all canastilla products
                 var items = new List<Item>();
+                if (facturaCanastilla.canastillas == null || !facturaCanastilla.canastillas.Any())
+                {
+                    return "error:Factura canastilla sin artículos (items vacíos)";
+                }
                 foreach (var canastillaItem in facturaCanastilla.canastillas)
                 {
                     var item = await GetItem(canastillaItem.Canastilla.descripcion, option);

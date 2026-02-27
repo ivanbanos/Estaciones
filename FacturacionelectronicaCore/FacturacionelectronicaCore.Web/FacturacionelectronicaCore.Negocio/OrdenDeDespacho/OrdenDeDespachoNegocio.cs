@@ -460,6 +460,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
         private IEnumerable<ConsolidadoFormaPago> GetConsolidadoFormaPagoOrdenes(IEnumerable<Modelo.OrdenDeDespacho> ordenes)
         {
             return ordenes
+                .Where(o => o.Estado == "Anulado" || o.Estado == "Anulada" || !string.IsNullOrWhiteSpace(o.idFacturaElectronica))
                 .GroupBy(o => o.FormaDePago)
                 .Select(g => new ConsolidadoFormaPago
                 {

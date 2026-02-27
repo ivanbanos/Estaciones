@@ -682,7 +682,7 @@ MultipartFormDataContent form = new MultipartFormDataContent();
                 {
                     PosConsecutive = factura.consecutivo,
                     InvoiceDate = factura.fecha.ToString("yyyy-MM-dd"),
-                    Details = $"Factura Canastilla: {factura.consecutivo}",
+                    Details = $"Factura Canastilla: {factura.consecutivo} - Placa: {(string.IsNullOrWhiteSpace(factura.Placa) ? "N/A" : factura.Placa.Trim())}",
                     VehicleInformation = new VehicleInformation
                     {
                         Plate = "N/A",

@@ -5,6 +5,7 @@ using ManejadorSurtidor.SICOM;
 using FactoradorEstacionesModelo.Siges;
 using LogLevel = NLog.LogLevel;
 using Modelo;
+using System.IO;
 
 namespace ManejadorSurtidor
 {
@@ -48,7 +49,15 @@ namespace ManejadorSurtidor
                     string suic = await _sicomConection.GetInfoCarros();
                     if (suic == "Fail")
                     {
-                        suic = File.ReadAllText(_optionsInfo.Value.ArchivoSiCOM + "SUIC.txt");
+                        var suicFilePath = GetSuicFilePath();
+                        if (!File.Exists(suicFilePath))
+                        {
+                            Logger.Log(LogLevel.Warn, $"No se encontró archivo de respaldo SUIC en la ruta {suicFilePath}");
+                            Thread.Sleep(1000 * 60 * 5);
+                            continue;
+                        }
+
+                        suic = File.ReadAllText(suicFilePath);
                     }
                     await setCarInDatabase(suic);
 
@@ -63,6 +72,12 @@ namespace ManejadorSurtidor
 
         private async Task setCarInDatabase(string suic)
         {
+            if (string.IsNullOrWhiteSpace(suic))
+            {
+                Logger.Log(LogLevel.Warn, "Contenido SUIC vacío; no se procesan vehículos.");
+                return;
+            }
+
             var lines = suic.Split('\n');
             var vehiculos = new List<VehiculoSuic>();
             for(var i = 1; i < lines.Length; i++)
@@ -124,6 +139,22 @@ namespace ManejadorSurtidor
                 Thread.Sleep(1000 * 60 * 5);
             }
            
+        }
+
+        private string GetSuicFilePath()
+        {
+            var configuredPath = _optionsInfo.Value.ArchivoSiCOM;
+            var basePath = string.IsNullOrWhiteSpace(configuredPath)
+                ? AppContext.BaseDirectory
+                : configuredPath;
+
+            if (!Path.IsPathRooted(basePath))
+            {
+                basePath = Path.Combine(AppContext.BaseDirectory, basePath);
+            }
+
+            var fullDirectory = Path.GetFullPath(basePath);
+            return Path.Combine(fullDirectory, "SUIC.txt");
         }
     }
 }

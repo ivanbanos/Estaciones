@@ -350,7 +350,7 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                     try
                     {
                         // Replace campoextra in each factura.canastillas from repo
-                        foreach (var canastilla in factura.canastillas)
+                        foreach (var canastilla in factura.canastillas ?? Enumerable.Empty<Modelo.CanastillaFactura>())
                         {
                             if (canastilla.Canastilla != null)
                             {
@@ -364,7 +364,15 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
 
                         var facturaCanastilla = await _facturaCanastillaRepository.GetFacturaPorIdCanastilla(factura.FacturasCanastillaId, estacion);
                         var idFactruraElectronica = "";
-                        if (facturaCanastilla == null
+                        var idExistente = facturaCanastilla?.idFacturaElectronica;
+                        var facturaElectronicaEnviada = !string.IsNullOrEmpty(idExistente)
+                            && !idExistente.StartsWith("error", StringComparison.OrdinalIgnoreCase);
+
+                        if (facturaElectronicaEnviada)
+                        {
+                            factura.idFacturaElectronica = idExistente;
+                        }
+                        else if (facturaCanastilla == null
                             || facturaCanastilla.idFacturaElectronica == null
                             || facturaCanastilla.idFacturaElectronica.StartsWith("error")
                             || facturaCanastilla.idFacturaElectronica.StartsWith("Error"))
@@ -377,7 +385,13 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                                 {
                                     idFactruraElectronica = "error:Tercero no está apto para facturación electrónica";
                                 }
-                                else
+                                else if (_alegra.EnvioDirecto
+                                    && (_alegra.EnviaTodo || factura.fecha > DateTime.Now.AddMonths(-1)
+                                        || (_alegra.EnviaMes && DateTime.Now.AddMonths(-1) < factura.fecha))
+                                    && (_alegra.EnviaCreditos || (!(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("dir")
+                                        && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("calibra")
+                                        && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("consum")
+                                        && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("puntos"))))
                                 {
                                     // Retry mechanism for newly created terceros in Alegra
                                     var maxRetries = 3;
@@ -423,9 +437,10 @@ namespace FacturacionelectronicaCore.Negocio.ManejadorInformacionLocal
                             }
                             else
                             {
-                                if ((factura.fecha > DateTime.Now.AddMonths(-1)
-                                    || (_alegra.EnviaMes && DateTime.Now.AddMonths(-1) < factura.fecha))
-                                    && (_alegra.EnviaCreditos || (!factura.codigoFormaPago.Descripcion.ToLower().Contains("dir") && !factura.codigoFormaPago.Descripcion.ToLower().Contains("calibra") && !factura.codigoFormaPago.Descripcion.ToLower().Contains("consum") && !factura.codigoFormaPago.Descripcion.ToLower().Contains("puntos"))))
+                                if (_alegra.EnvioDirecto
+                                    && (_alegra.EnviaTodo || factura.fecha > DateTime.Now.AddMonths(-1)
+                                        || (_alegra.EnviaMes && DateTime.Now.AddMonths(-1) < factura.fecha))
+                                    && (_alegra.EnviaCreditos || (!(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("dir") && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("calibra") && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("consum") && !(factura.codigoFormaPago?.Descripcion ?? "").ToLower().Contains("puntos"))))
                                 {
                                     // Retry mechanism for newly created terceros in Alegra
                                     var maxRetries = 3;

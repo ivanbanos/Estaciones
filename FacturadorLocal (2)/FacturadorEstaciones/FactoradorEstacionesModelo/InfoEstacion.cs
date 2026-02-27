@@ -49,6 +49,8 @@ namespace Modelo
         public bool ImpresionFormaDePagoOrdenDespacho { get; set; }
         public bool GeneraFacturaElectronica { get; set; }
         public bool ImpresionPDA { get; set; }
+        public bool Rifa { get; set; }
+        public decimal MontoMinimoRifa { get; set; } = 10000m;
         public object Url { get; set; }
         public object Password { get; set; }
         public object User { get; set; }

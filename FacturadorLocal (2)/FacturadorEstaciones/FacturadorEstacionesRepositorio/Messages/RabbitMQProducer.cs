@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Connections;
 using Microsoft.Extensions.Options;
 using Modelo;
+using NLog;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
 using System;
@@ -14,6 +15,7 @@ namespace ManejadorSurtidor.Messages
 {
     public class RabbitMQProducer : IMessageProducer, IDisposable
     {
+        private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
         private readonly InfoEstacion _infoEstacion;
         private IConnection _connection;
         private bool _disposed = false;
@@ -39,9 +41,11 @@ namespace ManejadorSurtidor.Messages
                 factory.HostName = _infoEstacion.RabbitHost;
                 
                 _connection = await factory.CreateConnectionAsync();
+                _logger.Log(LogLevel.Info, $"RabbitMQ conexión abierta en host {_infoEstacion.RabbitHost}");
             }
             catch (Exception ex)
             {
+                _logger.Log(LogLevel.Error, $"Error creando conexión RabbitMQ a host {_infoEstacion.RabbitHost}: {ex.Message}");
                 throw new InvalidOperationException($"Failed to create RabbitMQ connection to {_infoEstacion.RabbitHost}", ex);
             }
         }
@@ -69,18 +73,21 @@ namespace ManejadorSurtidor.Messages
             {
                 try
                 {
+                    _logger.Log(LogLevel.Info, $"Publicando mensaje en cola '{queue}'. Intento {i + 1}/{maxRetries}");
                     await channel.BasicPublishAsync(exchange: "", routingKey: queue, body: body);
+                    _logger.Log(LogLevel.Info, $"Mensaje publicado correctamente en cola '{queue}'");
                     break;
                 }
                 catch (Exception ex)
                 {
                     if (i < maxRetries - 1)
                     {
-                        System.Diagnostics.Debug.WriteLine($"RabbitMQ send attempt {i + 1} failed: {ex.Message}. Retrying...");
+                        _logger.Log(LogLevel.Warn, $"Falló publicación en cola '{queue}' intento {i + 1}: {ex.Message}. Reintentando...");
                         await Task.Delay(1000);
                     }
                     else
                     {
+                        _logger.Log(LogLevel.Error, $"Falló publicación en cola '{queue}' tras {maxRetries} intentos: {ex.Message}");
                         throw new InvalidOperationException($"Failed to send message to queue '{queue}' after {maxRetries} attempts", ex);
                     }
                 }

@@ -15,13 +15,11 @@ namespace ManejadorSurtidor
     {
         private readonly IEstacionesRepositorio _estacionesRepositorio;
 
-        SerialPort serialPort1;
+        SerialPort serialPort1 = null!;
         IEnumerable<SurtidorSiges> Surtidores;
         private readonly Logger _logger = NLog.LogManager.GetCurrentClassLogger();
         private int count = 0;
         private LectorIButton lectorIButton;
-        private string iButtom;
-        private bool leyendoButton = false;
         private readonly IMessageProducer _messageProducer;
         private bool respondio;
         private bool finalizo;
@@ -39,8 +37,7 @@ namespace ManejadorSurtidor
             lectorIButton = new LectorIButton();
             Surtidores = surtidores;
 
-            System.ComponentModel.IContainer components = null;
-            components = new System.ComponentModel.Container();
+            System.ComponentModel.IContainer components = new System.ComponentModel.Container();
             serialPort1 = new SerialPort(components);
             serialPort1.PortName = surtidores.First().Puerto;
             serialPort1.BaudRate = 4800;
@@ -55,7 +52,6 @@ namespace ManejadorSurtidor
             serialPort1.DataReceived += new SerialDataReceivedEventHandler(DataReceiverHandler);
             //serialPort1.WriteTimeout = 500;
             //serialPort1.ReadTimeout = 500;
-            lectorIButton = new LectorIButton();
             _fidelizacion = fidelizacion;
             _islas = islas;
         }
@@ -74,7 +70,19 @@ namespace ManejadorSurtidor
                     _logger.Log(NLog.LogLevel.Info, $"Inicicando Surtidor {surtidor.Descripcion}");
 
                 }
-                if (!serialPort1.IsOpen) { serialPort1.Open(); }
+                _logger.Log(NLog.LogLevel.Info, $"Puerto configurado: {serialPort1.PortName}, BaudRate: {serialPort1.BaudRate}, Parity: {serialPort1.Parity}, DataBits: {serialPort1.DataBits}, StopBits: {serialPort1.StopBits}");
+                var puertosDisponibles = SerialPort.GetPortNames();
+                _logger.Log(NLog.LogLevel.Info, $"Puertos detectados: {string.Join(",", puertosDisponibles)}");
+                if (!puertosDisponibles.Any(x => string.Equals(x, serialPort1.PortName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    _logger.Log(NLog.LogLevel.Warn, $"El puerto configurado {serialPort1.PortName} no aparece en los puertos detectados del sistema.");
+                }
+                if (!serialPort1.IsOpen)
+                {
+                    _logger.Log(NLog.LogLevel.Info, $"Intentando abrir puerto {serialPort1.PortName}");
+                    serialPort1.Open();
+                    _logger.Log(NLog.LogLevel.Info, $"Puerto {serialPort1.PortName} abierto correctamente");
+                }
                 foreach (var surtidor in Surtidores)
                 {
                     foreach (var manguera in surtidor.mangueras)
@@ -93,8 +101,8 @@ namespace ManejadorSurtidor
             }
             catch (Exception ex)
             {
-                _logger.Log(NLog.LogLevel.Info, $"Error {ex.Message}");
-                _logger.Log(NLog.LogLevel.Info, $"Error {ex.StackTrace}");
+                LogException(ex, "Error inicializando surtidores");
+                _logger.Log(NLog.LogLevel.Error, $"Fallo inicializando/abriendo puerto serial {serialPort1?.PortName}. Excepción: {ex}");
 
             }
             while (!stoppingToken.IsCancellationRequested)
@@ -103,292 +111,310 @@ namespace ManejadorSurtidor
                 {
                     foreach (var surtidor in Surtidores)
                     {
-
-                        surtidor.turno = _estacionesRepositorio.ObtenerTurnoSurtidor(surtidor.Id);
-                        string message = surtidor.turno == null ? "Cerrado" : JsonConvert.SerializeObject(surtidor.turno);
-                        
                         try
                         {
-
-                            if (surtidor.turno != null)
-                            {
-                                surtidor.idTurno = surtidor.turno.Id;
-                                if (surtidor.turno.IdEstado == 1)
-                                {
-                                    _logger.Log(NLog.LogLevel.Info, $"Abriendo turno {surtidor.Descripcion}");
-                                    foreach (var manguera in surtidor.mangueras)
-                                    {
-                                        await sendEstado(surtidor.Id, manguera.Ubicacion, "Abriendo", surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-                                        manguera.Estado = "Totalizadores";
-                                         _logger.Log(NLog.LogLevel.Info, $"Buscando totalizador Manguera {manguera.Descripcion}");
-                                        await totalizadorManguera(surtidor, manguera, stoppingToken);
-
-                                         _logger.Log(NLog.LogLevel.Info, $"Abriendo {manguera.Descripcion} {surtidor.turno.Id} {manguera.totalizador}");
-                                        _estacionesRepositorio.EnviarTotalizadorApertura(surtidor.Id, surtidor.turno.Id, manguera.Id, manguera.totalizador);
-                                        await sendEstado(surtidor.Id, manguera.Ubicacion, "Abierta",  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-                                        _logger.Log(NLog.LogLevel.Info, $"Abrierta {manguera.Descripcion} {surtidor.turno.Id} {manguera.totalizador}");
-
-                                    }
-                                }
-                                else if (surtidor.turno.IdEstado == 3 || surtidor.turno.IdEstado == 4)
-                                {
-                                    _logger.Log(NLog.LogLevel.Info, $"Cerrando turno {surtidor.Descripcion}");
-                                    foreach (var manguera in surtidor.mangueras)
-                                    {
-                                        await sendEstado(surtidor.Id, manguera.Ubicacion, "Cerrando",  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-                                        manguera.Estado = "Totalizadores";
-                                         _logger.Log(NLog.LogLevel.Info, $"Buscando totalizador Manguera {manguera.Descripcion}");
-                                        await totalizadorManguera(surtidor, manguera, stoppingToken);
-                                         _logger.Log(NLog.LogLevel.Info, $"Cerrando {manguera.Descripcion} {surtidor.turno.Id} {manguera.totalizador}");
-                                        _estacionesRepositorio.EnviarTotalizadorCierre(surtidor.Id, surtidor.turno.Id, manguera.Id, manguera.totalizador);
-                                        await sendEstado(surtidor.Id, manguera.Ubicacion, "Cerrada",  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-                                        _logger.Log(NLog.LogLevel.Info, $"Cerrada {manguera.Descripcion} {surtidor.turno.Id} {manguera.totalizador}");
-
-                                    }
-                                }
-                                else if (surtidor.turno.IdEstado == 2)
-                                {
-                                    //_logger.Log(NLog.LogLevel.Info, $"Surtidor {JsonConvert.SerializeObject(surtidor)} ");
-
-                                    if (!serialPort1.IsOpen) { serialPort1.Open(); }
-                                    if (serialPort1.IsOpen)
-                                    {
-                                        try
-                                        {
-                                            if (surtidor.mangueras.Any(x => x.Estado == "Desautorizar" || x.Estado == "BuscarBoton" || (x.Estado == "Colgada" && x.Vendiendo)))
-                                            {
-                                                foreach (var manguera in surtidor.mangueras)
-                                                {
-                                                    switch (manguera.Estado)
-                                                    {
-                                                        case "Desautorizar":
-                                                            await sendEstado(surtidor.Id, manguera.Ubicacion, "Desautorizando",  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-
-                                                            manguera.Estado = "Desautorizando";
-                                                            manguera.Vendiendo = false;
-                                                            manguera.Vehiculo = null;
-                                                            await desautorizarManguera(surtidor, manguera, stoppingToken);
-                                                            manguera.tiempoOcio = 0;
-                                                            break;
-                                                        case "BuscarBoton":
-
-                                                            manguera.Estado = "Desautorizando";
-                                                            await desautorizarManguera(surtidor, manguera, stoppingToken);
-                                                            manguera.tiempoOcio = 0;
-                                                            await sendEstado(surtidor.Id, manguera.Ubicacion, "Validando botón",  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-                                                            await ValidarBoton(surtidor, manguera);
-                                                            if (manguera.Vehiculo != null && manguera.Vehiculo.estado == 0 && manguera.Vehiculo.fechaFin > DateTime.Now)
-                                                            {
-                                                                await sendEstado(surtidor.Id, manguera.Ubicacion, "Autorizando - " + manguera.Vehiculo.placa,  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-
-                                                                manguera.Estado = "Autorizando";
-                                                                await autorizarManguera(surtidor, manguera, stoppingToken);
-                                                                manguera.Estado = "Vendiendo";
-                                                                manguera.Vendiendo = true;
-                                                                manguera.Date = DateTime.Now;
-                                                                await sendEstado(surtidor.Id, manguera.Ubicacion, "Vendiendo - " + manguera.Vehiculo.placa,  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-
-                                                            }
-                                                            else
-                                                            {
-                                                                await sendEstado(surtidor.Id, manguera.Ubicacion, "Desautorizando",  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-
-                                                                manguera.Vendiendo = false;
-                                                                manguera.Vehiculo = null;
-                                                                manguera.Estado = "Desautorizando";
-                                                                await desautorizarManguera(surtidor, manguera, stoppingToken);
-                                                            }
-                                                            break;
-                                                        case "Colgada":
-                                                            if (manguera.Vendiendo)
-                                                            {
-                                                                await sendEstado(surtidor.Id, manguera.Ubicacion, "Fin venta - " + manguera.Vehiculo.placa,  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-
-                                                                manguera.Estado = "Desautorizando";
-                                                                await desautorizarManguera(surtidor, manguera, stoppingToken);
-
-                                                                manguera.Estado = "BuscandoUltimaVenta";
-                                                                manguera.CambioVenta = false;
-                                                                await venta(surtidor, manguera, stoppingToken);
-                                                                while (!manguera.CambioVenta)
-                                                                {
-                                                                    Thread.Sleep(100);
-                                                                }
-                                                                //_logger.Log(NLog.LogLevel.Info, $"Manguera {JsonConvert.SerializeObject(manguera)} ");
-
-                                                                if (manguera.Vehiculo != null && manguera.ultimaVenta > 0)
-                                                                {
-                                                                    bool vender = true;
-                                                                    if (manguera.ultimaVenta == manguera.NuevaVenta)
-                                                                    {
-
-                                                                        //_logger.Log(NLog.LogLevel.Info, $"Ver totalizador");
-                                                                        manguera.Estado = "Totalizadores";
-                                                                        manguera.CambioVenta = false;
-                                                                        await totalizadorManguera(surtidor, manguera, stoppingToken);
-
-                                                                        _logger.Log(NLog.LogLevel.Info, $"Manguera {JsonConvert.SerializeObject(manguera)} ");
-                                                                        while (!manguera.CambioVenta)
-                                                                        {
-                                                                            Thread.Sleep(100);
-                                                                        }
-                                                                        var totalizador = 0d;
-                                                                        if (manguera.NuevoTotalizador == manguera.totalizador)
-                                                                        {
-                                                                            vender = false;
-                                                                        }
-                                                                        else { 
-                                                                            while(true)
-                                                                            {
-                                                                                manguera.Estado = "Totalizadores";
-                                                                                manguera.CambioVenta = false;
-                                                                                await totalizadorManguera(surtidor, manguera, stoppingToken);
-
-                                                                                _logger.Log(NLog.LogLevel.Info, $"Manguera {JsonConvert.SerializeObject(manguera)} ");
-                                                                                while (!manguera.CambioVenta)
-                                                                                {
-                                                                                    Thread.Sleep(100);
-                                                                                }
-                                                                                if(totalizador == manguera.totalizador)
-                                                                                {
-                                                                                    break;
-                                                                                } else
-                                                                                {
-                                                                                    totalizador = manguera.totalizador;
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        manguera.NuevoTotalizador = manguera.totalizador;
-                                                                    }
-                                                                    if (vender)
-                                                                    {
-                                                                        await sendEstado(surtidor.Id, manguera.Ubicacion, "Total ultima venta " + manguera.ultimaVenta,  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-
-                                                                        // _logger.Log(NLog.LogLevel.Info, $"Guardando venta");
-                                                                        _estacionesRepositorio.AgregarVenta(manguera.Id, manguera.ultimaVenta, manguera.Vehiculo.idrom);
-                                                                        await Fidelizar(manguera.Id);
-                                                                    }
-                                                                    manguera.NuevaVenta = manguera.ultimaVenta;
-                                                                }
-                                                                manguera.Estado = "FinVenta";
-                                                                manguera.Vendiendo = false;
-                                                                manguera.Vehiculo = null;
-                                                            }
-                                                            else
-                                                            {
-
-                                                                manguera.Vendiendo = false;
-                                                                manguera.Vehiculo = null;
-                                                                manguera.tiempoOcio++;
-                                                                if (manguera.Estado == "Colgada" && !manguera.Vendiendo)
-                                                                {
-                                                                    await sendEstado(surtidor.Id, manguera.Ubicacion, "Desautorizando",  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-
-                                                                    //manguera.Estado = "Autorizando";
-                                                                    //await autorizarManguera(surtidor, manguera, stoppingToken);
-                                                                    //Thread.Sleep(300);
-                                                                    manguera.Estado = "Desautorizando";
-                                                                    await desautorizarManguera(surtidor, manguera, stoppingToken);
-                                                                    manguera.tiempoOcio = 0;
-                                                                }
-                                                            }
-                                                            break;
-                                                    }
-                                                }
-                                            }
-                                            else
-                                            {
-                                                foreach (var manguera in surtidor.mangueras)
-                                                {
-                                                    manguera.tiempoOcio++;
-                                                    if (manguera.Estado == "Colgada" && !manguera.Vendiendo)
-                                                    {
-                                                        await sendEstado(surtidor.Id, manguera.Ubicacion, "Desautorizando",  surtidor.turno.FechaApertura.ToString(),  surtidor.turno.Empleado);
-
-                                                        //manguera.Estado = "Autorizando";
-                                                        //await autorizarManguera(surtidor, manguera, stoppingToken);
-                                                        //Thread.Sleep(300);
-                                                        manguera.Estado = "Desautorizando";
-                                                        await desautorizarManguera(surtidor, manguera, stoppingToken);
-                                                        manguera.tiempoOcio = 0;
-                                                    }
-                                                }
-                                                await estado(surtidor, null, stoppingToken);
-                                            }
-                                        } catch(Exception ex)
-                                        {
-                                            _logger.Log(NLog.LogLevel.Info, $"Error {ex.Message}");
-                                            _logger.Log(NLog.LogLevel.Info, $"Error {ex.StackTrace}");
-                                            foreach (var surtidorcatch in Surtidores)
-                                            {
-                                                foreach (var manguera in surtidor.mangueras)
-                                                {
-                                                    manguera.Vendiendo = false;
-                                                    manguera.Vehiculo = null;
-                                                    await desautorizarManguera(surtidorcatch, manguera, stoppingToken);
-                                                }
-                                            }
-                                        }
-                                           
-                                    }
-
-
-
-                                }
-
-                                Thread.Sleep(1000);
-                            }
-                            else
-                            {
-                                
-
-                                Thread.Sleep(1000);
-                            }
+                            await ProcesarSurtidorAsync(surtidor, stoppingToken);
                         }
                         catch (Exception ex)
                         {
-                            _logger.Log(NLog.LogLevel.Info, $"Error {ex.Message}");
-                            _logger.Log(NLog.LogLevel.Info, $"Error {ex.StackTrace}");
-                            foreach (var surtidorcatch in Surtidores)
-                            {
-                                foreach (var manguera in surtidor.mangueras)
-                                {
-                                    manguera.Vendiendo = false;
-                                    manguera.Vehiculo = null;
-                                    await desautorizarManguera(surtidorcatch, manguera, stoppingToken);
-                                }
-                            }
+                            LogException(ex, $"Error en ciclo del surtidor {surtidor.Descripcion}");
+                            await ResetYDesautorizarTodasMangueras(stoppingToken);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    _logger.Log(NLog.LogLevel.Info, $"Error {ex.Message}");
-                    _logger.Log(NLog.LogLevel.Info, $"Error {ex.StackTrace}");
-                    foreach (var surtidor in Surtidores)
+                    LogException(ex, "Error general en loop de OperarCara");
+                    await ResetYDesautorizarTodasMangueras(stoppingToken);
+                    if (serialPort1 != null)
                     {
-                        foreach (var manguera in surtidor.mangueras)
-                        {
-                            manguera.Vendiendo = false;
-                            manguera.Vehiculo = null;
-                            await desautorizarManguera(surtidor, manguera, stoppingToken);
-                        }
+                        serialPort1.Close();
                     }
-                    serialPort1.Close();
                 }
             }
+        }
+
+        private async Task ProcesarSurtidorAsync(SurtidorSiges surtidor, CancellationToken stoppingToken)
+        {
+            surtidor.turno = _estacionesRepositorio.ObtenerTurnoSurtidor(surtidor.Id);
+
+            if (surtidor.turno == null)
+            {
+                await Task.Delay(1000, stoppingToken);
+                return;
+            }
+
+            surtidor.idTurno = surtidor.turno.Id;
+            if (surtidor.turno.IdEstado == 1)
+            {
+                await ProcesarAperturaTurnoAsync(surtidor, stoppingToken);
+            }
+            else if (surtidor.turno.IdEstado == 3 || surtidor.turno.IdEstado == 4)
+            {
+                await ProcesarCierreTurnoAsync(surtidor, stoppingToken);
+            }
+            else if (surtidor.turno.IdEstado == 2)
+            {
+                await ProcesarTurnoOperativoAsync(surtidor, stoppingToken);
+            }
+
+            await Task.Delay(1000, stoppingToken);
+        }
+
+        private async Task ProcesarAperturaTurnoAsync(SurtidorSiges surtidor, CancellationToken stoppingToken)
+        {
+            _logger.Log(NLog.LogLevel.Info, $"Abriendo turno {surtidor.Descripcion}");
+            foreach (var manguera in surtidor.mangueras)
+            {
+                await sendEstado(surtidor.Id, manguera.Ubicacion, "Abriendo", surtidor.turno.FechaApertura.ToString(), surtidor.turno.Empleado);
+                manguera.Estado = "Totalizadores";
+                _logger.Log(NLog.LogLevel.Info, $"Buscando totalizador Manguera {manguera.Descripcion}");
+                await totalizadorManguera(surtidor, manguera, stoppingToken);
+
+                _logger.Log(NLog.LogLevel.Info, $"Abriendo {manguera.Descripcion} {surtidor.turno.Id} {manguera.totalizador}");
+                _estacionesRepositorio.EnviarTotalizadorApertura(surtidor.Id, surtidor.turno.Id, manguera.Id, manguera.totalizador);
+                await sendEstado(surtidor.Id, manguera.Ubicacion, "Abierta", surtidor.turno.FechaApertura.ToString(), surtidor.turno.Empleado);
+                _logger.Log(NLog.LogLevel.Info, $"Abrierta {manguera.Descripcion} {surtidor.turno.Id} {manguera.totalizador}");
+            }
+        }
+
+        private async Task ProcesarCierreTurnoAsync(SurtidorSiges surtidor, CancellationToken stoppingToken)
+        {
+            _logger.Log(NLog.LogLevel.Info, $"Cerrando turno {surtidor.Descripcion}");
+            foreach (var manguera in surtidor.mangueras)
+            {
+                await sendEstado(surtidor.Id, manguera.Ubicacion, "Cerrando", surtidor.turno.FechaApertura.ToString(), surtidor.turno.Empleado);
+                manguera.Estado = "Totalizadores";
+                _logger.Log(NLog.LogLevel.Info, $"Buscando totalizador Manguera {manguera.Descripcion}");
+                await totalizadorManguera(surtidor, manguera, stoppingToken);
+                _logger.Log(NLog.LogLevel.Info, $"Cerrando {manguera.Descripcion} {surtidor.turno.Id} {manguera.totalizador}");
+                _estacionesRepositorio.EnviarTotalizadorCierre(surtidor.Id, surtidor.turno.Id, manguera.Id, manguera.totalizador);
+                await sendEstado(surtidor.Id, manguera.Ubicacion, "Cerrada", surtidor.turno.FechaApertura.ToString(), surtidor.turno.Empleado);
+                _logger.Log(NLog.LogLevel.Info, $"Cerrada {manguera.Descripcion} {surtidor.turno.Id} {manguera.totalizador}");
+            }
+        }
+
+        private async Task ProcesarTurnoOperativoAsync(SurtidorSiges surtidor, CancellationToken stoppingToken)
+        {
+            if (!serialPort1.IsOpen)
+            {
+                _logger.Log(NLog.LogLevel.Warn, $"Puerto {serialPort1.PortName} cerrado durante operación. Reintentando apertura.");
+                serialPort1.Open();
+                _logger.Log(NLog.LogLevel.Info, $"Puerto {serialPort1.PortName} reabierto correctamente.");
+            }
+            if (!serialPort1.IsOpen)
+            {
+                return;
+            }
+
+            try
+            {
+                if (surtidor.mangueras.Any(x => x.Estado == "Desautorizar" || x.Estado == "BuscarBoton" || (x.Estado == "Colgada" && x.Vendiendo)))
+                {
+                    foreach (var manguera in surtidor.mangueras)
+                    {
+                        await ProcesarEstadoMangueraAsync(surtidor, manguera, stoppingToken);
+                    }
+                }
+                else
+                {
+                    await ProcesarManguerasEnReposoAsync(surtidor, stoppingToken);
+                    await estado(surtidor, null, stoppingToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                LogException(ex, $"Error operando surtidor {surtidor.Descripcion}");
+                await ResetYDesautorizarTodasMangueras(stoppingToken);
+            }
+        }
+
+        private async Task ProcesarEstadoMangueraAsync(SurtidorSiges surtidor, MangueraSiges manguera, CancellationToken stoppingToken)
+        {
+            switch (manguera.Estado)
+            {
+                case "Desautorizar":
+                    await ManejarEstadoDesautorizarAsync(surtidor, manguera, stoppingToken);
+                    break;
+                case "BuscarBoton":
+                    await ManejarEstadoBuscarBotonAsync(surtidor, manguera, stoppingToken);
+                    break;
+                case "Colgada":
+                    await ManejarEstadoColgadaAsync(surtidor, manguera, stoppingToken);
+                    break;
+            }
+        }
+
+        private async Task ManejarEstadoDesautorizarAsync(SurtidorSiges surtidor, MangueraSiges manguera, CancellationToken stoppingToken)
+        {
+            await sendEstado(surtidor.Id, manguera.Ubicacion, "Desautorizando", surtidor.turno.FechaApertura.ToString(), surtidor.turno.Empleado);
+            manguera.Estado = "Desautorizando";
+            manguera.Vendiendo = false;
+            manguera.Vehiculo = null;
+            await desautorizarManguera(surtidor, manguera, stoppingToken);
+            manguera.tiempoOcio = 0;
+        }
+
+        private async Task ManejarEstadoBuscarBotonAsync(SurtidorSiges surtidor, MangueraSiges manguera, CancellationToken stoppingToken)
+        {
+            _logger.Log(NLog.LogLevel.Info, $"Entrando a ValidarBoton surtidor {surtidor.Numero} manguera {manguera.Ubicacion} puertoIButton {surtidor.PuertoIButton}");
+            manguera.Estado = "Desautorizando";
+            await desautorizarManguera(surtidor, manguera, stoppingToken);
+            manguera.tiempoOcio = 0;
+            await sendEstado(surtidor.Id, manguera.Ubicacion, "Validando botón", surtidor.turno.FechaApertura.ToString(), surtidor.turno.Empleado);
+            await ValidarBoton(surtidor, manguera);
+
+            if (manguera.Vehiculo == null)
+            {
+                _logger.Log(NLog.LogLevel.Warn, $"ValidarBoton sin vehículo. surtidor {surtidor.Numero} manguera {manguera.Ubicacion} puertoIButton {surtidor.PuertoIButton}");
+            }
+
+            if (manguera.Vehiculo != null && manguera.Vehiculo.estado == 0 && manguera.Vehiculo.fechaFin > DateTime.Now)
+            {
+                await sendEstado(surtidor.Id, manguera.Ubicacion, "Autorizando - " + manguera.Vehiculo.placa, surtidor.turno.FechaApertura.ToString(), surtidor.turno.Empleado);
+                manguera.Estado = "Autorizando";
+                await autorizarManguera(surtidor, manguera, stoppingToken);
+                manguera.Estado = "Vendiendo";
+                manguera.Vendiendo = true;
+                manguera.Date = DateTime.Now;
+                await sendEstado(surtidor.Id, manguera.Ubicacion, "Vendiendo - " + manguera.Vehiculo.placa, surtidor.turno.FechaApertura.ToString(), surtidor.turno.Empleado);
+                return;
+            }
+
+            await sendEstado(surtidor.Id, manguera.Ubicacion, "Desautorizando", surtidor.turno.FechaApertura.ToString(), surtidor.turno.Empleado);
+            manguera.Vendiendo = false;
+            manguera.Vehiculo = null;
+            manguera.Estado = "Desautorizando";
+            await desautorizarManguera(surtidor, manguera, stoppingToken);
+        }
+
+        private async Task ManejarEstadoColgadaAsync(SurtidorSiges surtidor, MangueraSiges manguera, CancellationToken stoppingToken)
+        {
+            if (manguera.Vendiendo)
+            {
+                await ManejarFinVentaMangueraAsync(surtidor, manguera, stoppingToken);
+                return;
+            }
+
+            manguera.Vendiendo = false;
+            manguera.Vehiculo = null;
+            manguera.tiempoOcio++;
+            if (manguera.Estado == "Colgada" && !manguera.Vendiendo)
+            {
+                await DesautorizarMangueraEnReposoAsync(surtidor, manguera, stoppingToken);
+            }
+        }
+
+        private async Task ManejarFinVentaMangueraAsync(SurtidorSiges surtidor, MangueraSiges manguera, CancellationToken stoppingToken)
+        {
+            await sendEstado(surtidor.Id, manguera.Ubicacion, "Fin venta - " + manguera.Vehiculo.placa, surtidor.turno.FechaApertura.ToString(), surtidor.turno.Empleado);
+            manguera.Estado = "Desautorizando";
+            await desautorizarManguera(surtidor, manguera, stoppingToken);
+            manguera.Estado = "BuscandoUltimaVenta";
+            manguera.CambioVenta = false;
+            await venta(surtidor, manguera, stoppingToken);
+            await EsperarCambioVentaAsync(manguera, stoppingToken);
+
+            if (manguera.Vehiculo != null && manguera.ultimaVenta > 0)
+            {
+                var vender = await DeterminarSiDebeVenderAsync(surtidor, manguera, stoppingToken);
+                if (vender)
+                {
+                    await sendEstado(surtidor.Id, manguera.Ubicacion, "Total ultima venta " + manguera.ultimaVenta, surtidor.turno.FechaApertura.ToString(), surtidor.turno.Empleado);
+                    _estacionesRepositorio.AgregarVenta(manguera.Id, manguera.ultimaVenta, manguera.Vehiculo.idrom);
+                    await Fidelizar(manguera.Id);
+                }
+                manguera.NuevaVenta = manguera.ultimaVenta;
+            }
+
+            manguera.Estado = "FinVenta";
+            manguera.Vendiendo = false;
+            manguera.Vehiculo = null;
+        }
+
+        private async Task<bool> DeterminarSiDebeVenderAsync(SurtidorSiges surtidor, MangueraSiges manguera, CancellationToken stoppingToken)
+        {
+            if (manguera.ultimaVenta != manguera.NuevaVenta)
+            {
+                return true;
+            }
+
+            manguera.Estado = "Totalizadores";
+            manguera.CambioVenta = false;
+            await totalizadorManguera(surtidor, manguera, stoppingToken);
+            _logger.Log(NLog.LogLevel.Info, $"Manguera {JsonConvert.SerializeObject(manguera)} ");
+            await EsperarCambioVentaAsync(manguera, stoppingToken);
+
+            if (manguera.NuevoTotalizador == manguera.totalizador)
+            {
+                return false;
+            }
+
+            await EsperarEstabilidadTotalizadorAsync(surtidor, manguera, stoppingToken);
+            manguera.NuevoTotalizador = manguera.totalizador;
+            return true;
+        }
+
+        private async Task EsperarEstabilidadTotalizadorAsync(SurtidorSiges surtidor, MangueraSiges manguera, CancellationToken stoppingToken)
+        {
+            var totalizador = 0d;
+            while (true)
+            {
+                manguera.Estado = "Totalizadores";
+                manguera.CambioVenta = false;
+                await totalizadorManguera(surtidor, manguera, stoppingToken);
+                _logger.Log(NLog.LogLevel.Info, $"Manguera {JsonConvert.SerializeObject(manguera)} ");
+                await EsperarCambioVentaAsync(manguera, stoppingToken);
+                if (totalizador == manguera.totalizador)
+                {
+                    return;
+                }
+                totalizador = manguera.totalizador;
+            }
+        }
+
+        private async Task ProcesarManguerasEnReposoAsync(SurtidorSiges surtidor, CancellationToken stoppingToken)
+        {
+            foreach (var manguera in surtidor.mangueras)
+            {
+                manguera.tiempoOcio++;
+                if (manguera.Estado == "Colgada" && !manguera.Vendiendo)
+                {
+                    await DesautorizarMangueraEnReposoAsync(surtidor, manguera, stoppingToken);
+                }
+            }
+        }
+
+        private async Task DesautorizarMangueraEnReposoAsync(SurtidorSiges surtidor, MangueraSiges manguera, CancellationToken stoppingToken)
+        {
+            await sendEstado(surtidor.Id, manguera.Ubicacion, "Desautorizando", surtidor.turno.FechaApertura.ToString(), surtidor.turno.Empleado);
+            manguera.Estado = "Desautorizando";
+            await desautorizarManguera(surtidor, manguera, stoppingToken);
+            manguera.tiempoOcio = 0;
         }
 
         private async Task Fidelizar(int id)
         {
             try
             {
+                if (_fidelizacion == null)
+                {
+                    _logger.Log(NLog.LogLevel.Warn, "Fidelizacion no configurada. Se omite proceso de fidelizacion.");
+                    return;
+                }
+
                 //Verificar si tercero fidelizado venta manguera get Punto
                 var puntos = _estacionesRepositorio.GetVentaFidelizarAutomatica(id);
                 if (puntos != null)
                 {
                     await _fidelizacion.SubirPuntops(puntos.ValorVenta, puntos.DocumentoFidelizado, puntos.Factura);
                     var fidelizados = await _fidelizacion.GetFidelizados(puntos.DocumentoFidelizado);
+                    if (fidelizados == null)
+                    {
+                        _logger.Log(NLog.LogLevel.Info, $"Sin fidelizados para documento {puntos.DocumentoFidelizado}");
+                        return;
+                    }
+
                     foreach (var fidelizado in fidelizados)
                     {
                         _estacionesRepositorio.AddFidelizado(fidelizado.Documento, fidelizado.Puntos??0);
@@ -397,9 +423,7 @@ namespace ManejadorSurtidor
             }
             catch (Exception ex )
             {
-
-                _logger.Log(NLog.LogLevel.Info, $"Error {ex.Message}");
-                _logger.Log(NLog.LogLevel.Info, $"Error {ex.StackTrace}");
+                LogException(ex, $"Error en fidelización de manguera {id}");
             }
         }
 
@@ -408,52 +432,88 @@ namespace ManejadorSurtidor
 
             var intentos = 0;
             VehiculoSuic? vehiculo = null;
+            var lecturaIButtonExitosa = false;
 
             surtidor = Surtidores.First(x => x.Id == surtidor.Id);
             manguera = surtidor.mangueras.First(x => x.Id == manguera.Id);
-            while (++intentos < 3)
+            while (++intentos <= 3)
             {
                 try
                 {
-
-
-                    // _logger.Log(NLog.LogLevel.Info, "Validando boton ");
-                    var boton = await lectorIButton.leerBoton(surtidor.PuertoIButton, surtidor.Numero, manguera.Ubicacion == "Par", _logger);
-                    if (_sicom.ValidarOnline)
-                    {
-                        vehiculo = await _sicomConection.validateIButton(boton);
-                    }
-                    var vehiculoLocal = _estacionesRepositorio.GetVehiculoSuic(boton);
-                    if (vehiculo == null)
-                    {
-                        vehiculo = vehiculoLocal;
-                    }
-                    else
-                    {
-                        if(vehiculo.fechaFin == DateTime.MinValue)
-                        {
-                            vehiculo.fechaFin = vehiculoLocal.fechaFin;
-                        }
-                    }
+                    var puertos = SerialPort.GetPortNames();
+                    _logger.Log(NLog.LogLevel.Info, $"ValidarBoton intento {intentos}. Puerto configurado: {surtidor.PuertoIButton}. Puertos detectados: {string.Join(",", puertos)}");
+                    var (vehiculoDetectado, iButtonValido) = await ObtenerVehiculoPorBotonAsync(surtidor, manguera);
+                    vehiculo = vehiculoDetectado;
+                    lecturaIButtonExitosa = lecturaIButtonExitosa || iButtonValido;
                     if (vehiculo != null)
                     {
                         vehiculo.surtidor = surtidor.Numero;
                         vehiculo.isla = surtidor.turno.Isla;
                         await sendVehiculo(vehiculo);
+                        _logger.Log(NLog.LogLevel.Info, $"ValidarBoton exitoso. Vehículo {vehiculo.placa} surtidor {surtidor.Numero} manguera {manguera.Ubicacion}");
                         break;
                     }
 
                 }
                 catch (Exception ex)
                 {
-                    _logger.Log(NLog.LogLevel.Info, $"Error {ex.Message}");
-                    _logger.Log(NLog.LogLevel.Info, $"Error {ex.StackTrace}");
+                    LogException(ex, "Error validando botón");
+                }
+            }
+            if (vehiculo == null)
+            {
+                if (lecturaIButtonExitosa)
+                {
+                    _logger.Log(NLog.LogLevel.Warn, $"ValidarBoton leyó iButton, pero no encontró vehículo asociado (SICOM/local). surtidor {surtidor.Numero} manguera {manguera.Ubicacion} puertoIButton {surtidor.PuertoIButton}");
+                }
+                else
+                {
+                    _logger.Log(NLog.LogLevel.Warn, $"ValidarBoton agotó intentos sin lectura válida de iButton. surtidor {surtidor.Numero} manguera {manguera.Ubicacion} puertoIButton {surtidor.PuertoIButton}");
                 }
             }
             manguera.Vehiculo = vehiculo;
         }
 
-        private async Task estado(SurtidorSiges surtidor, MangueraSiges manguera, CancellationToken stoppingToken)
+        private async Task<(VehiculoSuic? vehiculo, bool iButtonValido)> ObtenerVehiculoPorBotonAsync(SurtidorSiges surtidor, MangueraSiges manguera)
+        {
+            var boton = await lectorIButton.leerBoton(surtidor.PuertoIButton, surtidor.Numero, manguera.Ubicacion == "Par", _logger);
+            _logger.Log(NLog.LogLevel.Info, $"Resultado lectura iButton en {surtidor.PuertoIButton}: {boton}");
+            if (string.IsNullOrWhiteSpace(boton) || boton == "fail")
+            {
+                return (null, false);
+            }
+
+            VehiculoSuic? vehiculoOnline = null;
+            if (_sicom.ValidarOnline)
+            {
+                vehiculoOnline = await _sicomConection.validateIButton(boton);
+            }
+
+            var vehiculoLocal = _estacionesRepositorio.GetVehiculoSuic(boton);
+            var vehiculoCombinado = CombinarVehiculo(vehiculoOnline, vehiculoLocal);
+            if (vehiculoCombinado == null)
+            {
+                _logger.Log(NLog.LogLevel.Warn, $"iButton leído sin coincidencia de vehículo. iButton: {boton}, surtidor: {surtidor.Numero}, manguera: {manguera.Ubicacion}");
+            }
+            return (vehiculoCombinado, true);
+        }
+
+        private VehiculoSuic? CombinarVehiculo(VehiculoSuic? vehiculoOnline, VehiculoSuic? vehiculoLocal)
+        {
+            if (vehiculoOnline == null)
+            {
+                return vehiculoLocal;
+            }
+
+            if (vehiculoLocal != null && vehiculoOnline.fechaFin == DateTime.MinValue)
+            {
+                vehiculoOnline.fechaFin = vehiculoLocal.fechaFin;
+            }
+
+            return vehiculoOnline;
+        }
+
+        private async Task estado(SurtidorSiges surtidor, MangueraSiges? manguera, CancellationToken stoppingToken)
         {
             serialPort1.ReceivedBytesThreshold = 10;
             //_logger.Log(NLog.LogLevel.Info, "PreguntandoEstados ");
@@ -503,7 +563,7 @@ namespace ManejadorSurtidor
             // _logger.Log(NLog.LogLevel.Info, $"Preguntando totalizador {manguera.Ubicacion} {trama}");
             await EnviarTramaAsync(surtidor, manguera, trama, stoppingToken);
         }
-        private async Task EnviarTramaAsync(SurtidorSiges s, MangueraSiges manguera, string trama, CancellationToken stoppingToken, bool debeEsperar = true)
+        private async Task EnviarTramaAsync(SurtidorSiges s, MangueraSiges? manguera, string trama, CancellationToken stoppingToken, bool debeEsperar = true)
         {
             var surtidor = Surtidores.First(x => x.Numero == s.Numero);
             surtidor.esperando = true;
@@ -515,16 +575,45 @@ namespace ManejadorSurtidor
                 mang.esperando = true;
             }
             byte[] tramaByte = FromHex(trama);
-            // _logger.Log(NLog.LogLevel.Info, $"Enviando trama {trama}");
+            _logger.Log(NLog.LogLevel.Info, $"Enviando trama {trama} a surtidor {surtidor.Numero} manguera {(manguera?.Ubicacion ?? "N/A")} - Threshold {serialPort1.ReceivedBytesThreshold}");
             count = 0;
+            var inicioEsperaRespuesta = DateTime.Now;
             while (!respondio && (debeEsperar || ++count < 6))
             {
+                if (!serialPort1.IsOpen)
+                {
+                    _logger.Log(NLog.LogLevel.Error, $"No se puede enviar trama {trama}: puerto {serialPort1.PortName} está cerrado.");
+                    break;
+                }
                 serialPort1.Write(tramaByte, 0, tramaByte.Length); //ENVIO DE LA TRAMA
-                Thread.Sleep(400);
+                await Task.Delay(400, stoppingToken);
+                if ((DateTime.Now - inicioEsperaRespuesta).TotalSeconds > 12)
+                {
+                    _logger.Log(NLog.LogLevel.Error, $"Timeout esperando respuesta de trama {trama} en surtidor {surtidor.Numero}.");
+                    break;
+                }
             }
+            if (!respondio)
+            {
+                _logger.Log(NLog.LogLevel.Warn, $"Sin respuesta serial para trama {trama} en surtidor {surtidor.Numero}. Estado manguera: {manguera?.Estado}");
+            }
+
+            var inicioEsperaFinal = DateTime.Now;
             while (!finalizo)
             {
-                Thread.Sleep(400);
+                if ((DateTime.Now - inicioEsperaFinal).TotalSeconds > 15)
+                {
+                    _logger.Log(NLog.LogLevel.Error, $"Timeout esperando finalización de lectura serial para trama {trama} en surtidor {surtidor.Numero}.");
+                    surtidor.esperando = false;
+                    if (manguera != null)
+                    {
+                        var mang = surtidor.mangueras.FirstOrDefault(x => x.Id == manguera.Id);
+                        if (mang != null)
+                            mang.esperando = false;
+                    }
+                    break;
+                }
+                await Task.Delay(400, stoppingToken);
             }
         }
 
@@ -534,63 +623,84 @@ namespace ManejadorSurtidor
             try
             {
 
+                SerialPort sp = (SerialPort)sender;
+                _logger.Log(NLog.LogLevel.Info, $"DataReceived en {sp.PortName}. BytesToRead: {sp.BytesToRead}, Threshold: {sp.ReceivedBytesThreshold}");
+
                 respondio = true;
-                var surtidor = Surtidores.Any(x => x.esperando) ? Surtidores.First(x => x.esperando) : null;
-
-                surtidor.esperando = false;
-                var manguera = surtidor.mangueras.Any(x => x.esperando) ? surtidor.mangueras.First(x => x.esperando) : null;
-
-                if (manguera != null)
-                    manguera.esperando = false;
+                var surtidor = ObtenerSurtidorEnEspera();
                 if (surtidor == null)
                 {
-                    _logger.Log(NLog.LogLevel.Info, $"No conectado");
+                    _logger.Log(NLog.LogLevel.Warn, "DataReceived sin surtidor en espera. Se descarta lectura.");
                     return;
                 }
-                if (++count == 500)
-                {
-                    count = 0;
-                    respondio = true;
-                    surtidor.esperando = false;
-                }
+                surtidor.esperando = false;
+                var manguera = ObtenerMangueraEnEspera(surtidor);
 
-                SerialPort sp = (SerialPort)sender;
                 if (manguera != null)
                 {
-                    //_logger.Log(NLog.LogLevel.Info, $"{manguera.Estado}");
-                    switch (manguera.Estado)
-                    {
-                        case "Desautorizando":
-                            GetTRamaDesautorizar(sp, surtidor, manguera);
-                            break;
-                        case "Autorizando":
-                            GetTRamaAutorizar(sp, surtidor, manguera);
-                            break;
-                        case "BuscandoUltimaVenta":
-                            manguera.ultimaVenta = GetTRamaVenta(sp, surtidor, manguera);
+                    manguera.esperando = false;
+                }
+                NormalizarContadorRespuesta(surtidor);
 
-                            manguera.CambioVenta = true;
-                            break;
-                        case "Totalizadores":
-                            manguera.totalizador = GetTRamaTotalizador(sp, surtidor, manguera);
-                            manguera.CambioVenta = true;
-                            break;
-                    }
+                if (manguera != null)
+                {
+                    ProcesarDataManguera(sp, surtidor, manguera);
                 }
                 else
                 {
-                    VerificarEstado(sp, surtidor, manguera);
+                    VerificarEstado(sp, surtidor);
                 }
 
             }
             catch (Exception ex)
             {
-
+                _logger.Log(NLog.LogLevel.Error, $"Error en DataReceiverHandler: {ex}");
             }
             finalizo = true;
 
 
 
+        }
+
+        private SurtidorSiges? ObtenerSurtidorEnEspera()
+        {
+            return Surtidores.FirstOrDefault(x => x.esperando);
+        }
+
+        private MangueraSiges? ObtenerMangueraEnEspera(SurtidorSiges surtidor)
+        {
+            return surtidor.mangueras.FirstOrDefault(x => x.esperando);
+        }
+
+        private void NormalizarContadorRespuesta(SurtidorSiges surtidor)
+        {
+            if (++count == 500)
+            {
+                count = 0;
+                respondio = true;
+                surtidor.esperando = false;
+            }
+        }
+
+        private void ProcesarDataManguera(SerialPort sp, SurtidorSiges surtidor, MangueraSiges manguera)
+        {
+            switch (manguera.Estado)
+            {
+                case "Desautorizando":
+                    GetTRamaDesautorizar(sp, surtidor, manguera);
+                    break;
+                case "Autorizando":
+                    GetTRamaAutorizar(sp, surtidor, manguera);
+                    break;
+                case "BuscandoUltimaVenta":
+                    manguera.ultimaVenta = GetTRamaVenta(sp, surtidor, manguera);
+                    manguera.CambioVenta = true;
+                    break;
+                case "Totalizadores":
+                    manguera.totalizador = GetTRamaTotalizador(sp, surtidor, manguera);
+                    manguera.CambioVenta = true;
+                    break;
+            }
         }
 
         private void GetTRamaAutorizar(SerialPort sp, SurtidorSiges surtidor, MangueraSiges manguera)
@@ -651,7 +761,7 @@ namespace ManejadorSurtidor
 
         }
 
-        private void VerificarEstado(SerialPort sp, SurtidorSiges surtidor, MangueraSiges manguera)
+        private void VerificarEstado(SerialPort sp, SurtidorSiges surtidor)
         {
             surtidor = Surtidores.First(x => x.Id == surtidor.Id);
             var hexString = "";
@@ -676,6 +786,11 @@ namespace ManejadorSurtidor
             count = 0;
             var mangueraPar = surtidor.mangueras.FirstOrDefault(x => x.Ubicacion == "Par");
             var mangueraImpar = surtidor.mangueras.FirstOrDefault(x => x.Ubicacion == "Impar");
+            if (mangueraPar == null || mangueraImpar == null)
+            {
+                _logger.Log(NLog.LogLevel.Warn, $"Surtidor {surtidor.Numero} no tiene mangueras Par/Impar configuradas para verificar estado.");
+                return;
+            }
             string estadoImPar = hexString.Substring(12, 2);
             string estadoPar = hexString.Substring(14, 2);
             // _logger.Log(NLog.LogLevel.Info, $"estado impar {estadoImPar}.");
@@ -687,6 +802,10 @@ namespace ManejadorSurtidor
             }
             if (estadoPar.Contains("B2") && !mangueraPar.Vendiendo)
             {
+                if (mangueraPar.Estado != "BuscarBoton")
+                {
+                    _logger.Log(NLog.LogLevel.Info, $"Cambio estado manguera Par a BuscarBoton en surtidor {surtidor.Numero}");
+                }
                 mangueraPar.Estado = "BuscarBoton";
             }
             if (estadoPar.Contains("80"))
@@ -700,6 +819,10 @@ namespace ManejadorSurtidor
             }
             if (estadoImPar.Contains("B2") && !mangueraImpar.Vendiendo)
             {
+                if (mangueraImpar.Estado != "BuscarBoton")
+                {
+                    _logger.Log(NLog.LogLevel.Info, $"Cambio estado manguera Impar a BuscarBoton en surtidor {surtidor.Numero}");
+                }
                 mangueraImpar.Estado = "BuscarBoton";
             }
             if (estadoImPar.Contains("80"))
@@ -787,9 +910,42 @@ namespace ManejadorSurtidor
         {
             try
             {
+                _logger.Log(NLog.LogLevel.Info, $"Enviando vehículo a cola VehiculosSICOM. idrom: {vehiculoSuic.idrom}, placa: {vehiculoSuic.placa}, surtidor: {vehiculoSuic.surtidor}, isla: {vehiculoSuic.isla}");
                 await _messageProducer.SendMessage(vehiculoSuic, "VehiculosSICOM");
                 await _messageProducer.SendMessage(vehiculoSuic, "VehiculosSICOM");
-            } catch(Exception ex) { }
+                _logger.Log(NLog.LogLevel.Info, $"Vehículo enviado a cola VehiculosSICOM (2 publicaciones). idrom: {vehiculoSuic.idrom}, placa: {vehiculoSuic.placa}");
+            }
+            catch (Exception ex)
+            {
+                LogException(ex, "Error enviando vehículo");
+            }
+        }
+
+        private async Task EsperarCambioVentaAsync(MangueraSiges manguera, CancellationToken stoppingToken)
+        {
+            while (!manguera.CambioVenta && !stoppingToken.IsCancellationRequested)
+            {
+                await Task.Delay(100, stoppingToken);
+            }
+        }
+
+        private async Task ResetYDesautorizarTodasMangueras(CancellationToken stoppingToken)
+        {
+            foreach (var surtidor in Surtidores)
+            {
+                foreach (var manguera in surtidor.mangueras)
+                {
+                    manguera.Vendiendo = false;
+                    manguera.Vehiculo = null;
+                    await desautorizarManguera(surtidor, manguera, stoppingToken);
+                }
+            }
+        }
+
+        private void LogException(Exception ex, string contexto)
+        {
+            _logger.Log(NLog.LogLevel.Error, $"{contexto}. Error: {ex.Message}");
+            _logger.Log(NLog.LogLevel.Error, $"StackTrace: {ex.StackTrace}");
         }
     }
 }

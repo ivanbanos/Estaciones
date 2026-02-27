@@ -26,5 +26,8 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
 		public float total { get; set; }
 		public Guid Guid { get; set; }
 		public string IdEstacion { get; set; }
+		public string Isla { get; set; }
+		public string Empleado { get; set; }
+		public string Placa { get; set; }
 	}
 }

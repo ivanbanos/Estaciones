@@ -388,6 +388,10 @@ namespace FacturacionelectronicaCore.Negocio.Contabilidad.FacturacionElectronica
 
         public async Task<string> GenerarFacturaElectronica(Modelo.FacturaCanastilla factura, Modelo.Tercero tercero, Guid estacionGuid)
         {
+            if (factura.canastillas == null || !factura.canastillas.Any())
+            {
+                return "error:Factura canastilla sin artículos (items vacíos)";
+            }
             string responseBody = "";
             var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
             var invoice = await GetFacturaDataico(factura, tercero, estacionGuid.ToString(), resolucion);

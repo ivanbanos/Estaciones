@@ -40,6 +40,10 @@ namespace FacturacionelectronicaCore.Repositorio.Mongodb
         {
             await GetCollection<T>(dbName, collectionName).UpdateOneAsync(filter, document);
         }
+        public async Task ReplaceDocument<T>(string dbName, string collectionName, FilterDefinition<T> filter, T document)
+        {
+            await GetCollection<T>(dbName, collectionName).ReplaceOneAsync(filter, document);
+        }
         public async Task CreateDocument<T>(string dbName, string collectionName, T document)
         {
             await GetCollection<T>(dbName, collectionName).InsertOneAsync(document);

@@ -37,6 +37,7 @@ namespace SigesServicio
             _estacionesRepositorio = estacionesRepositorio;
             _infoEstacion = infoEstacion.Value;
             _caraImpresoras = caraImpresoras.Value;
+            estacionFuente = Guid.TryParse(_infoEstacion.EstacionFuente, out var estacion) ? estacion : Guid.Empty;
 
             firstMacAddress = NetworkInterface
         .GetAllNetworkInterfaces()
@@ -45,17 +46,18 @@ namespace SigesServicio
         .FirstOrDefault();
             _fidelizacion = fidelizacion;
             _conexionEstacionRemota = conexionEstacionRemota;
+            generaFacturaElectronica = _infoEstacion.GeneraFacturaElectronica;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(async () =>
         {
-            var estacionFuente = new Guid(_infoEstacion.EstacionFuente);
-
-
             Logger.Log(NLog.LogLevel.Error,_infoEstacion.Razon);
             ImpresionAutomatica = _infoEstacion.ImpresionAutomatica;
             impresionFormaDePagoOrdenDespacho = _infoEstacion.ImpresionFormaDePagoOrdenDespacho;
-            var generaFacturaElectronica = _infoEstacion.GeneraFacturaElectronica;
+            if (estacionFuente == Guid.Empty)
+            {
+                Logger.Log(NLog.LogLevel.Warn, $"EstacionFuente invalida en configuración: '{_infoEstacion.EstacionFuente}'.");
+            }
 
 
             formas = _estacionesRepositorio.BuscarFormasPagosSiges();
@@ -398,56 +400,22 @@ namespace SigesServicio
             lineasImprimir.Add(new LineasImprimir(_infoEstacion.Direccion, true));
             lineasImprimir.Add(new LineasImprimir(_infoEstacion.Telefono, true));
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-            var infoTemp = "";
-            try
+            var infoTemp = ObtenerInfoFacturaElectronica(_factura.ventaId);
+            var esFacturaElectronicaValida = EsInfoFacturaElectronicaValida(infoTemp, out var facturaElectronica);
+            if (esFacturaElectronicaValida)
             {
-                Logger.Log(NLog.LogLevel.Info, $"Obteniendo info factura electronica - VentaId: {_factura.ventaId}");
-                var intentos = 0;
-                do
-                {
-                    try
-                    {
-                        var token = _conexionEstacionRemota.getToken();
-                        Logger.Log(NLog.LogLevel.Debug, $"Token obtenido, intento {intentos + 1}/3");
-                        infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, estacionFuente, token);
-                        
-                        if (!string.IsNullOrEmpty(infoTemp))
-                        {
-                            Logger.Log(NLog.LogLevel.Info, $"Info factura electronica obtenida: {infoTemp}");
-                        }
-                        else
-                        {
-                            Logger.Log(NLog.LogLevel.Warn, $"Info factura electronica vacia en intento {intentos + 1}");
-                        }
-                    }
-                    catch (Exception exIntento)
-                    {
-                        Logger.Log(NLog.LogLevel.Warn, $"Error en intento {intentos + 1} obteniendo factura electronica: {exIntento.Message}");
-                    }
-                    
-                    Thread.Sleep(500);
-                    intentos++;
-                } while (string.IsNullOrEmpty(infoTemp) && intentos < 3);
-
-                if (string.IsNullOrEmpty(infoTemp))
-                {
-                    Logger.Log(NLog.LogLevel.Warn, "No se pudo obtener info factura electronica despues de 3 intentos");
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Log(NLog.LogLevel.Error, $"Error obteniendo info factura electronica - {ex.Message}");
-                Logger.Log(NLog.LogLevel.Error, ex.StackTrace);
-            }
-            if (!string.IsNullOrEmpty(infoTemp))
-            {
-                infoTemp = infoTemp.Replace("\n\r", " ");
-
-                var facturaElectronica = infoTemp.Split(' ');
-
-                lineasImprimir.Add(new LineasImprimir("Factura Electrónica" + facturaElectronica[2], true));
+                lineasImprimir.Add(new LineasImprimir("Factura Electrónica " + facturaElectronica[2], true));
                 lineasImprimir.Add(new LineasImprimir(facturaElectronica[3], true));
-                lineasImprimir.Add(new LineasImprimir(facturaElectronica[4], true));
+                var anchoLinea = _infoEstacion.CaracteresPorPagina > 0 ? _infoEstacion.CaracteresPorPagina : 40;
+                var cufeLimpio = LimpiarPrefijoCufe(facturaElectronica[4]);
+                var cufePartido = PartirTextoEnBloques(cufeLimpio, anchoLinea).ToList();
+                if (cufePartido.Any())
+                {
+                    foreach (var parte in cufePartido)
+                    {
+                        lineasImprimir.Add(new LineasImprimir(parte, true));
+                    }
+                }
             }
             else if (_factura.Consecutivo == 0)
             {
@@ -606,13 +574,129 @@ namespace SigesServicio
             lineasImprimir.Add(new LineasImprimir("Nit:" + " 901430393-2 ", true));
             lineasImprimir.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress ?? ""), false));
-            lineasImprimir.Add(new LineasImprimir(".", true));
-            if (!string.IsNullOrEmpty(infoTemp))
-            {
 
-                var facturaElectronica = infoTemp.Split(' ');
+            if (_infoEstacion.Rifa && _factura.Total >= (double)_infoEstacion.MontoMinimoRifa)
+            {
+                lineasImprimir.Add(new LineasImprimir(" ", false));
+                lineasImprimir.Add(new LineasImprimir(" ", false));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+
+                lineasImprimir.Add(new LineasImprimir(" ", false));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                lineasImprimir.Add(new LineasImprimir("CÉDULA", false));
+
+                lineasImprimir.Add(new LineasImprimir(" ", false));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                lineasImprimir.Add(new LineasImprimir("CEL/TEL", false));
+
+                lineasImprimir.Add(new LineasImprimir(" ", false));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                lineasImprimir.Add(new LineasImprimir("NRO RECIBO DE TANQUEO ", false));
+
+                lineasImprimir.Add(new LineasImprimir(" ", false));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+                lineasImprimir.Add(new LineasImprimir($"FECHA DE TANQUEO {DateTime.Now} ", false));
+                lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
+            }
+
+            lineasImprimir.Add(new LineasImprimir(".", true));
+            if (esFacturaElectronicaValida)
+            {
                 lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false, $"https://catalogo-vpfe.dian.gov.co/User/SearchDocument?DocumentKey={facturaElectronica[4]}"));
             }
+        }
+
+        private string ObtenerInfoFacturaElectronica(int ventaId)
+        {
+            if (estacionFuente == Guid.Empty)
+            {
+                Logger.Log(NLog.LogLevel.Warn, $"No se consulta factura electrónica para venta {ventaId} porque EstacionFuente es inválida.");
+                return string.Empty;
+            }
+
+            Logger.Log(NLog.LogLevel.Info, $"Obteniendo info factura electronica - VentaId: {ventaId}");
+            for (var intento = 1; intento <= 3; intento++)
+            {
+                try
+                {
+                    var token = _conexionEstacionRemota.getToken();
+                    Logger.Log(NLog.LogLevel.Debug, $"Token obtenido, intento {intento}/3");
+                    var infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(ventaId, estacionFuente, token);
+
+                    if (!string.IsNullOrWhiteSpace(infoTemp))
+                    {
+                        Logger.Log(NLog.LogLevel.Info, $"Info factura electronica obtenida para venta {ventaId}.");
+                        return infoTemp;
+                    }
+
+                    Logger.Log(NLog.LogLevel.Warn, $"Info factura electronica vacia en intento {intento}/3 para venta {ventaId}.");
+                }
+                catch (Exception exIntento)
+                {
+                    Logger.Log(NLog.LogLevel.Warn, $"Error en intento {intento}/3 obteniendo factura electronica para venta {ventaId}: {exIntento.Message}");
+                }
+
+                if (intento < 3)
+                {
+                    Thread.Sleep(500);
+                }
+            }
+
+            Logger.Log(NLog.LogLevel.Warn, $"No se pudo obtener info factura electronica para venta {ventaId} despues de 3 intentos.");
+            return string.Empty;
+        }
+
+        private static bool EsInfoFacturaElectronicaValida(string infoFacturaElectronica, out string[] facturaElectronica)
+        {
+            facturaElectronica = Array.Empty<string>();
+            if (string.IsNullOrWhiteSpace(infoFacturaElectronica))
+            {
+                return false;
+            }
+
+            var infoNormalizada = infoFacturaElectronica.Replace("\n\r", " ").Trim();
+            var partes = infoNormalizada.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (partes.Length < 5)
+            {
+                return false;
+            }
+
+            facturaElectronica = partes;
+            return true;
+        }
+
+        private static IEnumerable<string> PartirTextoEnBloques(string texto, int longitudBloque)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+            {
+                return Array.Empty<string>();
+            }
+
+            var longitud = longitudBloque > 0 ? longitudBloque : 40;
+            var bloques = new List<string>();
+            for (var i = 0; i < texto.Length; i += longitud)
+            {
+                var largoActual = Math.Min(longitud, texto.Length - i);
+                bloques.Add(texto.Substring(i, largoActual));
+            }
+
+            return bloques;
+        }
+
+        private static string LimpiarPrefijoCufe(string cufe)
+        {
+            if (string.IsNullOrWhiteSpace(cufe))
+            {
+                return string.Empty;
+            }
+
+            var cufeLimpio = cufe.Trim();
+            if (cufeLimpio.StartsWith("CUFE", StringComparison.OrdinalIgnoreCase))
+            {
+                cufeLimpio = cufeLimpio.Substring(4).TrimStart(':', ' ', '-');
+            }
+
+            return cufeLimpio;
         }
 
         private IEnumerable<LineasImprimir> getPuntos(int ventaId)

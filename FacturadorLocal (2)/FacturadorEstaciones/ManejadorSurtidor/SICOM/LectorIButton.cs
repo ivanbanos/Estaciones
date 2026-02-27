@@ -74,23 +74,34 @@ namespace ManejadorSurtidor.SICOM
             {
                 serialPort.DataReceived += handler;
 
-                if (!serialPort.IsOpen)
+                var puertosDisponibles = SerialPort.GetPortNames();
+                _logger.Log(NLog.LogLevel.Info, $"LectorIButton iniciado. Puerto configurado: {puerto}. Puertos detectados: {string.Join(",", puertosDisponibles)}");
+                if (Array.IndexOf(puertosDisponibles, puerto) < 0)
                 {
-                    serialPort.Open();
+                    _logger.Log(NLog.LogLevel.Warn, $"Puerto iButton {puerto} no aparece en puertos detectados.");
                 }
 
-                _logger.Log(NLog.LogLevel.Info, "Leyendo boton");
+                if (!serialPort.IsOpen)
+                {
+                    _logger.Log(NLog.LogLevel.Info, $"Abriendo puerto iButton {puerto}");
+                    serialPort.Open();
+                    _logger.Log(NLog.LogLevel.Info, $"Puerto iButton {puerto} abierto correctamente");
+                }
+
+                _logger.Log(NLog.LogLevel.Info, $"Leyendo botón. surtidor {surtidorNumero} caraPar {caraPAr}");
                 string trama = GetTrama(surtidorNumero, caraPAr);
                 if (string.IsNullOrWhiteSpace(trama))
                 {
                     _logger.Log(NLog.LogLevel.Info, "Trama vacia para lectura de boton");
                     return "fail";
                 }
+                _logger.Log(NLog.LogLevel.Info, $"Trama iButton a enviar: {trama}");
 
                 var intentos = 0;
                 while (!tcs.Task.IsCompleted && intentos++ < 3)
                 {
                     byte[] tramaByte = FromHex(trama);
+                    _logger.Log(NLog.LogLevel.Info, $"Enviando trama iButton intento {intentos} por puerto {puerto}");
                     serialPort.Write(tramaByte, 0, tramaByte.Length);
                     await Task.WhenAny(tcs.Task, Task.Delay(2000));
                 }
@@ -119,8 +130,8 @@ namespace ManejadorSurtidor.SICOM
             }
             catch (Exception ex)
             {
-                _logger.Log(NLog.LogLevel.Info, $"Error Leyendo boton {ex.Message}");
-                _logger.Log(NLog.LogLevel.Info, $"Error Leyendo boton {ex.StackTrace}");
+                _logger.Log(NLog.LogLevel.Error, $"Error Leyendo boton en puerto {puerto}. {ex.Message}");
+                _logger.Log(NLog.LogLevel.Error, $"Error Leyendo boton stacktrace {ex.StackTrace}");
                 return "fail";
             }
             finally
@@ -135,7 +146,7 @@ namespace ManejadorSurtidor.SICOM
                 }
                 catch (Exception ex)
                 {
-                    _logger.Log(NLog.LogLevel.Info, $"Error cerrando puerto de boton {ex.Message}");
+                    _logger.Log(NLog.LogLevel.Warn, $"Error cerrando puerto de boton {puerto}. {ex.Message}");
                 }
             }
         }

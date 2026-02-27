@@ -821,6 +821,10 @@ Console.WriteLine($"Factura creada, {respuesta.order_reference}, {respuesta.dian
                 Console.WriteLine(estacionGuid.ToString());
                 var resolucion = await _resolucionRepositorio.GetFacturaelectronicaPorPRefijo(estacionGuid.ToString());
                 var invoice = await GetFacturaDataico(factura, tercero, estacionGuid.ToString(), resolucion);
+                if (invoice == null)
+                {
+                    return "error:Factura canastilla sin articulos (items vacíos)";
+                }
                 //Console.WriteLine(JsonConvert.SerializeObject(invoice));
                 var triedAgain = 0;
                 while (triedAgain++ < 1)
@@ -987,6 +991,10 @@ Console.WriteLine($"Factura creada, {respuesta.order_reference}, {respuesta.dian
                 apellido = tercero.Apellidos;
             }
             var items = new List<ItemDataico>();
+            if (factura.canastillas == null || !factura.canastillas.Any())
+            {
+                return null;
+            }
             foreach (var articulo in factura.canastillas)
             {
                 var taxes = new List<TaxDataico>();
@@ -1001,20 +1009,20 @@ Console.WriteLine($"Factura creada, {respuesta.order_reference}, {respuesta.dian
                         tax_base = (double)articulo.subtotal,
                         base_amount = (double)articulo.subtotal
                     });
-                    var item = new ItemDataico()
-                    {
-                        sku = "C" + articulo.Canastilla.CanastillaId.ToString(),
-                        price = (double)articulo.precio,
-                        original_price = (factura.descuento > 0) ? (double?)articulo.precio : null,
-                        description = articulo.Canastilla.descripcion,
-                        quantity = (double)articulo.cantidad,
-                        taxes = taxes,
-                        measuring_unit = "GL",
-                        retentions = new List<RetentionDataico>() { },
-                        discount_rate = (decimal?)((factura.descuento > 0 && factura.subtotal > 0) ? Math.Round((decimal)factura.descuento / (decimal)factura.subtotal * 100, 2) : (decimal?)null)
-                    };
-                    items.Add(item);
                 }
+                var item = new ItemDataico()
+                {
+                    sku = "C" + articulo.Canastilla.CanastillaId.ToString(),
+                    price = (double)articulo.precio,
+                    original_price = (factura.descuento > 0) ? (double?)articulo.precio : null,
+                    description = articulo.Canastilla.descripcion,
+                    quantity = (double)articulo.cantidad,
+                    taxes = taxes,
+                    measuring_unit = "GL",
+                    retentions = new List<RetentionDataico>() { },
+                    discount_rate = (decimal?)((factura.descuento > 0 && factura.subtotal > 0) ? Math.Round((decimal)factura.descuento / (decimal)factura.subtotal * 100, 2) : (decimal?)null)
+                };
+                items.Add(item);
             }
             return new FacturaDataico()
             {

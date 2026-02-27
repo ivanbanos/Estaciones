@@ -56,9 +56,12 @@ namespace SigesServicio
                 }
                 catch (Exception ex)
                 {
+                    var rootException = ex is AggregateException aggregateException
+                        ? aggregateException.Flatten().InnerException ?? ex
+                        : ex;
 
-                    Logger.Error("Ex" + ex.Message);
-                    Logger.Error("Ex" + ex.StackTrace);
+                    Logger.Error("Ex" + rootException.Message);
+                    Logger.Error("Ex" + rootException.StackTrace);
                     Thread.Sleep(300000);
                 }
             }
@@ -69,8 +72,9 @@ namespace SigesServicio
         private void EnviarFacturas()
         {
             string token = _conexionEstacionRemota.getToken();
+            var estacionFuente = Guid.Parse(_infoEstacion.EstacionFuente);
 
-            var ResolucionesRemota = _conexionEstacionRemota.GetResolucionEstacion(Guid.Parse(_infoEstacion.EstacionFuente), token);
+            var ResolucionesRemota = _conexionEstacionRemota.GetResolucionEstacion(estacionFuente, token);
             var resolucion = _estacionesRepositorio.BuscarResolucionActiva(ResolucionesRemota);
 
 
@@ -95,7 +99,7 @@ namespace SigesServicio
             {
                 var formas = _estacionesRepositorio.BuscarFormasPagosSiges();
 
-                var okFacturas = _conexionEstacionRemota.EnviarFacturas(facturas, formas, Guid.Parse(_infoEstacion.EstacionFuente), token);
+                var okFacturas = _conexionEstacionRemota.EnviarFacturas(facturas, formas, estacionFuente, token);
                 if (okFacturas)
                 {
                     _estacionesRepositorio.ActuralizarFacturasEnviados(facturas.Select(x => x.ventaId));
@@ -111,7 +115,7 @@ namespace SigesServicio
             if (facturasFechas.Any())
             {
 
-                var okFacturasFechas = _conexionEstacionRemota.AgregarFechaReporteFactura(facturasFechas.Where(x=>x.FechaReporte != null).ToList(), Guid.Parse(_infoEstacion.EstacionFuente), token);
+                var okFacturasFechas = _conexionEstacionRemota.AgregarFechaReporteFactura(facturasFechas.Where(x=>x.FechaReporte != null).ToList(), estacionFuente, token);
                 if (okFacturasFechas)
                 {
                     _estacionesRepositorio.ActuralizarFechasReportesEnviadas(facturasFechas.Select(x => x.IdVentaLocal));
@@ -131,8 +135,8 @@ namespace SigesServicio
 
             //}
 
-            var facturasIdImprimir = _conexionEstacionRemota.RecibirFacturasImprimir(Guid.Parse(_infoEstacion.EstacionFuente), token);
-            var ordenesIdImprimir = _conexionEstacionRemota.RecibirOrdenesImprimir(Guid.Parse(_infoEstacion.EstacionFuente), token);
+            var facturasIdImprimir = _conexionEstacionRemota.RecibirFacturasImprimir(estacionFuente, token);
+            var ordenesIdImprimir = _conexionEstacionRemota.RecibirOrdenesImprimir(estacionFuente, token);
 
 
             foreach (var orden in ordenesIdImprimir)
@@ -141,9 +145,61 @@ namespace SigesServicio
             }
             foreach (var factura in facturasIdImprimir)
             {
+                var tieneFacturaElectronica = TieneFacturaElectronicaDisponible(factura.IdVentaLocal, estacionFuente, token);
+                if (tieneFacturaElectronica)
+                {
+                    Logger.Info($"Factura {factura.IdVentaLocal} con info de factura electrónica disponible. Se manda a imprimir.");
+                }
+                else
+                {
+                    Logger.Warn($"Factura {factura.IdVentaLocal} sin info de factura electrónica después de reintentos. Se manda a impresión temporal.");
+                }
+
                 _estacionesRepositorio.MandarImprimir(factura.IdVentaLocal);
             }
 
+        }
+
+        private bool TieneFacturaElectronicaDisponible(int ventaId, Guid estacionFuente, string token)
+        {
+            for (var intento = 1; intento <= 3; intento++)
+            {
+                try
+                {
+                    var tokenActual = string.IsNullOrWhiteSpace(token) ? _conexionEstacionRemota.getToken() : token;
+                    var infoFacturaElectronica = _conexionEstacionRemota.GetInfoFacturaElectronica(ventaId, estacionFuente, tokenActual);
+                    if (EsInfoFacturaElectronicaValida(infoFacturaElectronica))
+                    {
+                        return true;
+                    }
+
+                    Logger.Warn($"Factura {ventaId} sin información electrónica válida en intento {intento}/3.");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"Error validando factura electrónica para venta {ventaId}, intento {intento}/3: {ex.Message}");
+                }
+
+                token = string.Empty;
+                if (intento < 3)
+                {
+                    Thread.Sleep(500);
+                }
+            }
+
+            return false;
+        }
+
+        private static bool EsInfoFacturaElectronicaValida(string infoFacturaElectronica)
+        {
+            if (string.IsNullOrWhiteSpace(infoFacturaElectronica))
+            {
+                return false;
+            }
+
+            var infoNormalizada = infoFacturaElectronica.Replace("\n\r", " ").Trim();
+            var partes = infoNormalizada.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return partes.Length >= 5;
         }
     }
 

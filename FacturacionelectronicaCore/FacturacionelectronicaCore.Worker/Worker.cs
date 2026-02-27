@@ -239,11 +239,63 @@ namespace FacturacionelectronicaCore.Worker
                 total = entity.total,
                 Guid = Guid.TryParse(entity.Guid, out var guid) ? guid : Guid.Empty,
                 IdEstacion = entity.IdEstacion,
-                // Set complex types to null for now - the essential fields for processing are above
-                resolucion = null,
-                terceroId = null,
-                codigoFormaPago = null,
-                canastillas = null
+                Isla = entity.Isla,
+                Empleado = entity.Empleado,
+                Placa = entity.Placa,
+                terceroId = entity.terceroId != null ? new FacturacionelectronicaCore.Negocio.Modelo.Tercero
+                {
+                    Id = entity.terceroId.Id,
+                    Guid = entity.terceroId.Guid,
+                    Nombre = entity.terceroId.Nombre,
+                    Segundo = entity.terceroId.Segundo,
+                    Apellidos = entity.terceroId.Apellidos,
+                    Municipio = entity.terceroId.Municipio,
+                    Departamento = entity.terceroId.Departamento,
+                    Direccion = entity.terceroId.Direccion,
+                    TipoPersona = entity.terceroId.TipoPersona,
+                    ResponsabilidadTributaria = entity.terceroId.ResponsabilidadTributaria,
+                    Pais = entity.terceroId.Pais,
+                    CodigoPostal = entity.terceroId.CodigoPostal,
+                    Celular = entity.terceroId.Celular,
+                    Telefono = entity.terceroId.Telefono,
+                    Telefono2 = entity.terceroId.Telefono2,
+                    Correo = entity.terceroId.Correo,
+                    Correo2 = entity.terceroId.Correo2,
+                    Vendedor = entity.terceroId.Vendedor,
+                    Comentarios = entity.terceroId.Comentarios,
+                    TipoIdentificacion = entity.terceroId.TipoIdentificacion,
+                    Identificacion = entity.terceroId.Identificacion,
+                    DescripcionTipoIdentificacion = entity.terceroId.DescripcionTipoIdentificacion,
+                    IdLocal = entity.terceroId.IdLocal,
+                    IdContable = entity.terceroId.IdContable,
+                    idFacturacion = entity.terceroId.idFacturacion,
+                } : null,
+                codigoFormaPago = entity.codigoFormaPago != null ? new FacturacionelectronicaCore.Negocio.Modelo.FormasPagos
+                {
+                    Id = entity.codigoFormaPago.Id,
+                    Descripcion = entity.codigoFormaPago.Descripcion,
+                } : null,
+                canastillas = entity.canastillas?.Select(c => new FacturacionelectronicaCore.Negocio.Modelo.CanastillaFactura
+                {
+                    cantidad = c.cantidad,
+                    precio = c.precio,
+                    subtotal = c.subtotal,
+                    iva = c.iva,
+                    total = c.total,
+                    Canastilla = c.Canastilla != null ? new FacturacionelectronicaCore.Negocio.Modelo.Canastilla
+                    {
+                        CanastillaId = c.Canastilla.CanastillaId,
+                        guid = c.Canastilla.guid,
+                        descripcion = c.Canastilla.descripcion,
+                        unidad = c.Canastilla.unidad,
+                        precio = c.Canastilla.precio,
+                        deleted = c.Canastilla.deleted,
+                        iva = c.Canastilla.iva,
+                        campoextra = c.Canastilla.campoextra,
+                        estacion = c.Canastilla.estacion,
+                    } : null,
+                }).ToList(),
+                resolucion = null
             };
         }
     }

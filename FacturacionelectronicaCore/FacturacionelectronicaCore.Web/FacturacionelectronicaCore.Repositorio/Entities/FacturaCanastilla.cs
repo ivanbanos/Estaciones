@@ -30,5 +30,8 @@ namespace FacturacionelectronicaCore.Repositorio.Entities
 		public float total { get; set; }
 		public string Guid { get; set; }
 		public string IdEstacion { get; set; }
+		public string Isla { get; set; }
+		public string Empleado { get; set; }
+		public string Placa { get; set; }
 	}
 }

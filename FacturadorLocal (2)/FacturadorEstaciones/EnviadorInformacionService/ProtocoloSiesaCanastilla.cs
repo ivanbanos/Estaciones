@@ -31,6 +31,7 @@ namespace EnviadorInformacionService
             var _apiContabilidad = new ApiSiesa();
 
             var estacionFuente = new Guid(ConfigurationManager.AppSettings["estacionFuente"]);
+            var fechaMaximaEnvioSiesa = ObtenerFechaMaximaEnvioSiesa(ConfigurationManager.AppSettings["FechaMaximaEnvioSiesa"], "appSettings.FechaMaximaEnvioSiesa");
             Logger.Info("Iniciando interfaz Siesa para Canastilla");
             Thread.CurrentThread.CurrentCulture = new CultureInfo("es-ES");
 
@@ -38,7 +39,17 @@ namespace EnviadorInformacionService
             {
                 try
                 {
-                    var facturasCanastilla = _estacionesRepositorio.BuscarFacturasCanastillaNoEnviadasSiesa();
+                    var facturasCanastilla = _estacionesRepositorio.BuscarFacturasCanastillaNoEnviadasSiesa().ToList();
+                    if (fechaMaximaEnvioSiesa.HasValue)
+                    {
+                        var facturasBloqueadasPorFecha = facturasCanastilla.Where(x => EsFacturaMasNuevaQueCorte(x.fecha, fechaMaximaEnvioSiesa)).ToList();
+                        if (facturasBloqueadasPorFecha.Any())
+                        {
+                            Logger.Warn($"Canastilla - Se omiten {facturasBloqueadasPorFecha.Count} facturas por ser más nuevas que la fecha máxima de envío a Siesa ({fechaMaximaEnvioSiesa:yyyy-MM-dd HH:mm:ss}). IDs: {string.Join(", ", facturasBloqueadasPorFecha.Select(x => x.FacturasCanastillaId))}");
+                        }
+
+                        facturasCanastilla = facturasCanastilla.Where(x => !EsFacturaMasNuevaQueCorte(x.fecha, fechaMaximaEnvioSiesa)).ToList();
+                    }
 
                     // Procesar terceros primero
                     var terceros = facturasCanastilla.Select(x => x.terceroId)
@@ -510,6 +521,35 @@ namespace EnviadorInformacionService
         /// <summary>
         /// Controla el rate limiting para no exceder 25 facturas por minuto
         /// </summary>
+        private DateTime? ObtenerFechaMaximaEnvioSiesa(string fechaConfig, string origenConfig)
+        {
+            if (string.IsNullOrWhiteSpace(fechaConfig))
+            {
+                return null;
+            }
+
+            var formatos = new[] { "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss", "dd/MM/yyyy", "dd/MM/yyyy HH:mm:ss" };
+            if (DateTime.TryParseExact(fechaConfig.Trim(), formatos, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaCorte))
+            {
+                Logger.Info($"Canastilla - Filtro de fecha máxima Siesa activo ({origenConfig}): {fechaCorte:yyyy-MM-dd HH:mm:ss}");
+                return fechaCorte;
+            }
+
+            if (DateTime.TryParse(fechaConfig.Trim(), out fechaCorte))
+            {
+                Logger.Info($"Canastilla - Filtro de fecha máxima Siesa activo ({origenConfig}): {fechaCorte:yyyy-MM-dd HH:mm:ss}");
+                return fechaCorte;
+            }
+
+            Logger.Warn($"Canastilla - No se pudo interpretar {origenConfig}='{fechaConfig}'. Se ignora filtro por fecha máxima de envío a Siesa.");
+            return null;
+        }
+
+        private static bool EsFacturaMasNuevaQueCorte(DateTime fechaFactura, DateTime? fechaCorteMaxima)
+        {
+            return fechaCorteMaxima.HasValue && fechaFactura > fechaCorteMaxima.Value;
+        }
+
         private void WaitForRateLimit()
         {
             lock (rateLimitLock)

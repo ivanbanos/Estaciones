@@ -14,6 +14,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.Drawing.Printing;
 using System.IO;
+using System.Globalization;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.ServiceProcess;
@@ -68,6 +69,12 @@ namespace EnviadorInformacionService
             _infoEstacion.Nombre = ConfigurationManager.AppSettings["Nombre"].ToString();
             _infoEstacion.Razon = ConfigurationManager.AppSettings["Razon"].ToString();
             _infoEstacion.Rifa = bool.Parse(ConfigurationManager.AppSettings["Rifa"].ToString());
+            if (!decimal.TryParse(ConfigurationManager.AppSettings["MontoMinimoRifa"], NumberStyles.Any, CultureInfo.InvariantCulture, out var montoMinimoRifa)
+                && !decimal.TryParse(ConfigurationManager.AppSettings["MontoMinimoRifa"], NumberStyles.Any, CultureInfo.CurrentCulture, out montoMinimoRifa))
+            {
+                montoMinimoRifa = 10000m;
+            }
+            _infoEstacion.MontoMinimoRifa = montoMinimoRifa;
 
             _infoEstacion.Telefono = ConfigurationManager.AppSettings["Telefono"].ToString();
             _infoEstacion.vecesPermitidasImpresion = int.Parse(ConfigurationManager.AppSettings["vecesPermitidasImpresion"].ToString());
@@ -108,145 +115,157 @@ namespace EnviadorInformacionService
             {
                 try
                 {
-                    try
-                    {
-                        var objetoImprimir = _estacionesRepositorio.GetObjetoImprimir().FirstOrDefault();
+                    var objetoImprimir = _estacionesRepositorio.GetObjetoImprimir().FirstOrDefault();
+                         
                         if (imprimiendo == 0 && objetoImprimir != null)
                         {
-                            switch (objetoImprimir.Objeto)
+                            var objeto = objetoImprimir.Objeto?.Trim();
+                            Logger.Warn($"Objeto a imprimir: '{objeto}' Id: {objetoImprimir.Id}");
+                            try
                             {
-                                case "Cierre":
-                                    {
-                                        var turnoimprimir = _estacionesRepositorio.ObtenerTurnoCerradoPorIslaFecha(objetoImprimir.fecha, objetoImprimir.Isla);
-                                        if (turnoimprimir == null)
+                                switch (objeto)
+                                {
+                                    case "Cierre":
                                         {
-                                            _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                            var turnoimprimir = _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha, objetoImprimir.Isla, objetoImprimir.Numero);
+                                            if (turnoimprimir == null)
+                                            {
+                                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
 
-                                        }
-                                        else
-                                        if (imprimiendo == 0)
-                                        {
-                                            imprimiendo++;
-                                            Logger.Info($"imprimirnedo {JsonConvert.SerializeObject(turnoimprimir)} ");
-                                            ImprimirTurno(turnoimprimir, objetoImprimir.Isla);
+                                            }
+                                            else if (imprimiendo == 0)
+                                            {
+                                                imprimiendo++;
+                                                Logger.Warn($"imprimirnedo {JsonConvert.SerializeObject(turnoimprimir)} ");
+                                                ImprimirTurno(turnoimprimir, objetoImprimir.Isla);
 
-                                            _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                            }
+                                            else
+                                            {
+                                                Thread.Sleep(100);
+                                            }
                                         }
-                                        else
-                                        {
-                                            Thread.Sleep(100);
-                                        }
-                                    }
-                                    break;
-                                case "Reimprimir":
-                                    {
-                                        var turnoimprimir = _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha, objetoImprimir.Isla, objetoImprimir.Numero);
-                                        if (turnoimprimir == null)
-                                        {
-                                            turnoimprimir = _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha.AddDays(-1), objetoImprimir.Isla, objetoImprimir.Numero);
-
-                                        }
-                                        if (turnoimprimir == null)
-                                        {
-                                            _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
-
-                                        }
-                                        else
-                                        if (imprimiendo == 0)
-                                        {
-                                            imprimiendo++;
-                                            Logger.Info($"imprimirnedo {JsonConvert.SerializeObject(turnoimprimir)} ");
-                                            ImprimirTurno(turnoimprimir, objetoImprimir.Isla);
-
-                                            _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
-                                        }
-                                        else
-                                        {
-                                            Thread.Sleep(100);
-                                        }
-                                    }
-                                    break;
-                                case "Apertura":
-                                    {
-                                        var turnoimprimir = _estacionesRepositorio.ObtenerTurnoPorIslaFecha(objetoImprimir.fecha, objetoImprimir.Isla);
-                                        if (turnoimprimir == null)
-                                        {
-                                            _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
-
-                                        }
-                                        else if (imprimiendo == 0)
-                                        {
-                                            imprimiendo++;
-                                            Logger.Info($"imprimirnedo {JsonConvert.SerializeObject(turnoimprimir)} ");
-                                            ImprimirTurno(turnoimprimir, objetoImprimir.Isla);
-
-                                            _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
-                                        }
-                                        else
-                                        {
-                                            Thread.Sleep(100);
-                                        }
-                                    }
-                                    break;
-                                case "Bolsa":
-                                    {
-                                        var bolsaimprimir = _estacionesRepositorio.ObtenerBolsa(objetoImprimir.fecha, objetoImprimir.Isla, objetoImprimir.Numero);
-                                        if (bolsaimprimir.Consecutivo == 0)
-                                        {
-                                            bolsaimprimir = _estacionesRepositorio.ObtenerBolsa(objetoImprimir.fecha.AddDays(-1), objetoImprimir.Isla, objetoImprimir.Numero);
-
-                                        }
-                                        if (bolsaimprimir.Consecutivo == 0)
-                                        {
-
-                                            _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
-                                        }
-                                        else if (imprimiendo == 0)
-                                        {
-                                            imprimiendo++;
-                                            Logger.Info($"imprimirnedo {JsonConvert.SerializeObject(bolsaimprimir)} ");
-                                            ImprimirBolsa(bolsaimprimir);
-
-                                            _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
-                                        }
-                                        else
-                                        {
-                                            Thread.Sleep(100);
-                                        }
-                                    }
-                                    break;
-                                case "CierreCanastilla":
-                                    // Se espera que objetoImprimir.Isla tenga la isla a imprimir
-                                    var isla = objetoImprimir.Isla;
-                                    var turnoCerrado = _estacionesRepositorio.ObtenerUltimoTurnoCerradoPorIsla(isla.ToString());
-                                    if (turnoCerrado == null)
-                                    {
-                                        Logger.Warn($"No hay turno cerrado para la isla {isla}");
                                         break;
-                                    }
-                                    var facturas = _estacionesRepositorio.GetFacturasCanastillaPorIslaTurno(isla.ToString(), turnoCerrado.Numero, turnoCerrado.FechaAperturaJuliana);
-                                    if (facturas == null || !facturas.Any())
-                                    {
-                                        Logger.Warn($"No hay facturas de canastilla para el cierre de la isla {isla} turno {turnoCerrado.Numero}");
+                                    case "Reimprimir":
+                                        {
+                                            var turnoimprimir = _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha, objetoImprimir.Isla, objetoImprimir.Numero);
+                                            if (turnoimprimir == null)
+                                            {
+                                                turnoimprimir = _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha.AddDays(-1), objetoImprimir.Isla, objetoImprimir.Numero);
+
+                                            }
+                                            if (turnoimprimir == null)
+                                            {
+                                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+
+                                            }
+                                            else if (imprimiendo == 0)
+                                            {
+                                                imprimiendo++;
+                                                Logger.Warn($"imprimirnedo {JsonConvert.SerializeObject(turnoimprimir)} ");
+                                                ImprimirTurno(turnoimprimir, objetoImprimir.Isla);
+
+                                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                            }
+                                            else
+                                            {
+                                                Thread.Sleep(100);
+                                            }
+                                        }
                                         break;
-                                    }
-                                    ImprimirCierreCanastilla(isla.ToString(), turnoCerrado.Numero, facturas);
-                                    _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
-                                    break;
-       
+                                    case "Apertura":
+                                        {
+                                            var turnoimprimir = _estacionesRepositorio.ObtenerTurnoPorIslaFecha(objetoImprimir.fecha, objetoImprimir.Isla);
+                                            if (turnoimprimir == null)
+                                            {
+                                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+
+                                            }
+                                            else if (imprimiendo == 0)
+                                            {
+                                                imprimiendo++;
+                                                Logger.Warn($"imprimirnedo {JsonConvert.SerializeObject(turnoimprimir)} ");
+                                                ImprimirTurno(turnoimprimir, objetoImprimir.Isla);
+
+                                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                            }
+                                            else
+                                            {
+                                                Thread.Sleep(100);
+                                            }
+                                        }
+                                        break;
+                                    case "Bolsa":
+                                        {
+                                            var bolsaimprimir = _estacionesRepositorio.ObtenerBolsa(objetoImprimir.fecha, objetoImprimir.Isla, objetoImprimir.Numero);
+                                            if (bolsaimprimir.Consecutivo == 0)
+                                            {
+                                                bolsaimprimir = _estacionesRepositorio.ObtenerBolsa(objetoImprimir.fecha.AddDays(-1), objetoImprimir.Isla, objetoImprimir.Numero);
+
+                                            }
+                                            if (bolsaimprimir.Consecutivo == 0)
+                                            {
+
+                                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                            }
+                                            else if (imprimiendo == 0)
+                                            {
+                                                imprimiendo++;
+                                                Logger.Warn($"imprimirnedo {JsonConvert.SerializeObject(bolsaimprimir)} ");
+                                                ImprimirBolsa(bolsaimprimir);
+
+                                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                            }
+                                            else
+                                            {
+                                                Thread.Sleep(100);
+                                            }
+                                        }
+                                        break;
+                                    case "CierreCanastilla":
+                                    case "ReimprimirCierreCanastilla":
+                                    case "CierreCana":
+                                        {
+                                            // Se espera que objetoImprimir.Isla y objetoImprimir.Numero tengan la isla y numero de turno a imprimir
+                                            var isla = objetoImprimir.Isla;
+                                            var turnoCerrado = _estacionesRepositorio.ObtenerTurnoIslaYFecha(objetoImprimir.fecha, isla, objetoImprimir.Numero);
+                                            if (turnoCerrado == null)
+                                            {
+                                                Logger.Warn($"No hay turno cerrado para la isla {isla} turno {objetoImprimir.Numero}");
+                                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                                break;
+                                            }
+                                            var facturas = _estacionesRepositorio.GetFacturasCanastillaPorIslaTurno(isla.ToString(), turnoCerrado.Numero, turnoCerrado.FechaAperturaJuliana);
+                                            if (facturas == null || !facturas.Any())
+                                            {
+                                                Logger.Warn($"No hay facturas de canastilla para el cierre de la isla {isla} turno {turnoCerrado.Numero}");
+                                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                                break;
+                                            }
+                                            imprimiendo++;
+                                            ImprimirCierreCanastilla(isla.ToString(), turnoCerrado, facturas);
+                                            _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                            break;
+
+                                        }
+                                    default:
+                                        Logger.Warn($"Objeto no reconocido para imprimir: '{objeto}' (Id: {objetoImprimir.Id})");
+                                        _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                                        break;
+
+                                }
                             }
-
+                            catch (Exception exObj)
+                            {
+                                imprimiendo = 0;
+                                Logger.Error($"Exception while processing objeto {objetoImprimir.Id}: {exObj.Message}");
+                                Logger.Error($"StackTrace: {exObj.StackTrace}");
+                                // Mark objeto as processed even though it failed, to prevent blocking other objects
+                                _estacionesRepositorio.ActualizarObjetoImpreso(objetoImprimir.Id);
+                            }
                         }
 
-                    }
-                    catch (Exception ex)
-                    {
-
-                        imprimiendo = 0;
-                        Logger.Error("Error " + ex.Message);
-                        Logger.Error("Error " + ex.StackTrace);
-                        Thread.Sleep(100);
-                    }
                     _estacionesRepositorio.AgregarFacturaDesdeIdVenta();
                     if (imprimiendo == 0)
                     {
@@ -350,9 +369,9 @@ namespace EnviadorInformacionService
             }
         }
 
- // --- Cierre Canastilla Printing ---
+        // --- Cierre Canastilla Printing ---
         private List<LineasImprimir> lineasImprimirCierreCanastilla;
-        private void ImprimirCierreCanastilla(string isla, int turno, IEnumerable<dynamic> facturas)
+        private void ImprimirCierreCanastilla(string isla, Turno turno, IEnumerable<dynamic> facturas)
         {
             try
             {
@@ -361,10 +380,19 @@ namespace EnviadorInformacionService
                 PrintDocument pd = new PrintDocument();
                 pd.PrintPage += new PrintPageEventHandler(pd_PrintCierreCanastilla);
                 pd.DefaultPageSettings.Margins.Bottom = 20;
-                if (islasImpresoras.ContainsKey(isla))
+                var printerKey = isla;
+                if (!islasImpresoras.ContainsKey(printerKey))
                 {
-                    Console.WriteLine("Selecionando impresora " + islasImpresoras[isla].Trim());
-                    pd.PrinterSettings.PrinterName = islasImpresoras[isla].Trim();
+                    printerKey = $"ISLA {isla}";
+                }
+                if (islasImpresoras.ContainsKey(printerKey))
+                {
+                    Console.WriteLine("Selecionando impresora " + islasImpresoras[printerKey].Trim());
+                    pd.PrinterSettings.PrinterName = islasImpresoras[printerKey].Trim();
+                }
+                else
+                {
+                    Logger.Warn($"No se encontro impresora configurada para isla {isla}. Se usara impresora por defecto.");
                 }
                 pd.Print();
             }
@@ -377,7 +405,7 @@ namespace EnviadorInformacionService
             }
         }
 
-        private void getLineasImprimirCierreCanastilla(string isla, int turno, IEnumerable<dynamic> facturas)
+        private void getLineasImprimirCierreCanastilla(string isla, Turno turno, IEnumerable<dynamic> facturas)
         {
             lineasImprimirCierreCanastilla = new List<LineasImprimir>();
             var guiones = new StringBuilder();
@@ -388,16 +416,77 @@ namespace EnviadorInformacionService
             lineasImprimirCierreCanastilla.Add(new LineasImprimir(_infoEstacion.Direccion, false));
             lineasImprimirCierreCanastilla.Add(new LineasImprimir(_infoEstacion.Telefono, false));
             lineasImprimirCierreCanastilla.Add(new LineasImprimir(guiones.ToString(), false));
-            lineasImprimirCierreCanastilla.Add(new LineasImprimir($"Cierre Canastilla Isla: {isla} Turno: {turno}", true));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir($"Turno Canastilla Isla: {isla} Turno: {turno.Numero}Turno: {turno.Numero}", true));
+             lineasImprimirCierreCanastilla.Add(new LineasImprimir($"Fecha: {turno.FechaApertura.Date}", true));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir($"Vendedor: {turno.Empleado}", false));
             lineasImprimirCierreCanastilla.Add(new LineasImprimir(guiones.ToString(), false));
-            lineasImprimirCierreCanastilla.Add(new LineasImprimir("ID Factura   Total        Forma de Pago", false));
-            lineasImprimirCierreCanastilla.Add(new LineasImprimir(guiones.ToString(), false));
-            foreach (var f in facturas)
+            
+            // Build summary of canastilla products with quantities and totals
+            var canastillasSummary = new Dictionary<string, (double cantidad, double total)>();
+            double grandTotal = 0;
+            
+            foreach (var factura in facturas)
             {
-                string linea = string.Format("{0,-12}{1,10:N2}   {2}", f.FacturasCanastillaId, f.total, f.codigoFormaPago);
+                // Get canastilla details for this invoice
+                var detalles = _estacionesRepositorio.getFacturaCanatillaDetalle(factura.FacturasCanastillaId);
+                if (detalles != null)
+                {
+                    foreach (var detalle in detalles)
+                    {
+                        string canastillaKey = detalle.Canastilla.descripcion;
+                        if (canastillasSummary.ContainsKey(canastillaKey))
+                        {
+                            var current = canastillasSummary[canastillaKey];
+                            canastillasSummary[canastillaKey] = (
+                                current.cantidad + detalle.cantidad,
+                                current.total + detalle.total
+                            );
+                        }
+                        else
+                        {
+                            canastillasSummary[canastillaKey] = (detalle.cantidad, detalle.total);
+                        }
+                        grandTotal += detalle.total;
+                    }
+                }
+            }
+            
+            // Print product details header
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir("Producto                    Cantidad    Total", false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(guiones.ToString(), false));
+            
+            // Print each canastilla product with quantity and total
+            foreach (var kvp in canastillasSummary)
+            {
+                string linea = string.Format("{0,-27}{1,10:F0}   {2,12:N2}", 
+                    kvp.Key.Length > 15 ? kvp.Key.Substring(0, 12) + "..." : kvp.Key,
+                    kvp.Value.cantidad,
+                    kvp.Value.total);
                 lineasImprimirCierreCanastilla.Add(new LineasImprimir(linea, false));
             }
+            
             lineasImprimirCierreCanastilla.Add(new LineasImprimir(guiones.ToString(), false));
+            
+            // Print total summary
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir("", false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir("RESUMEN DE FACTURAS Y FORMAS DE PAGO", true));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(guiones.ToString(), false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir("Factura   Total        Forma de Pago", false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(guiones.ToString(), false));
+            
+            foreach (var f in facturas)
+            {
+                // Lookup payment method description from formas list
+                var formaPago = formas?.FirstOrDefault(x => x.Id == f.codigoFormaPago.Id);
+                string formaPagoDescripcion = formaPago?.Descripcion ?? "Sin registro";
+                string linea = string.Format("{0,-12}{1,10:N2}   {2}", f.consecutivo, f.total, formaPagoDescripcion);
+                lineasImprimirCierreCanastilla.Add(new LineasImprimir(linea, false));
+            }
+            
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(guiones.ToString(), false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(string.Format("TOTAL GENERAL:                        {0,12:N2}", grandTotal), true));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir(guiones.ToString(), false));
+            lineasImprimirCierreCanastilla.Add(new LineasImprimir("", false));
             lineasImprimirCierreCanastilla.Add(new LineasImprimir("Fabricado por: SIGES SOLUCIONES SAS ", true));
             lineasImprimirCierreCanastilla.Add(new LineasImprimir("Nit: 901430393-2 ", true));
             lineasImprimirCierreCanastilla.Add(new LineasImprimir("Nombre: Facturador SIGES ", true));
@@ -770,27 +859,27 @@ namespace EnviadorInformacionService
             lineasImprimir.Add(new LineasImprimir(_infoEstacion.Telefono, true));
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             var infoTemp = "";
-          
-                try
-                {
-                    var intentos = 0;
-                    do
-                    {
-                        infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, estacionFuente, _conexionEstacionRemota.getToken());
-                        Thread.Sleep(100);
-                    } while (infoTemp == null || intentos++ < 3);
 
-                    Console.WriteLine("info fac elec " + infoTemp);
-                    Logger.Info("info fac elec " + infoTemp);
-                }
-                catch (Exception ex)
+            try
+            {
+                var intentos = 0;
+                do
                 {
-                    Logger.Info("info fac elec " + ex.Message);
-                    Logger.Info("info fac elec " + ex.StackTrace);
-                    Console.WriteLine("info fac elec " + ex.Message);
-                    Console.WriteLine("info fac elec " + ex.StackTrace);
-                }
-            
+                    infoTemp = _conexionEstacionRemota.GetInfoFacturaElectronica(_factura.ventaId, estacionFuente, _conexionEstacionRemota.getToken());
+                    Thread.Sleep(100);
+                } while (infoTemp == null || intentos++ < 3);
+
+                Console.WriteLine("info fac elec " + infoTemp);
+                Logger.Info("info fac elec " + infoTemp);
+            }
+            catch (Exception ex)
+            {
+                Logger.Info("info fac elec " + ex.Message);
+                Logger.Info("info fac elec " + ex.StackTrace);
+                Console.WriteLine("info fac elec " + ex.Message);
+                Console.WriteLine("info fac elec " + ex.StackTrace);
+            }
+
             if (!string.IsNullOrEmpty(infoTemp))
             {
                 infoTemp = infoTemp.Replace("\n\r", " ");
@@ -955,7 +1044,7 @@ namespace EnviadorInformacionService
                     var resoluconElectronica = _conexionEstacionRemota.GetResolucionElectronica(_conexionEstacionRemota.getToken());
 
                     lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
-                    
+
                     // Dividir el texto de resolución en líneas de máximo 40 caracteres
                     var lineasResolucion = DividirTextoEnLineas(resoluconElectronica.invoiceText, _charactersPerPage);
                     foreach (var lineaResolucion in lineasResolucion)
@@ -995,7 +1084,7 @@ namespace EnviadorInformacionService
             lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress), false));
 
 
-            if (_factura.codigoFormaPago == 6 || (_infoEstacion.Rifa && _venta.TOTAL >= 10000))
+            if (_infoEstacion.Rifa && _venta.TOTAL >= _infoEstacion.MontoMinimoRifa)
             {
                 lineasImprimir.Add(new LineasImprimir(" ", false));
                 lineasImprimir.Add(new LineasImprimir(" ", false));
@@ -1202,7 +1291,7 @@ namespace EnviadorInformacionService
         private List<string> DividirTextoEnLineas(string texto, int maxCaracteres)
         {
             var lineas = new List<string>();
-            
+
             if (string.IsNullOrEmpty(texto))
                 return lineas;
 
@@ -1213,8 +1302,8 @@ namespace EnviadorInformacionService
             foreach (var palabra in palabras)
             {
                 // Calcular longitud total si agregamos esta palabra (incluyendo espacios mínimos)
-                var longitudConPalabra = palabrasLineaActual.Sum(p => p.Length) + 
-                                        (palabrasLineaActual.Count > 0 ? palabrasLineaActual.Count : 0) + 
+                var longitudConPalabra = palabrasLineaActual.Sum(p => p.Length) +
+                                        (palabrasLineaActual.Count > 0 ? palabrasLineaActual.Count : 0) +
                                         palabra.Length;
 
                 // Si agregar la palabra excede el límite de caracteres
@@ -1224,7 +1313,7 @@ namespace EnviadorInformacionService
                     var lineaJustificada = JustificarLinea(palabrasLineaActual, maxCaracteres);
                     lineas.Add(lineaJustificada);
                     palabrasLineaActual.Clear();
-                    
+
                     // Si la palabra sola es más larga que el límite, dividirla
                     if (palabra.Length > maxCaracteres)
                     {
@@ -1285,13 +1374,13 @@ namespace EnviadorInformacionService
             for (int i = 0; i < palabras.Count; i++)
             {
                 resultado.Append(palabras[i]);
-                
+
                 if (i < palabras.Count - 1) // No agregar espacios después de la última palabra
                 {
                     var espaciosAgregar = espaciosPorHueco;
                     if (i < espaciosExtra)
                         espaciosAgregar++; // Distribuir espacios extra en los primeros huecos
-                    
+
                     resultado.Append(' ', espaciosAgregar);
                 }
             }

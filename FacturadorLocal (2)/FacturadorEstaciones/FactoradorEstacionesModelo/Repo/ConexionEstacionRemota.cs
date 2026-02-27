@@ -231,12 +231,34 @@ namespace EnviadorInformacionService
             using (var client = new HttpClient())
             {
                 var path = $"/api/Usuarios/{_infoEstacion.User}/{_infoEstacion.Password}";
-                Console.WriteLine($"{_infoEstacion.Url}{path}");
-                var response = client.GetAsync($"{_infoEstacion.Url}{path}").Result;
-                response.EnsureSuccessStatusCode();
-                string responseBody = response.Content.ReadAsStringAsync().Result;
-                JObject token = JObject.Parse(responseBody);
-                return token.Value<string>("token");
+                var baseUrl = _infoEstacion.Url?.ToString()?.Trim();
+                if (string.IsNullOrWhiteSpace(baseUrl))
+                {
+                    throw new InvalidOperationException("InfoEstacion:Url no está configurada.");
+                }
+
+                baseUrl = baseUrl.TrimEnd('/');
+                if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var baseUri))
+                {
+                    throw new InvalidOperationException($"InfoEstacion:Url no es válida: '{baseUrl}'.");
+                }
+
+                var requestUri = new Uri(baseUri, path);
+                Console.WriteLine(requestUri.ToString());
+
+                try
+                {
+                    var response = client.GetAsync(requestUri).Result;
+                    response.EnsureSuccessStatusCode();
+                    string responseBody = response.Content.ReadAsStringAsync().Result;
+                    JObject token = JObject.Parse(responseBody);
+                    return token.Value<string>("token");
+                }
+                catch (HttpRequestException ex)
+                {
+                    Logger.Error($"Error de conectividad al solicitar token en {requestUri}: {ex.Message}");
+                    throw;
+                }
             }
         }
 
