@@ -112,6 +112,7 @@ const ReporteFiscal = () => {
         reporteData.consolidadoOrdenesAnuladas,
       )
       const cantidadTotal = calcularCantidadTotal(reporteData.consolidadosOrdenes)
+      const cantidadTotalFacturadas = calcularCantidadTotal(reporteData.consolidadoOrdenesAnuladas)
 
       // Crear workbook
       const wb = XLSX.utils.book_new()
@@ -127,8 +128,8 @@ const ReporteFiscal = () => {
         ['Concepto', 'Valor'],
         ['Total de Órdenes', reporteData.totalDeOrdenes || 0],
         ['Órdenes de despacho Facturadas', reporteData.totalOrdenesAnuladas || 0],
-        ['Cantidad Total Despachada (Gal)', cantidadTotal.toFixed(2)],
-        ['Valor Total Ventas', totalOrdenes],
+        ['Cantidad Total Despachada (Gal)', cantidadTotalFacturadas.toFixed(2)],
+        ['Valor Total Ventas no Facturadas', totalOrdenes],
         ['Valor Total Facturadas', totalOrdenesAnuladas],
       ]
 
@@ -249,7 +250,7 @@ const ReporteFiscal = () => {
       const totalOrdenesAnuladas = calcularTotalOrdenesAnuladas(
         reporteData.consolidadoOrdenesAnuladas,
       )
-      const cantidadTotal = calcularCantidadTotal(reporteData.consolidadosOrdenes)
+      const cantidadTotalFacturadas = calcularCantidadTotal(reporteData.consolidadoOrdenesAnuladas)
 
       // Crear tabla de consolidados por combustible
       const tablaCombustibles = [
@@ -313,8 +314,8 @@ const ReporteFiscal = () => {
                 ['Concepto', 'Valor'],
                 ['Total de Órdenes', reporteData.totalDeOrdenes || 0],
                 ['Órdenes de despacho Facturadas', reporteData.totalOrdenesAnuladas || 0],
-                ['Cantidad Total Despachada (Gal)', cantidadTotal.toFixed(2)],
-                ['Valor Total Ventas', cop.format(totalOrdenes)],
+                ['Cantidad Total Despachada (Gal)', cantidadTotalFacturadas.toFixed(2)],
+                ['Valor Total Ventas no Facturadas', cop.format(totalOrdenes)],
                 ['Valor Total Facturadas', cop.format(totalOrdenesAnuladas)],
               ],
             },
@@ -376,6 +377,34 @@ const ReporteFiscal = () => {
                         }),
                         cop.format(item.total || 0),
                       ]),
+                      [
+                        { text: 'TOTALES', bold: true },
+                        {
+                          text: reporteData.consolidadoFormaPagoOrdenes.reduce(
+                            (sum, item) => sum + (item.cantidadFacturas || 0),
+                            0,
+                          ),
+                          bold: true,
+                        },
+                        {
+                          text: reporteData.consolidadoFormaPagoOrdenes
+                            .reduce((sum, item) => sum + (item.cantidadCombustible || 0), 0)
+                            .toLocaleString('es-CO', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            }),
+                          bold: true,
+                        },
+                        {
+                          text: cop.format(
+                            reporteData.consolidadoFormaPagoOrdenes.reduce(
+                              (sum, item) => sum + (item.total || 0),
+                              0,
+                            ),
+                          ),
+                          bold: true,
+                        },
+                      ],
                     ],
                   },
                   layout: 'lightHorizontalLines',
@@ -520,7 +549,7 @@ const ReporteFiscal = () => {
                     {cop.format(calcularTotalOrdenes(reporteData.consolidadosOrdenes))}
                   </div>
                   <div className="text-medium-emphasis text-uppercase fw-semibold small">
-                    Total Ventas
+                    Total Ventas no Facturadas
                   </div>
                   <div className="small text-muted">
                     {reporteData.totalDeOrdenes || 0} órdenes de despacho
@@ -605,7 +634,7 @@ const ReporteFiscal = () => {
                   </CTableRow>
                   <CTableRow>
                     <CTableDataCell>
-                      <strong>Total Ventas (Órdenes de despacho)</strong>
+                      <strong>Total Ventas no Facturadas</strong>
                     </CTableDataCell>
                     <CTableDataCell className="text-end fw-bold text-success">
                       {cop.format(calcularTotalOrdenes(reporteData.consolidadosOrdenes))}
@@ -616,7 +645,7 @@ const ReporteFiscal = () => {
                       <strong>Total Galones Despachados</strong>
                     </CTableDataCell>
                     <CTableDataCell className="text-end fw-bold text-info">
-                      {calcularCantidadTotal(reporteData.consolidadosOrdenes).toFixed(2)} Gal
+                      {calcularCantidadTotal(reporteData.consolidadoOrdenesAnuladas).toFixed(2)} Gal
                     </CTableDataCell>
                   </CTableRow>
                   <CTableRow className="table-active">

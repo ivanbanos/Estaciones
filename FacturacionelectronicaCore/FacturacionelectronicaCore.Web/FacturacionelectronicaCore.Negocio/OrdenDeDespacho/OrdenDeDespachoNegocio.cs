@@ -36,25 +36,60 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             _validadorGuidAFacturaElectronica = validadorGuidAFacturaElectronica;
         }
 
-        // Convert a nullable incoming DateTime by adding the configured hour offset from _alegra.ServerTimeOffsetHours.
+        // Normalize incoming DateTime to the server storage timezone (UTC in production).
         // Behavior:
-        //  - If ServerTimeOffsetHours is null, returns the original value (no offset).
-        //  - Adds the configured number of hours (can be negative) to the provided DateTime.
+        //  - If input is UTC, returns it unchanged.
+        //  - If input is Local, converts with ToUniversalTime().
+        //  - If input is Unspecified (common in date-only UI payloads), applies ServerTimeOffsetHours.
+        //  - If ServerTimeOffsetHours is null for Unspecified values, returns the original value.
         private DateTime? ConvertToServerTime(DateTime? input)
         {
             if (!input.HasValue) return null;
-            if (_alegra == null || !_alegra.ServerTimeOffsetHours.HasValue) return input;
 
             try
             {
+                var value = input.Value;
+
+                if (value.Kind == DateTimeKind.Utc)
+                {
+                    return value;
+                }
+
+                if (value.Kind == DateTimeKind.Local)
+                {
+                    return value.ToUniversalTime();
+                }
+
+                if (_alegra == null || !_alegra.ServerTimeOffsetHours.HasValue)
+                {
+                    return value;
+                }
+
                 var offset = _alegra.ServerTimeOffsetHours.GetValueOrDefault(0);
-                return input.Value.AddHours(offset);
+                return DateTime.SpecifyKind(value.AddHours(offset), DateTimeKind.Utc);
             }
             catch
             {
                 // If anything goes wrong, fall back to original value
                 return input;
             }
+        }
+
+        private DateTime ConvertFromServerTimeForSearchResult(DateTime input)
+        {
+            if (_alegra == null || !_alegra.ServerTimeOffsetHoursSearch.HasValue)
+            {
+                return input;
+            }
+
+            var offset = _alegra.ServerTimeOffsetHoursSearch.Value;
+
+            if (input.Kind == DateTimeKind.Local)
+            {
+                return input;
+            }
+
+            return input.AddHours(offset);
         }
 
 
@@ -111,7 +146,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                         factura.Descuento /= 10;
                     }
                     factura.NombreTercero = nombresPorIdentificacion[factura.Identificacion];
-                    factura.Fecha = factura.Fecha.AddHours(_alegra.ServerTimeOffsetHoursSearch ?? 0);
+                    factura.Fecha = ConvertFromServerTimeForSearchResult(factura.Fecha);
                 }
                 return ordenes.OrderByDescending(x => x.IdVentaLocal);
             }
@@ -389,6 +424,9 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                         FechaReporte = orden.FechaReporte,
                         FechaProximoMantenimiento = orden.FechaProximoMantenimiento,
                         FormaDePago = orden.FormaDePago,
+                        FormaDePago2 = orden.FormaDePago2,
+                        Total1 = orden.Total1,
+                        Total2 = orden.Total2,
                         Identificacion = orden.Identificacion,
                         IdentificacionTercero = orden.IdentificacionTercero,
                         IdEstacion = orden.IdEstacion,
@@ -423,18 +461,6 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
             try
             {
                 var ordenes = await GetOrdenesDeDespacho(filtroFactura).ConfigureAwait(true);
-
-                foreach (var orden in ordenes)
-                {
-                    if (orden.Precio > 20000)
-                    {
-
-                        orden.Precio /= 10;
-                        orden.SubTotal /= 10;
-                        orden.Total /= 10;
-                        orden.Descuento /= 10;
-                    }
-                }
                 if (!ordenes.Any())
                 {
                     return null;
@@ -442,11 +468,11 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
 
                 var reporte = new ReporteFiscal
                 {
-                    ConsolidadoOrdenesAnuladas = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => orden.Estado == "Anulado" || orden.Estado == "Anulada" || orden.idFacturaElectronica != null)),
+                    ConsolidadoOrdenesAnuladas = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(EsOrdenAnuladaParaReporte)),
                     TotalDeOrdenes = !ordenes.Any() ? 0 : ordenes.Count(),
-                    ConsolidadosOrdenes = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => orden.Estado != "Anulado" && orden.Estado != "Anulada" && orden.idFacturaElectronica == null)),
+                    ConsolidadosOrdenes = !ordenes.Any() ? new List<ConsolidadoCombustible>() : GetConsolidadosOrdenes(ordenes.Where(orden => !EsOrdenAnuladaParaReporte(orden))),
                     consolidadoClienteOrdenes = !ordenes.Any() ? new List<ConsolidadoCliente>() : GetConsolidadosOrdenesCliente(ordenes),
-                    TotalOrdenesAnuladas = !ordenes.Any() ? 0 : ordenes.Count(orden => orden.Estado == "Anulado" || orden.Estado == "Anulada" || orden.idFacturaElectronica != null),
+                    TotalOrdenesAnuladas = !ordenes.Any() ? 0 : ordenes.Count(EsOrdenAnuladaParaReporte),
                     ConsolidadoFormaPagoOrdenes = !ordenes.Any() ? new List<ConsolidadoFormaPago>() : GetConsolidadoFormaPagoOrdenes(ordenes),
                 };
                 return reporte;
@@ -460,8 +486,7 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
         private IEnumerable<ConsolidadoFormaPago> GetConsolidadoFormaPagoOrdenes(IEnumerable<Modelo.OrdenDeDespacho> ordenes)
         {
             return ordenes
-                .Where(o => o.Estado == "Anulado" || o.Estado == "Anulada" || !string.IsNullOrWhiteSpace(o.idFacturaElectronica))
-                .GroupBy(o => o.FormaDePago)
+                .GroupBy(o => string.IsNullOrWhiteSpace(o.FormaDePago) ? "Sin forma de pago" : o.FormaDePago.Trim(), StringComparer.OrdinalIgnoreCase)
                 .Select(g => new ConsolidadoFormaPago
                 {
                     FormaPago = g.Key,
@@ -470,6 +495,11 @@ namespace FacturacionelectronicaCore.Negocio.OrdenDeDespacho
                     Total = g.Sum(x => Convert.ToDecimal(x.Total))
                 })
                 .ToList();
+        }
+
+        private static bool EsOrdenAnuladaParaReporte(Modelo.OrdenDeDespacho orden)
+        {
+            return !string.IsNullOrWhiteSpace(orden?.idFacturaElectronica);
         }
 
         private IEnumerable<ConsolidadoCliente> GetConsolidadosOrdenesCliente(IEnumerable<Modelo.OrdenDeDespacho> ordenes)

@@ -47,11 +47,14 @@ namespace SigesServicio
         private static readonly NLog.Logger Logger = NLog.LogManager.GetCurrentClassLogger();
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(async () =>
         {
+            Logger.Info("FacturasWorker iniciado");
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
+                    Logger.Debug("FacturasWorker ciclo iniciado");
                     EnviarFacturas();
+                    Logger.Debug("FacturasWorker ciclo finalizado");
                     Thread.Sleep(300000);
                 }
                 catch (Exception ex)
@@ -71,6 +74,7 @@ namespace SigesServicio
 
         private void EnviarFacturas()
         {
+            Logger.Info("FacturasWorker - iniciando envío de facturas");
             string token = _conexionEstacionRemota.getToken();
             var estacionFuente = Guid.Parse(_infoEstacion.EstacionFuente);
 
@@ -79,6 +83,7 @@ namespace SigesServicio
 
 
             var terceros = _estacionesRepositorio.BuscarTercerosNoEnviados();
+            Logger.Debug($"FacturasWorker - terceros pendientes: {terceros.Count}");
             if (terceros.Any(t => t.identificacion != null))
             {
                 terceros = terceros.Where(t => t.identificacion != null).ToList();
@@ -95,6 +100,7 @@ namespace SigesServicio
                 }
             }
             var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadasSiges();
+            Logger.Debug($"FacturasWorker - facturas pendientes: {facturas.Count}");
             if (facturas.Any())
             {
                 var formas = _estacionesRepositorio.BuscarFormasPagosSiges();
@@ -112,6 +118,7 @@ namespace SigesServicio
             }
 
             var facturasFechas = _estacionesRepositorio.BuscarFechasReportesNoEnviadasSiges();
+            Logger.Debug($"FacturasWorker - fechas reporte pendientes: {facturasFechas.Count}");
             if (facturasFechas.Any())
             {
 
@@ -137,6 +144,7 @@ namespace SigesServicio
 
             var facturasIdImprimir = _conexionEstacionRemota.RecibirFacturasImprimir(estacionFuente, token);
             var ordenesIdImprimir = _conexionEstacionRemota.RecibirOrdenesImprimir(estacionFuente, token);
+            Logger.Debug($"FacturasWorker - ordenes imprimir: {ordenesIdImprimir.Count()}, facturas imprimir: {facturasIdImprimir.Count()}");
 
 
             foreach (var orden in ordenesIdImprimir)
@@ -157,6 +165,8 @@ namespace SigesServicio
 
                 _estacionesRepositorio.MandarImprimir(factura.IdVentaLocal);
             }
+
+            Logger.Info("FacturasWorker - envío finalizado");
 
         }
 

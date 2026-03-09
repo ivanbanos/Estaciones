@@ -61,6 +61,7 @@ namespace EnviadorInformacionService.Contabilidad
             await Task.Run(async () =>
             {
                 Logger.Info("Iniciando interfaz Siesa");
+                var fechaMinimaEnvioSiesa = ObtenerFechaMinimaEnvioSiesa(_siesa.FechaMinimaEnvioSiesa, "Siesa.FechaMinimaEnvioSiesa");
                 var fechaMaximaEnvioSiesa = ObtenerFechaMaximaEnvioSiesa(_siesa.FechaMaximaEnvioSiesa, "Siesa.FechaMaximaEnvioSiesa");
                 while (!stoppingToken.IsCancellationRequested)
                 {
@@ -68,6 +69,17 @@ namespace EnviadorInformacionService.Contabilidad
                     {
 
                         var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadasSiesa().ToList();
+                        if (fechaMinimaEnvioSiesa.HasValue)
+                        {
+                            var facturasBloqueadasPorMinima = facturas.Where(x => EsFacturaMasViejaQueCorte(x.fecha, fechaMinimaEnvioSiesa)).ToList();
+                            if (facturasBloqueadasPorMinima.Any())
+                            {
+                                Logger.Warn($"Se omiten {facturasBloqueadasPorMinima.Count} facturas por ser más antiguas que la fecha mínima de envío a Siesa ({fechaMinimaEnvioSiesa:yyyy-MM-dd HH:mm:ss}). IDs: {string.Join(", ", facturasBloqueadasPorMinima.Select(x => x.ventaId))}");
+                            }
+
+                            facturas = facturas.Where(x => !EsFacturaMasViejaQueCorte(x.fecha, fechaMinimaEnvioSiesa)).ToList();
+                        }
+
                         if (fechaMaximaEnvioSiesa.HasValue)
                         {
                             var facturasBloqueadasPorFecha = facturas.Where(x => EsFacturaMasNuevaQueCorte(x.fecha, fechaMaximaEnvioSiesa)).ToList();
@@ -361,6 +373,30 @@ namespace EnviadorInformacionService.Contabilidad
             });
         }
 
+        private DateTime? ObtenerFechaMinimaEnvioSiesa(string fechaConfig, string origenConfig)
+        {
+            if (string.IsNullOrWhiteSpace(fechaConfig))
+            {
+                return null;
+            }
+
+            var formatos = new[] { "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss", "dd/MM/yyyy", "dd/MM/yyyy HH:mm:ss" };
+            if (DateTime.TryParseExact(fechaConfig.Trim(), formatos, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaCorte))
+            {
+                Logger.Info($"Filtro de fecha mínima Siesa activo ({origenConfig}): {fechaCorte:yyyy-MM-dd HH:mm:ss}");
+                return fechaCorte;
+            }
+
+            if (DateTime.TryParse(fechaConfig.Trim(), out fechaCorte))
+            {
+                Logger.Info($"Filtro de fecha mínima Siesa activo ({origenConfig}): {fechaCorte:yyyy-MM-dd HH:mm:ss}");
+                return fechaCorte;
+            }
+
+            Logger.Warn($"No se pudo interpretar {origenConfig}='{fechaConfig}'. Se ignora filtro por fecha mínima de envío a Siesa.");
+            return null;
+        }
+
         private DateTime? ObtenerFechaMaximaEnvioSiesa(string fechaConfig, string origenConfig)
         {
             if (string.IsNullOrWhiteSpace(fechaConfig))
@@ -388,6 +424,11 @@ namespace EnviadorInformacionService.Contabilidad
         private static bool EsFacturaMasNuevaQueCorte(DateTime fechaFactura, DateTime? fechaCorteMaxima)
         {
             return fechaCorteMaxima.HasValue && fechaFactura > fechaCorteMaxima.Value;
+        }
+
+        private static bool EsFacturaMasViejaQueCorte(DateTime fechaFactura, DateTime? fechaCorteMinima)
+        {
+            return fechaCorteMinima.HasValue && fechaFactura < fechaCorteMinima.Value;
         }
 
         private async Task EnviarFactura(FacturaSiges factura, string facturaelectronica, string consecutivo, string? auxiliarContable, string? auxiliarCruce)

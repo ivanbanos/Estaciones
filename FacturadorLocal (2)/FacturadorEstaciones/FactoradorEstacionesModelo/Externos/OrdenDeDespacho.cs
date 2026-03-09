@@ -27,16 +27,19 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public string Estado { get; set; }
         public Tercero Tercero { get; set; }
         public string FormaDePago { get; set; }
+        public string FormaDePago2 { get; set; }
         public int IdLocal { get; set; }
         public int IdVentaLocal { get; set; }
         public int IdTerceroLocal { get; set; }
         public DateTime FechaProximoMantenimiento { get; set; }
         public double SubTotal { get; set; }
+        public double? Total1 { get; set; }
+        public double? Total2 { get; set; }
         public string Vendedor { get; set; }
         public Guid estacion { get; set; }
 
 
-        public OrdenDeDespacho(FacturaSiges x, string forma)
+        public OrdenDeDespacho(FacturaSiges x, string forma, string forma2)
         {
             Guid = Guid.NewGuid();
             Combustible = x.Combustible;
@@ -50,6 +53,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
             Cara = x.Cara + "";
             Manguera = x.Manguera + "";
             FormaDePago = forma;
+            FormaDePago2 = forma2;
             Fecha = x.fecha;
             Tercero = new Tercero(x.Tercero);
             Descuento = x.Descuento;
@@ -58,8 +62,11 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
             IdTerceroLocal = x.Tercero.terceroId;
             FechaProximoMantenimiento = DateTime.Now;
             SubTotal = x.Subtotal;
+            Total1 = x.total1;
+            Total2 = x.total2;
             Vendedor = x.Empleado;
             Identificacion = x.Tercero.identificacion;
+            NombreTercero = Tercero?.Nombre;
         }
     }
 }

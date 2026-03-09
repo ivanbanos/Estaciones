@@ -166,7 +166,15 @@ namespace EnviadorInformacionService
         {
             RequestEnviarFacturas request = new RequestEnviarFacturas();
             request.facturas = new List<FacturacionelectronicaCore.Negocio.Modelo.Factura>();
-            request.ordenDeDespachos = facturas.Select(x => new FacturacionelectronicaCore.Negocio.Modelo.OrdenDeDespacho(x, formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).FirstOrDefault()));
+            request.ordenDeDespachos = facturas.Select(x =>
+            {
+                var forma1 = formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).FirstOrDefault();
+                var forma2 = x.codigoFormaPago2.HasValue
+                    ? formas.Where(y => y.Id == x.codigoFormaPago2.Value).Select(y => y.Descripcion).FirstOrDefault()
+                    : null;
+
+                return new FacturacionelectronicaCore.Negocio.Modelo.OrdenDeDespacho(x, forma1, forma2);
+            });
             request.Estacion = estacion;
             using (var client = new HttpClient())
             {

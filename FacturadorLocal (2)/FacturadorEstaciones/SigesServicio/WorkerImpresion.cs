@@ -51,6 +51,7 @@ namespace SigesServicio
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken) => Task.Run(async () =>
         {
+            Logger.Info("WorkerImpresion iniciado");
             Logger.Log(NLog.LogLevel.Error,_infoEstacion.Razon);
             ImpresionAutomatica = _infoEstacion.ImpresionAutomatica;
             impresionFormaDePagoOrdenDespacho = _infoEstacion.ImpresionFormaDePagoOrdenDespacho;
@@ -68,6 +69,7 @@ namespace SigesServicio
             {
                 try
                 {
+                    Logger.Debug($"WorkerImpresion ciclo iniciado. imprimiendo={imprimiendo}");
 
                     if (imprimiendo == 0)
 
@@ -78,6 +80,7 @@ namespace SigesServicio
                     {
 
                         var turnoimprimir = _estacionesRepositorio.getTurnosSinImprimir();
+                        Logger.Debug($"WorkerImpresion turno pendiente: {(turnoimprimir != null ? turnoimprimir.Id : 0)}");
                         if (imprimiendo == 0 && turnoimprimir != null)
                         {
                             if (imprimiendo == 0)
@@ -96,6 +99,7 @@ namespace SigesServicio
                             Thread.Sleep(1000);
                         }
                         var factura = _estacionesRepositorio.getFacturasImprimir();
+                        Logger.Debug($"WorkerImpresion factura pendiente: {(factura != null ? factura.ventaId : 0)}");
                         
                         if (factura != null)
                         {
@@ -107,34 +111,26 @@ namespace SigesServicio
                         {
                             Logger.Log(NLog.LogLevel.Info, $"Iniciando impresion de factura VentaId: {factura.ventaId}");
 
-                            while (true)
+                            if (imprimiendo == 0)
                             {
-                                if (imprimiendo == 0)
+                                imprimiendo++;
+                                try
                                 {
-                                    imprimiendo++;
-                                    try
-                                    {
-                                        Imprimir(factura);
-                                        factura.impresa++;
-                                        Logger.Log(NLog.LogLevel.Info, $"Factura VentaId: {factura.ventaId} impresa exitosamente");
-                                    }
-                                    catch (Exception exImprimir)
-                                    {
-                                        Logger.Log(NLog.LogLevel.Error, $"Error imprimiendo factura VentaId: {factura.ventaId} - {exImprimir.Message}");
-                                        Logger.Log(NLog.LogLevel.Error, exImprimir.StackTrace);
-                                        imprimiendo = 0;
-                                        factura.impresa++; // Mark as attempted to avoid infinite loop
-                                        break;
-                                    }
+                                    Imprimir(factura);
+                                    factura.impresa++;
+                                    Logger.Log(NLog.LogLevel.Info, $"Factura VentaId: {factura.ventaId} impresa exitosamente");
                                 }
-                                else
+                                catch (Exception exImprimir)
                                 {
-                                    Thread.Sleep(100);
+                                    Logger.Log(NLog.LogLevel.Error, $"Error imprimiendo factura VentaId: {factura.ventaId} - {exImprimir.Message}");
+                                    Logger.Log(NLog.LogLevel.Error, exImprimir.StackTrace);
+                                    imprimiendo = 0;
+                                    factura.impresa++; // Mark as attempted to avoid retry inmediato infinito
                                 }
-                                if (factura.impresa == 0)
-                                {
-                                    break;
-                                }
+                            }
+                            else
+                            {
+                                Thread.Sleep(100);
                             }
                             Thread.Sleep(1000);
                         }
@@ -145,6 +141,7 @@ namespace SigesServicio
 
 
                         Thread.Sleep(1000);
+                        Logger.Debug("WorkerImpresion ciclo finalizado");
 
                     }
                     else
@@ -225,6 +222,14 @@ namespace SigesServicio
             {
                 lineasImprimirTurno.Add(new LineasImprimir("Fecha cierre:   " + turnoimprimir.FechaCierre.Value.ToString(), false));
                 reporteCierrePorTotal = _estacionesRepositorio.GetReporteCierrePorTotal(turnoimprimir.Id);
+                var cantidadOriginal = reporteCierrePorTotal.Count;
+                reporteCierrePorTotal = reporteCierrePorTotal
+                    .Where(x => x.fecha >= turnoimprimir.FechaApertura && x.fecha <= turnoimprimir.FechaCierre.Value)
+                    .ToList();
+                if (cantidadOriginal != reporteCierrePorTotal.Count)
+                {
+                    Logger.Log(NLog.LogLevel.Warn, $"GetReporteCierrePorTotal devolvió registros fuera de rango para turno {turnoimprimir.Id}. Original: {cantidadOriginal}, Filtrado: {reporteCierrePorTotal.Count}, Apertura: {turnoimprimir.FechaApertura:yyyy-MM-dd HH:mm:ss}, Cierre: {turnoimprimir.FechaCierre.Value:yyyy-MM-dd HH:mm:ss}");
+                }
             }
 
 
@@ -429,10 +434,11 @@ namespace SigesServicio
 
             lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false));
             var placa = (!string.IsNullOrEmpty(_factura.Placa) ? _factura.Placa : _factura.Placa + "").Trim();
+            var nombreCompletoTercero = ObtenerNombreCompletoTercero(_factura.Tercero);
             if (_factura.codigoFormaPago != 1)
             {
 
-                lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", _factura.Tercero.Nombre == null ? "" : _factura.Tercero.Nombre.Trim()), false));
+                lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", nombreCompletoTercero), false));
                 lineasImprimir.Add(new LineasImprimir(formatoTotales("Nit/C.C. : ", _factura.Tercero.identificacion.Trim()), false));
                 lineasImprimir.Add(new LineasImprimir(formatoTotales("Placa : ", placa), false));
                 lineasImprimir.Add(new LineasImprimir(formatoTotales("Kilometraje : ", (!string.IsNullOrEmpty(_factura.Kilometraje) ? _factura.Kilometraje : "").Trim()), false));
@@ -444,13 +450,13 @@ namespace SigesServicio
             }
             else
             {
-                if (string.IsNullOrEmpty(_factura.Tercero.Nombre))
+                if (string.IsNullOrWhiteSpace(nombreCompletoTercero))
                 {
                     lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a :", " CONSUMIDOR FINAL".Trim()), false));
                 }
                 else
                 {
-                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", _factura.Tercero.Nombre.Trim()) + "", false));
+                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", nombreCompletoTercero) + "", false));
 
                     lineasImprimir.AddRange(getPuntos(_factura.ventaId));
                 }
@@ -525,15 +531,24 @@ namespace SigesServicio
 
             if (_factura.Consecutivo != 0 || impresionFormaDePagoOrdenDespacho)
             {
-                if (formas.FirstOrDefault(x => x.Id == _factura.codigoFormaPago) != null)
-                {
-                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago : ", formas.FirstOrDefault(x => x.Id == _factura.codigoFormaPago).Descripcion.Trim()), false));
+                var formaPagoPrincipal = formas.FirstOrDefault(x => x.Id == _factura.codigoFormaPago)?.Descripcion?.Trim() ?? "Efectivo";
+                lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago : ", formaPagoPrincipal), false));
 
-                }
-                else
+                var usaMultipago = _factura.codigoFormaPago2.HasValue;
+                if (usaMultipago)
                 {
-                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago :", " Efectivo"), false));
+                    if (_factura.total1.HasValue)
+                    {
+                        lineasImprimir.Add(new LineasImprimir(formatoTotales("Valor pago 1 : ", $"{_factura.total1.Value:F2}"), false));
+                    }
 
+                    var formaPago2 = formas.FirstOrDefault(x => x.Id == _factura.codigoFormaPago2.Value)?.Descripcion?.Trim() ?? "No informado";
+                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago 2 : ", formaPago2), false));
+
+                    if (_factura.total2.HasValue)
+                    {
+                        lineasImprimir.Add(new LineasImprimir(formatoTotales("Valor pago 2 : ", $"{_factura.total2.Value:F2}"), false));
+                    }
                 }
             }
 
@@ -575,7 +590,8 @@ namespace SigesServicio
             lineasImprimir.Add(new LineasImprimir("Nombre:" + " Facturador SIGES ", true));
             lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress ?? ""), false));
 
-            if (_infoEstacion.Rifa && _factura.Total >= (double)_infoEstacion.MontoMinimoRifa)
+            var esCredito = _factura.codigoFormaPago == 6 || (_factura.codigoFormaPago2.HasValue && _factura.codigoFormaPago2.Value == 6);
+            if (_infoEstacion.Rifa && !esCredito && _factura.Total >= (double)_infoEstacion.MontoMinimoRifa)
             {
                 lineasImprimir.Add(new LineasImprimir(" ", false));
                 lineasImprimir.Add(new LineasImprimir(" ", false));
@@ -604,6 +620,18 @@ namespace SigesServicio
             {
                 lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false, $"https://catalogo-vpfe.dian.gov.co/User/SearchDocument?DocumentKey={facturaElectronica[4]}"));
             }
+        }
+
+        private static string ObtenerNombreCompletoTercero(FactoradorEstacionesModelo.Objetos.Tercero tercero)
+        {
+            if (tercero == null)
+            {
+                return string.Empty;
+            }
+
+            var nombre = string.IsNullOrWhiteSpace(tercero.Nombre) ? string.Empty : tercero.Nombre.Trim();
+            var apellidos = string.IsNullOrWhiteSpace(tercero.Apellidos) ? string.Empty : tercero.Apellidos.Trim();
+            return $"{nombre} {apellidos}".Trim();
         }
 
         private string ObtenerInfoFacturaElectronica(int ventaId)

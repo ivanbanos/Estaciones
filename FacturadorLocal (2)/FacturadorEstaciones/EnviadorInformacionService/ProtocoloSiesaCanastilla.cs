@@ -31,6 +31,7 @@ namespace EnviadorInformacionService
             var _apiContabilidad = new ApiSiesa();
 
             var estacionFuente = new Guid(ConfigurationManager.AppSettings["estacionFuente"]);
+            var fechaMinimaEnvioSiesa = ObtenerFechaMinimaEnvioSiesa(ConfigurationManager.AppSettings["FechaMinimaEnvioSiesa"], "appSettings.FechaMinimaEnvioSiesa");
             var fechaMaximaEnvioSiesa = ObtenerFechaMaximaEnvioSiesa(ConfigurationManager.AppSettings["FechaMaximaEnvioSiesa"], "appSettings.FechaMaximaEnvioSiesa");
             Logger.Info("Iniciando interfaz Siesa para Canastilla");
             Thread.CurrentThread.CurrentCulture = new CultureInfo("es-ES");
@@ -40,6 +41,17 @@ namespace EnviadorInformacionService
                 try
                 {
                     var facturasCanastilla = _estacionesRepositorio.BuscarFacturasCanastillaNoEnviadasSiesa().ToList();
+                    if (fechaMinimaEnvioSiesa.HasValue)
+                    {
+                        var facturasBloqueadasPorMinima = facturasCanastilla.Where(x => EsFacturaMasViejaQueCorte(x.fecha, fechaMinimaEnvioSiesa)).ToList();
+                        if (facturasBloqueadasPorMinima.Any())
+                        {
+                            Logger.Warn($"Canastilla - Se omiten {facturasBloqueadasPorMinima.Count} facturas por ser más antiguas que la fecha mínima de envío a Siesa ({fechaMinimaEnvioSiesa:yyyy-MM-dd HH:mm:ss}). IDs: {string.Join(", ", facturasBloqueadasPorMinima.Select(x => x.FacturasCanastillaId))}");
+                        }
+
+                        facturasCanastilla = facturasCanastilla.Where(x => !EsFacturaMasViejaQueCorte(x.fecha, fechaMinimaEnvioSiesa)).ToList();
+                    }
+
                     if (fechaMaximaEnvioSiesa.HasValue)
                     {
                         var facturasBloqueadasPorFecha = facturasCanastilla.Where(x => EsFacturaMasNuevaQueCorte(x.fecha, fechaMaximaEnvioSiesa)).ToList();
@@ -163,6 +175,9 @@ namespace EnviadorInformacionService
                                 facturaCanastilla.fecha,
                                 Tercero = facturaCanastilla.terceroId,
                                 facturaCanastilla.codigoFormaPago,
+                                facturaCanastilla.codigoFormaPago2,
+                                facturaCanastilla.total1,
+                                facturaCanastilla.total2,
                                 Detalle = detalle,
                                 Subtotal = subtotal,
                                 TotalIva = totalIva,
@@ -201,7 +216,7 @@ namespace EnviadorInformacionService
                             else
                             {
                                 facturasFallidas.Add($"ID: {facturaCanastilla.FacturasCanastillaId}, Total: {total}");
-                                Logger.Warn($"Fallo al enviar factura canastilla {facturaCanastilla.FacturasCanastillaId}");
+                                Logger.Debug($"Fallo al enviar factura canastilla {facturaCanastilla.FacturasCanastillaId}");
                             }
                         }
                         catch (Exception ex)
@@ -220,7 +235,7 @@ namespace EnviadorInformacionService
 
                     if (facturasFallidas.Any())
                     {
-                        Logger.Warn($"Total facturas canastilla que fallaron: {facturasFallidas.Count} - {string.Join(" | ", facturasFallidas)}");
+                        Logger.Debug($"Total facturas canastilla que fallaron: {facturasFallidas.Count} - {string.Join(" | ", facturasFallidas)}");
                     }
 
                     Thread.Sleep(1000);
@@ -247,6 +262,15 @@ namespace EnviadorInformacionService
                 
                 var consecutivo = facturaCanastilla.consecutivo.ToString();
                 var config = facturaCanastilla.Configuracion;
+
+                var formaPagoPrincipalId = ObtenerIdFormaPago(facturaCanastilla.codigoFormaPago);
+                var formaPagoSecundariaId = ConvertirEnteroNullable(facturaCanastilla.codigoFormaPago2);
+                List<PagoCanastillaSiesa> pagos = ConstruirPagosFactura(
+                    formaPagoPrincipalId,
+                    formaPagoSecundariaId,
+                    ConvertirDecimal(facturaCanastilla.Total),
+                    ConvertirDecimalNullable(facturaCanastilla.total1),
+                    ConvertirDecimalNullable(facturaCanastilla.total2));
                 
                 // Construir el objeto de movimiento contable
                 var movimientosContables = new List<object>();
@@ -309,8 +333,16 @@ namespace EnviadorInformacionService
                     }
                 }
                 
-                // Movimiento de caja/CXC (según forma de pago)
-                if (facturaCanastilla.codigoFormaPago.FormaPagoId == 4) // Efectivo
+                // Si tiene segunda forma de pago con valor, se envía usando ambas formas en Caja.
+                if (pagos.Count > 1)
+                {
+                    var resumenPagos = string.Join(", ", pagos.Select(x => $"{x.FormaPagoId}:{x.Valor.ToString("0.00", CultureInfo.InvariantCulture)}").ToArray());
+                    Logger.Info($"Factura canastilla {facturaCanastilla.FacturasCanastillaId} con multipago detectado. Formas: {resumenPagos}");
+                    return EnviarFacturaCanastillaMultipago(facturaCanastilla, consecutivo, config, movimientosContables, pagos);
+                }
+
+                // Movimiento de caja/CXC (según forma de pago principal)
+                if (EsFormaPagoEfectivo(formaPagoPrincipalId))
                 {
                     return EnviarFacturaCanastillaEfectivo(facturaCanastilla, consecutivo, config, movimientosContables);
                 }
@@ -322,6 +354,66 @@ namespace EnviadorInformacionService
             catch (Exception ex)
             {
                 Logger.Error(ex, $"Error enviando factura canastilla {facturaCanastilla.FacturasCanastillaId} a Siesa");
+                return false;
+            }
+        }
+
+        private bool EnviarFacturaCanastillaMultipago(dynamic facturaCanastilla, string consecutivo, dynamic config, List<object> movimientosContables, List<PagoCanastillaSiesa> pagos)
+        {
+            try
+            {
+                var caja = pagos.Select(pago => new
+                {
+                    F_CIA = "1",
+                    F350_ID_CO = ConfigurationManager.AppSettings["centrooperacionescaja"],
+                    F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"],
+                    F350_CONSEC_DOCTO = consecutivo,
+                    F351_NOTAS = $"Venta canastilla forma {pago.FormaPagoId}",
+                    F351_ID_AUXILIAR = ConfigurationManager.AppSettings["cajaotros"] ?? "110501",
+                    F351_ID_CCOSTO = ConfigurationManager.AppSettings["centrocostocaja"] ?? "",
+                    F351_ID_CO_MOV = ConfigurationManager.AppSettings["movimientocaja"] ?? "",
+                    F351_ID_UN = ConfigurationManager.AppSettings["unidadnegociocaja"],
+                    F351_VALOR_CR = "0",
+                    F351_VALOR_DB = pago.Valor.ToString("0.00", CultureInfo.InvariantCulture),
+                    F351_ID_FE = config.Idfe,
+                    F358_COD_SEGURIDAD = "",
+                    F358_FECHA_VCTO = facturaCanastilla.fecha.ToString("yyyyMMdd"),
+                    F358_ID_CAJA = ConfigurationManager.AppSettings["caja"] ?? "003",
+                    F358_ID_MEDIOS_PAGO = pago.MedioSiesa,
+                    F358_NOTAS = $"Factura canastilla {consecutivo} forma {pago.FormaPagoId}",
+                    F358_NRO_AUTORIZACION = "",
+                    F358_NRO_CUENTA = "",
+                    F358_REFERENCIA_OTROS = ""
+                }).Cast<object>().ToList();
+
+                var requestContent = new
+                {
+                    Inicial = new List<object> { new { F_CIA = "1" } },
+                    Final = new List<object> { new { F_CIA = "1" } },
+                    Caja = caja,
+                    Documentocontable = new List<object>
+                    {
+                        new
+                        {
+                            F_CIA = "1",
+                            F_CONSEC_AUTO_REG = config.ConsecutivoAutoregulado,
+                            F350_ID_CO = config.CentroOperacionesDocumento,
+                            F350_ID_TIPO_DOCTO = ConfigurationManager.AppSettings["documentofactura"],
+                            F350_CONSEC_DOCTO = consecutivo,
+                            F350_FECHA = facturaCanastilla.fecha.ToString("yyyyMMdd"),
+                            F350_ID_TERCERO = facturaCanastilla.Tercero.identificacion.ToString(),
+                            F350_IND_ESTADO = "1",
+                            F350_NOTAS = $"Factura canastilla {consecutivo}"
+                        }
+                    },
+                    Movimientocontable = movimientosContables
+                };
+
+                return EnviarASiesaAPI(requestContent, consecutivo, "Canastilla-Multipago");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, $"Error enviando factura canastilla multipago {consecutivo}");
                 return false;
             }
         }
@@ -518,9 +610,193 @@ namespace EnviadorInformacionService
             }
         }
 
+        private List<PagoCanastillaSiesa> ConstruirPagosFactura(int formaPagoPrincipalId, int? formaPagoSecundariaId, decimal totalFactura, decimal? total1, decimal? total2)
+        {
+            var valorPago2 = (formaPagoSecundariaId.HasValue && total2.HasValue && total2.Value > 0)
+                ? Decimal.Round(total2.Value, 2)
+                : 0m;
+
+            var valorPago1 = total1.HasValue && total1.Value > 0
+                ? Decimal.Round(total1.Value, 2)
+                : Decimal.Round(Math.Max(0m, totalFactura - valorPago2), 2);
+
+            // Ajuste defensivo para que la suma de pagos no supere el total de la factura.
+            if (valorPago1 + valorPago2 > totalFactura && totalFactura > 0)
+            {
+                valorPago1 = Decimal.Round(Math.Max(0m, totalFactura - valorPago2), 2);
+            }
+
+            var pagos = new List<PagoCanastillaSiesa>();
+
+            if (formaPagoPrincipalId > 0 && valorPago1 > 0)
+            {
+                pagos.Add(new PagoCanastillaSiesa
+                {
+                    FormaPagoId = formaPagoPrincipalId,
+                    Valor = valorPago1,
+                    MedioSiesa = ObtenerMedioPagoSiesa(formaPagoPrincipalId)
+                });
+            }
+
+            if (formaPagoSecundariaId.HasValue && formaPagoSecundariaId.Value > 0 && valorPago2 > 0)
+            {
+                pagos.Add(new PagoCanastillaSiesa
+                {
+                    FormaPagoId = formaPagoSecundariaId.Value,
+                    Valor = valorPago2,
+                    MedioSiesa = ObtenerMedioPagoSiesa(formaPagoSecundariaId.Value)
+                });
+            }
+
+            if (!pagos.Any())
+            {
+                pagos.Add(new PagoCanastillaSiesa
+                {
+                    FormaPagoId = formaPagoPrincipalId,
+                    Valor = Decimal.Round(totalFactura, 2),
+                    MedioSiesa = ObtenerMedioPagoSiesa(formaPagoPrincipalId)
+                });
+            }
+
+            return pagos
+                .GroupBy(x => x.FormaPagoId)
+                .Select(g => new PagoCanastillaSiesa
+                {
+                    FormaPagoId = g.Key,
+                    Valor = Decimal.Round(g.Sum(x => x.Valor), 2),
+                    MedioSiesa = g.First().MedioSiesa
+                })
+                .Where(x => x.Valor > 0)
+                .ToList();
+        }
+
+        private static int ObtenerIdFormaPago(dynamic formaPago)
+        {
+            if (formaPago == null)
+            {
+                return 0;
+            }
+
+            try
+            {
+                return Convert.ToInt32(formaPago.Id, CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                try
+                {
+                    return Convert.ToInt32(formaPago.FormaPagoId, CultureInfo.InvariantCulture);
+                }
+                catch
+                {
+                    return 0;
+                }
+            }
+        }
+
+        private static int? ConvertirEnteroNullable(dynamic valor)
+        {
+            if (valor == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                return Convert.ToInt32(valor, CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static decimal ConvertirDecimal(dynamic valor)
+        {
+            try
+            {
+                return Convert.ToDecimal(valor, CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                return 0m;
+            }
+        }
+
+        private static decimal? ConvertirDecimalNullable(dynamic valor)
+        {
+            if (valor == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                return Convert.ToDecimal(valor, CultureInfo.InvariantCulture);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static bool EsFormaPagoEfectivo(int formaPagoId)
+        {
+            // En instalaciones históricas se usa 1 o 4 para efectivo.
+            return formaPagoId == 1 || formaPagoId == 4;
+        }
+
+        private string ObtenerMedioPagoSiesa(int formaPagoId)
+        {
+            var key = $"mediopagosiesa_{formaPagoId}";
+            var medioDesdeConfig = ConfigurationManager.AppSettings[key];
+            if (!string.IsNullOrWhiteSpace(medioDesdeConfig))
+            {
+                return medioDesdeConfig.Trim().ToUpperInvariant();
+            }
+
+            if (EsFormaPagoEfectivo(formaPagoId))
+            {
+                return "EFE";
+            }
+
+            return (ConfigurationManager.AppSettings["mediopagosiesa_default"] ?? "OTR").Trim().ToUpperInvariant();
+        }
+
+        private class PagoCanastillaSiesa
+        {
+            public int FormaPagoId { get; set; }
+            public decimal Valor { get; set; }
+            public string MedioSiesa { get; set; }
+        }
+
         /// <summary>
         /// Controla el rate limiting para no exceder 25 facturas por minuto
         /// </summary>
+        private DateTime? ObtenerFechaMinimaEnvioSiesa(string fechaConfig, string origenConfig)
+        {
+            if (string.IsNullOrWhiteSpace(fechaConfig))
+            {
+                return null;
+            }
+
+            var formatos = new[] { "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss", "dd/MM/yyyy", "dd/MM/yyyy HH:mm:ss" };
+            if (DateTime.TryParseExact(fechaConfig.Trim(), formatos, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaCorte))
+            {
+                Logger.Info($"Canastilla - Filtro de fecha mínima Siesa activo ({origenConfig}): {fechaCorte:yyyy-MM-dd HH:mm:ss}");
+                return fechaCorte;
+            }
+
+            if (DateTime.TryParse(fechaConfig.Trim(), out fechaCorte))
+            {
+                Logger.Info($"Canastilla - Filtro de fecha mínima Siesa activo ({origenConfig}): {fechaCorte:yyyy-MM-dd HH:mm:ss}");
+                return fechaCorte;
+            }
+
+            Logger.Warn($"Canastilla - No se pudo interpretar {origenConfig}='{fechaConfig}'. Se ignora filtro por fecha mínima de envío a Siesa.");
+            return null;
+        }
+
         private DateTime? ObtenerFechaMaximaEnvioSiesa(string fechaConfig, string origenConfig)
         {
             if (string.IsNullOrWhiteSpace(fechaConfig))
@@ -548,6 +824,11 @@ namespace EnviadorInformacionService
         private static bool EsFacturaMasNuevaQueCorte(DateTime fechaFactura, DateTime? fechaCorteMaxima)
         {
             return fechaCorteMaxima.HasValue && fechaFactura > fechaCorteMaxima.Value;
+        }
+
+        private static bool EsFacturaMasViejaQueCorte(DateTime fechaFactura, DateTime? fechaCorteMinima)
+        {
+            return fechaCorteMinima.HasValue && fechaFactura < fechaCorteMinima.Value;
         }
 
         private void WaitForRateLimit()

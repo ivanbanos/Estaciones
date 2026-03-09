@@ -44,8 +44,31 @@ namespace EnviadorInformacionService
 
         public ImpresionService()
         {
-            estacionFuente = new Guid(ConfigurationManager.AppSettings["estacionFuente"]);
-            MultiplicarPor10 = bool.Parse(ConfigurationManager.AppSettings["MultiplicarPor10"]);
+            string GetSetting(string key, string defaultValue = "")
+            {
+                return ConfigurationManager.AppSettings[key] ?? defaultValue;
+            }
+
+            bool GetBool(string key, bool defaultValue = false)
+            {
+                var value = ConfigurationManager.AppSettings[key];
+                return bool.TryParse(value, out var parsed) ? parsed : defaultValue;
+            }
+
+            int GetInt(string key, int defaultValue = 0)
+            {
+                var value = ConfigurationManager.AppSettings[key];
+                return int.TryParse(value, out var parsed) ? parsed : defaultValue;
+            }
+
+            var estacionFuenteSetting = ConfigurationManager.AppSettings["estacionFuente"];
+            if (!Guid.TryParse(estacionFuenteSetting, out estacionFuente))
+            {
+                estacionFuente = Guid.Empty;
+                Logger.Warn("No se encontro 'estacionFuente' valido en AppSettings. Se usara Guid.Empty.");
+            }
+
+            MultiplicarPor10 = GetBool("MultiplicarPor10", false);
             _conexionEstacionRemota = new ConexionEstacionRemota();
             firstMacAddress = NetworkInterface
         .GetAllNetworkInterfaces()
@@ -53,22 +76,22 @@ namespace EnviadorInformacionService
         .Select(nic => nic.GetPhysicalAddress().ToString())
         .FirstOrDefault();
             firstMacAddress = firstMacAddress ?? "Mac Unknown";
-            Console.WriteLine(ConfigurationManager.AppSettings["Razon"].ToString());
-            ImpresionAutomatica = bool.Parse(ConfigurationManager.AppSettings["ImpresionAutomatica"]);
-            impresionFormaDePagoOrdenDespacho = bool.Parse(ConfigurationManager.AppSettings["impresionFormaDePagoOrdenDespacho"]);
+            Console.WriteLine(GetSetting("Razon"));
+            ImpresionAutomatica = GetBool("ImpresionAutomatica", false);
+            impresionFormaDePagoOrdenDespacho = GetBool("impresionFormaDePagoOrdenDespacho", false);
             _infoEstacion = new InfoEstacion();
-            generaFacturaElectronica = bool.Parse(ConfigurationManager.AppSettings["GeneraFacturaElectronica"].ToString());
-            _infoEstacion.CaracteresPorPagina = int.Parse(ConfigurationManager.AppSettings["CaracteresPorPagina"].ToString());
-            _infoEstacion.ImpresionPDA = bool.Parse(ConfigurationManager.AppSettings["ImpresionPDA"].ToString());
-            _infoEstacion.Direccion = ConfigurationManager.AppSettings["Direccion"].ToString();
-            _infoEstacion.Linea1 = ConfigurationManager.AppSettings["Linea1"].ToString();
-            _infoEstacion.Linea2 = ConfigurationManager.AppSettings["Linea2"].ToString();
-            _infoEstacion.Linea3 = ConfigurationManager.AppSettings["Linea3"].ToString();
-            _infoEstacion.Linea4 = ConfigurationManager.AppSettings["Linea4"].ToString();
-            _infoEstacion.NIT = ConfigurationManager.AppSettings["NIT"].ToString();
-            _infoEstacion.Nombre = ConfigurationManager.AppSettings["Nombre"].ToString();
-            _infoEstacion.Razon = ConfigurationManager.AppSettings["Razon"].ToString();
-            _infoEstacion.Rifa = bool.Parse(ConfigurationManager.AppSettings["Rifa"].ToString());
+            generaFacturaElectronica = GetBool("GeneraFacturaElectronica", false);
+            _infoEstacion.CaracteresPorPagina = GetInt("CaracteresPorPagina", 40);
+            _infoEstacion.ImpresionPDA = GetBool("ImpresionPDA", false);
+            _infoEstacion.Direccion = GetSetting("Direccion");
+            _infoEstacion.Linea1 = GetSetting("Linea1");
+            _infoEstacion.Linea2 = GetSetting("Linea2");
+            _infoEstacion.Linea3 = GetSetting("Linea3");
+            _infoEstacion.Linea4 = GetSetting("Linea4");
+            _infoEstacion.NIT = GetSetting("NIT");
+            _infoEstacion.Nombre = GetSetting("Nombre");
+            _infoEstacion.Razon = GetSetting("Razon");
+            _infoEstacion.Rifa = GetBool("Rifa", false);
             if (!decimal.TryParse(ConfigurationManager.AppSettings["MontoMinimoRifa"], NumberStyles.Any, CultureInfo.InvariantCulture, out var montoMinimoRifa)
                 && !decimal.TryParse(ConfigurationManager.AppSettings["MontoMinimoRifa"], NumberStyles.Any, CultureInfo.CurrentCulture, out montoMinimoRifa))
             {
@@ -76,8 +99,8 @@ namespace EnviadorInformacionService
             }
             _infoEstacion.MontoMinimoRifa = montoMinimoRifa;
 
-            _infoEstacion.Telefono = ConfigurationManager.AppSettings["Telefono"].ToString();
-            _infoEstacion.vecesPermitidasImpresion = int.Parse(ConfigurationManager.AppSettings["vecesPermitidasImpresion"].ToString());
+            _infoEstacion.Telefono = GetSetting("Telefono");
+            _infoEstacion.vecesPermitidasImpresion = GetInt("vecesPermitidasImpresion", 1);
 
 
             carasImpresoras = new Dictionary<int, string>();
@@ -839,6 +862,7 @@ namespace EnviadorInformacionService
         private void getLineasImprimir()
         {
             _charactersPerPage = _infoEstacion.CaracteresPorPagina;
+            var nombreTercero = ObtenerNombreCompletoTercero(_tercero);
             if (_factura.codigoFormaPago == 0)
             {
                 _factura.codigoFormaPago = _venta.COD_FOR_PAG;
@@ -910,7 +934,7 @@ namespace EnviadorInformacionService
             if (_venta.COD_FOR_PAG != 4)
             {
 
-                lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", _tercero.Nombre == null ? "" : _tercero.Nombre.Trim()), false));
+                lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", nombreTercero), false));
                 lineasImprimir.Add(new LineasImprimir(formatoTotales("Nit/C.C. : ", _tercero.identificacion.Trim()), false));
                 lineasImprimir.Add(new LineasImprimir(formatoTotales("Placa : ", placa), false));
                 lineasImprimir.Add(new LineasImprimir(formatoTotales("Kilometraje : ", (!string.IsNullOrEmpty(_factura.Kilometraje) ? _factura.Kilometraje : _venta.KILOMETRAJE + "").Trim()), false));
@@ -922,13 +946,13 @@ namespace EnviadorInformacionService
             }
             else
             {
-                if (string.IsNullOrEmpty(_tercero.Nombre))
+                if (string.IsNullOrEmpty(nombreTercero))
                 {
                     lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a :", " CONSUMIDOR FINAL".Trim()), false));
                 }
                 else
                 {
-                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", _tercero.Nombre.Trim()) + "", false));
+                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Vendido a : ", nombreTercero) + "", false));
                 }
                 if (string.IsNullOrEmpty(_tercero.identificacion))
                 {
@@ -1008,6 +1032,7 @@ namespace EnviadorInformacionService
 
             if (_factura.Consecutivo != 0 || impresionFormaDePagoOrdenDespacho)
             {
+                var usaMultipago = _factura.codigoFormaPago2.HasValue;
                 if (formas.FirstOrDefault(x => x.Id == _factura.codigoFormaPago) != null)
                 {
                     var forma = formas.FirstOrDefault(x => x.Id == _factura.codigoFormaPago);
@@ -1021,12 +1046,31 @@ namespace EnviadorInformacionService
 
                     }
                     lineasImprimir.Add(new LineasImprimir(formatoTotales("Método de pago : ", forma.Descripcion.Trim()), false));
+                    if (usaMultipago && _factura.total1.HasValue)
+                    {
+                        lineasImprimir.Add(new LineasImprimir(formatoTotales("Valor pago 1 : ", String.Format("{0:#,0.00}", _factura.total1.Value)), false));
+                    }
 
                 }
                 else
                 {
                     lineasImprimir.Add(new LineasImprimir(formatoTotales("Forma de pago :", " Contado"), false));
                     lineasImprimir.Add(new LineasImprimir(formatoTotales("Método de pago :", " Efectivo"), false));
+                    if (usaMultipago && _factura.total1.HasValue)
+                    {
+                        lineasImprimir.Add(new LineasImprimir(formatoTotales("Valor pago 1 : ", String.Format("{0:#,0.00}", _factura.total1.Value)), false));
+                    }
+
+                }
+
+                if (usaMultipago)
+                {
+                    var forma2 = formas.FirstOrDefault(x => x.Id == _factura.codigoFormaPago2.Value);
+                    lineasImprimir.Add(new LineasImprimir(formatoTotales("Método pago 2 : ", (forma2?.Descripcion ?? "No definido").Trim()), false));
+                    if (_factura.total2.HasValue)
+                    {
+                        lineasImprimir.Add(new LineasImprimir(formatoTotales("Valor pago 2 : ", String.Format("{0:#,0.00}", _factura.total2.Value)), false));
+                    }
 
                 }
                 if (!string.IsNullOrEmpty(_factura.numeroTransaccion) && _factura.numeroTransaccion != "NA")
@@ -1084,7 +1128,11 @@ namespace EnviadorInformacionService
             lineasImprimir.Add(new LineasImprimir(formatoTotales("SERIAL MAQUINA: ", firstMacAddress), false));
 
 
-            if (_infoEstacion.Rifa && _venta.TOTAL >= _infoEstacion.MontoMinimoRifa)
+            var esCredito = _factura.codigoFormaPago == 6
+                || (_factura.codigoFormaPago2.HasValue && _factura.codigoFormaPago2.Value == 6)
+                || _venta.COD_FOR_PAG == 6;
+
+            if (_infoEstacion.Rifa && !esCredito && _venta.TOTAL >= _infoEstacion.MontoMinimoRifa)
             {
                 lineasImprimir.Add(new LineasImprimir(" ", false));
                 lineasImprimir.Add(new LineasImprimir(" ", false));
@@ -1114,6 +1162,13 @@ namespace EnviadorInformacionService
                 var facturaElectronica = infoTemp.Split(' ');
                 lineasImprimir.Add(new LineasImprimir(guiones.ToString(), false, $"https://catalogo-vpfe.dian.gov.co/User/SearchDocument?DocumentKey={facturaElectronica[4]}"));
             }
+        }
+
+        private string ObtenerNombreCompletoTercero(FactoradorEstacionesModelo.Objetos.Tercero tercero)
+        {
+            var nombre = tercero?.Nombre?.Trim() ?? string.Empty;
+            var apellidos = tercero?.Apellidos?.Trim() ?? string.Empty;
+            return string.Join(" ", new[] { nombre, apellidos }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
         }
 
         private void pd_PrintPageOnly(object sender, PrintPageEventArgs ev)

@@ -195,6 +195,10 @@ const OrdenesDespacho = () => {
     }).format(amount || 0)
   }
 
+  const getFormaPago = (orden) => {
+    return orden.formaDePago || orden.formaPago || orden.FormaDePago || 'N/A'
+  }
+
   // Filtrar órdenes por término de búsqueda y por el checkbox sin facturar
   const filteredOrdenes = ordenes
     .filter(
@@ -246,6 +250,7 @@ const OrdenesDespacho = () => {
           { text: 'ID Transacción', style: 'tableHeader' },
           { text: 'Fecha', style: 'tableHeader' },
           { text: 'Cliente', style: 'tableHeader' },
+          { text: 'Forma de Pago', style: 'tableHeader' },
           { text: 'Combustible', style: 'tableHeader' },
           { text: 'Placa', style: 'tableHeader' },
           { text: 'Cantidad', style: 'tableHeader' },
@@ -262,6 +267,7 @@ const OrdenesDespacho = () => {
             orden.numeroTransaccion || orden.idVentaLocal || 'N/A',
             formatDate(orden.fecha),
             `${orden.nombreTercero || 'N/A'}\n${orden.identificacion || ''}`,
+            getFormaPago(orden),
             orden.combustible || 'N/A',
             orden.placa || 'N/A',
             orden.cantidad || '0',
@@ -347,7 +353,7 @@ const OrdenesDespacho = () => {
           {
             table: {
               headerRows: 1,
-              widths: ['auto', 'auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
+              widths: ['auto', 'auto', '*', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'],
               body: tableRows,
             },
             layout: {
@@ -454,6 +460,7 @@ const OrdenesDespacho = () => {
           'Fecha',
           'Cliente',
           'Identificación',
+          'Forma de Pago',
           'Combustible',
           'Placa',
           'Cantidad',
@@ -473,6 +480,7 @@ const OrdenesDespacho = () => {
             orden.fecha ? new Date(orden.fecha).toLocaleDateString('es-ES') : 'N/A',
             orden.nombreTercero || 'N/A',
             orden.identificacion || 'N/A',
+            getFormaPago(orden),
             orden.combustible || 'N/A',
             orden.placa || 'N/A',
             orden.cantidad || 0,
@@ -494,6 +502,7 @@ const OrdenesDespacho = () => {
         { width: 12 }, // Fecha
         { width: 25 }, // Cliente
         { width: 15 }, // Identificación
+        { width: 18 }, // Forma de Pago
         { width: 15 }, // Combustible
         { width: 12 }, // Placa
         { width: 10 }, // Cantidad

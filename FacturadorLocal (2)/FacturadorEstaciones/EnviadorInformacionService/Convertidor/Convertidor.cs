@@ -157,12 +157,18 @@ namespace FactoradorEstacionesModelo.Convertidor
                     impresa = dr.Field<int>("impresa"),
                     Estado = dr.Field<string>("estado"),
                     codigoFormaPago = dr.Field<int>("codigoFormaPago"),
-                    numeroTransaccion = dr.Field<string>("numeroTransaccion"),
+                    codigoFormaPago2 = dr.Table.Columns.Contains("codigoFormaPago2") && !dr.IsNull("codigoFormaPago2") ? (int?)Convert.ToInt32(dr["codigoFormaPago2"]) : null,
+                    total1 = dr.Table.Columns.Contains("total1") && !dr.IsNull("total1") ? (decimal?)Convert.ToDecimal(dr["total1"]) : null,
+                    total2 = dr.Table.Columns.Contains("total2") && !dr.IsNull("total2") ? (decimal?)Convert.ToDecimal(dr["total2"]) : null,
+                    numeroTransaccion = dr.Table.Columns.Contains("numeroTransaccion") && !dr.IsNull("numeroTransaccion")
+                        ? dr.Field<string>("numeroTransaccion")
+                        : null,
 
                     Tercero = new Objetos.Tercero() {
                         COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI"),
                         Direccion = dr.Field<string>("direccion"),
                         Nombre = dr.Field<string>("Nombre"),
+                        Apellidos = dr.Table.Columns.Contains("apellidos") ? (dr.IsNull("apellidos") ? null : dr.Field<string>("apellidos")) : null,
                         Telefono = dr.Field<string>("Telefono"),
                         identificacion = dr.Field<string>("identificacion"),
 
@@ -187,6 +193,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                     COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI"),
                     Direccion = dr.Field<string>("direccion"),
                     Nombre = dr.Field<string>("Nombre"),
+                    Apellidos = dr.Table.Columns.Contains("apellidos") ? (dr.IsNull("apellidos") ? null : dr.Field<string>("apellidos")) : null,
                     Telefono = dr.Field<string>("Telefono"),
                     identificacion = dr.Field<string>("identificacion"),
                     
@@ -286,6 +293,15 @@ namespace FactoradorEstacionesModelo.Convertidor
                     fc.impresa = dr.Field<int>("impresa");
                     fc.estado = dr.Field<string>("estado");
                     fc.codigoFormaPago = new FormasPagos() { Id = dr.Field<int>("codigoFormaPago") };
+                    fc.codigoFormaPago2 = dr.Table.Columns.Contains("codigoFormaPago2") && !dr.IsNull("codigoFormaPago2")
+                        ? (int?)Convert.ToInt32(dr["codigoFormaPago2"])
+                        : null;
+                    fc.total1 = dr.Table.Columns.Contains("total1") && !dr.IsNull("total1")
+                        ? (decimal?)Convert.ToDecimal(dr["total1"])
+                        : null;
+                    fc.total2 = dr.Table.Columns.Contains("total2") && !dr.IsNull("total2")
+                        ? (decimal?)Convert.ToDecimal(dr["total2"])
+                        : null;
                     fc.descuento = Convert.ToSingle(dr.Field<double>("descuento"));
                     fc.subtotal = Convert.ToSingle(dr.Field<double>("subtotal"));
                     fc.total = Convert.ToSingle(dr.Field<double>("total"));
@@ -297,6 +313,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                     fc.terceroId.COD_CLI = dr.IsNull("COD_CLI") ? "" : dr.Field<string>("COD_CLI");
                     fc.terceroId.Direccion = dr.Field<string>("direccion");
                     fc.terceroId.Nombre = dr.Field<string>("Nombre");
+                    fc.terceroId.Apellidos = dr.Table.Columns.Contains("apellidos") ? (dr.IsNull("apellidos") ? null : dr.Field<string>("apellidos")) : null;
                     fc.terceroId.Telefono = dr.Field<string>("Telefono");
                     fc.terceroId.identificacion = dr.Field<string>("identificacion");
 

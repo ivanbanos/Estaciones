@@ -469,6 +469,7 @@ namespace FacturadorEstacionesRepositorio
                     {"@tipoIdentificacion", tercero.tipoIdentificacion },
                     {"@identificacion", tercero.identificacion },
                     {"@nombre", tercero.Nombre },
+                    {"@apellidos", tercero.Apellidos },
                     {"@telefono", tercero.Telefono },
                     {"@correo", tercero.Correo },
                     {"@direccion", tercero.Direccion },
@@ -915,10 +916,12 @@ DataTable dt = LoadDataTableFromStoredProc(_connectionString.estacion, "GetFidel
                          parameters);
         }
 
-        public IEnumerable<FactoradorEstacionesModelo.Objetos.Factura> BuscarFacturasNoEnviadasSiesa()
+        public IEnumerable<FactoradorEstacionesModelo.Objetos.Factura> BuscarFacturasNoEnviadasSiesa(DateTime? fechaMin = null, DateTime? fechaMax = null)
         {
             var parameters = new Dictionary<string, object>
             {
+                {"@fechaMin", (object)fechaMin ?? DBNull.Value },
+                {"@fechaMax", (object)fechaMax ?? DBNull.Value }
             };
             DataTable dt2 = LoadDataTableFromStoredProc(_connectionString.Facturacion, "getFacturaSinEnviarSiesa",
                          parameters);

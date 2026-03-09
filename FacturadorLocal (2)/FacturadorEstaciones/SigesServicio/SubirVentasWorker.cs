@@ -69,7 +69,7 @@ namespace ManejadorSurtidor
                         }
                         catch (Exception ex) {
 
-                            Logger.Log(NLog.LogLevel.Error, $"Error. {ex.Message}.{ex.StackTrace}");
+                           // Logger.Log(NLog.LogLevel.Error, $"Error. {ex.Message}.{ex.StackTrace}");
                         }
                     }
                 }

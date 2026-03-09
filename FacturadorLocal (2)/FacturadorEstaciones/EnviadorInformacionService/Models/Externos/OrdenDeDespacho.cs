@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Configuration;
+using System.Linq;
 
 namespace FacturacionelectronicaCore.Negocio.Modelo
 {
@@ -28,6 +29,9 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public string Estado { get; set; }
         public Tercero Tercero { get; set; }
         public string FormaDePago { get; set; }
+        public string FormaDePago2 { get; set; }
+        public decimal? Total1 { get; set; }
+        public decimal? Total2 { get; set; }
         public int IdLocal { get; set; }
         public int IdVentaLocal { get; set; }
         public int IdTerceroLocal { get; set; }
@@ -37,7 +41,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public Guid estacion { get; set; }
 
 
-        public OrdenDeDespacho(FactoradorEstacionesModelo.Objetos.Factura x, string forma)
+        public OrdenDeDespacho(FactoradorEstacionesModelo.Objetos.Factura x, string forma, string forma2 = null)
         {
             var MultiplicarPor10 = bool.Parse(ConfigurationManager.AppSettings["MultiplicarPor10"]);
             if (MultiplicarPor10)
@@ -59,8 +63,14 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
             Cara = x.Venta.COD_CAR + "";
             Manguera = x.Manguera.COD_MAN + "";
             FormaDePago = forma;
+            FormaDePago2 = forma2;
+            Total1 = x.total1;
+            Total2 = x.total2;
             Fecha = x.fecha;
             Descuento  = x.Venta.Descuento;
+            var nombres = x.Tercero?.Nombre?.Trim();
+            var apellidos = x.Tercero?.Apellidos?.Trim();
+            NombreTercero = string.Join(" ", new[] { nombres, apellidos }.Where(v => !string.IsNullOrWhiteSpace(v))).Trim();
             Tercero = new Tercero(x.Tercero);
             IdLocal = x.facturaPOSId;
             IdVentaLocal = x.Venta.CONSECUTIVO;

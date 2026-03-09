@@ -32,6 +32,7 @@ namespace EnviadorInformacionService
             var _apiContabilidad = new ApiSiesa();
 
             var estacionFuente = new Guid(ConfigurationManager.AppSettings["estacionFuente"]);
+            var fechaMinimaEnvioSiesa = ObtenerFechaMinimaEnvioSiesa(ConfigurationManager.AppSettings["FechaMinimaEnvioSiesa"], "appSettings.FechaMinimaEnvioSiesa");
             var fechaMaximaEnvioSiesa = ObtenerFechaMaximaEnvioSiesa(ConfigurationManager.AppSettings["FechaMaximaEnvioSiesa"], "appSettings.FechaMaximaEnvioSiesa");
             Logger.Info("Iniciando interfaz Siesa");
             Thread.CurrentThread.CurrentCulture = new CultureInfo("es-ES");
@@ -40,14 +41,21 @@ namespace EnviadorInformacionService
                 try
                 {
 
-                    var facturas = _estacionesRepositorio.BuscarFacturasNoEnviadasSiesa().ToList();
+                    var facturas = _estacionesRepositorio
+                        .BuscarFacturasNoEnviadasSiesa(fechaMinimaEnvioSiesa, fechaMaximaEnvioSiesa)
+                        .ToList();
+                    if (fechaMinimaEnvioSiesa.HasValue)
+                    {
+                        var facturasBloqueadasPorMinima = facturas.Where(x => EsFacturaMasViejaQueCorte(x.fecha, fechaMinimaEnvioSiesa)).ToList();
+                       
+
+                        facturas = facturas.Where(x => !EsFacturaMasViejaQueCorte(x.fecha, fechaMinimaEnvioSiesa)).ToList();
+                    }
+
                     if (fechaMaximaEnvioSiesa.HasValue)
                     {
                         var facturasBloqueadasPorFecha = facturas.Where(x => EsFacturaMasNuevaQueCorte(x.fecha, fechaMaximaEnvioSiesa)).ToList();
-                        if (facturasBloqueadasPorFecha.Any())
-                        {
-                            Logger.Warn($"Se omiten {facturasBloqueadasPorFecha.Count} facturas por ser más nuevas que la fecha máxima de envío a Siesa ({fechaMaximaEnvioSiesa:yyyy-MM-dd HH:mm:ss}). IDs: {string.Join(", ", facturasBloqueadasPorFecha.Select(x => x.ventaId))}");
-                        }
+                        
 
                         facturas = facturas.Where(x => !EsFacturaMasNuevaQueCorte(x.fecha, fechaMaximaEnvioSiesa)).ToList();
                     }
@@ -362,20 +370,20 @@ namespace EnviadorInformacionService
                                                 catch (Exception exSend)
                                                 {
                                                     facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: {exSend.Message}");
-                                                    Logger.Warn($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: {exSend.Message}");
+                                                    Logger.Debug($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: {exSend.Message}");
                                                 }
                                             }
                                             else
                                             {
                                                 facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: no hubo información de Dataico");
-                                                Logger.Warn($"No se envió factura {factura.ventaId} a Siesa porque Dataico no devolvió información.");
+                                                Logger.Debug($"No se envió factura {factura.ventaId} a Siesa porque Dataico no devolvió información.");
                                             }
 
                                         }
                                         else
                                         {
                                             facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: no tiene factura electrónica");
-                                            Logger.Warn($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: no tiene factura electrónica");
+                                            Logger.Debug($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: no tiene factura electrónica");
 
                                         }
                                     }
@@ -383,7 +391,7 @@ namespace EnviadorInformacionService
                                     {
 
                                         facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: no tiene factura electrónica");
-                                        Logger.Warn($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: no tiene factura electrónica");
+                                        Logger.Debug($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: no tiene factura electrónica");
 
                                     }
 
@@ -391,7 +399,7 @@ namespace EnviadorInformacionService
                                 catch (Exception ex)
                                 {
                                     facturasFallidas.Add($"ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
-                                    Logger.Warn($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
+                                    Logger.Debug($"Fallo al enviar factura - ID: {factura.ventaId}, Total: {factura.Venta.TOTAL}, Forma Pago: {factura.codigoFormaPago}, Error: {ex.Message}");
                                 }
                             }
                             else
@@ -413,7 +421,7 @@ namespace EnviadorInformacionService
 
                     if (facturasFallidas.Any())
                     {
-                        Logger.Warn($"Total facturas que fallaron al enviar: {facturasFallidas.Count} - {string.Join(" | ", facturasFallidas)}");
+                        Logger.Debug($"Total facturas que fallaron al enviar: {facturasFallidas.Count} - {string.Join(" | ", facturasFallidas)}");
                     }
 
                     Thread.Sleep(1000);
@@ -448,6 +456,30 @@ namespace EnviadorInformacionService
             return ConfigurationManager.AppSettings["auxiliardescuento"];
         }
 
+        private DateTime? ObtenerFechaMinimaEnvioSiesa(string fechaConfig, string origenConfig)
+        {
+            if (string.IsNullOrWhiteSpace(fechaConfig))
+            {
+                return null;
+            }
+
+            var formatos = new[] { "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss", "dd/MM/yyyy", "dd/MM/yyyy HH:mm:ss" };
+            if (DateTime.TryParseExact(fechaConfig.Trim(), formatos, CultureInfo.InvariantCulture, DateTimeStyles.None, out var fechaCorte))
+            {
+                Logger.Info($"Filtro de fecha mínima Siesa activo ({origenConfig}): {fechaCorte:yyyy-MM-dd HH:mm:ss}");
+                return fechaCorte;
+            }
+
+            if (DateTime.TryParse(fechaConfig.Trim(), out fechaCorte))
+            {
+                Logger.Info($"Filtro de fecha mínima Siesa activo ({origenConfig}): {fechaCorte:yyyy-MM-dd HH:mm:ss}");
+                return fechaCorte;
+            }
+
+            Logger.Warn($"No se pudo interpretar {origenConfig}='{fechaConfig}'. Se ignora filtro por fecha mínima de envío a Siesa.");
+            return null;
+        }
+
         private DateTime? ObtenerFechaMaximaEnvioSiesa(string fechaConfig, string origenConfig)
         {
             if (string.IsNullOrWhiteSpace(fechaConfig))
@@ -475,6 +507,11 @@ namespace EnviadorInformacionService
         private static bool EsFacturaMasNuevaQueCorte(DateTime fechaFactura, DateTime? fechaCorteMaxima)
         {
             return fechaCorteMaxima.HasValue && fechaFactura > fechaCorteMaxima.Value;
+        }
+
+        private static bool EsFacturaMasViejaQueCorte(DateTime fechaFactura, DateTime? fechaCorteMinima)
+        {
+            return fechaCorteMinima.HasValue && fechaFactura < fechaCorteMinima.Value;
         }
         
         /// <summary>

@@ -30,6 +30,9 @@ namespace FactoradorEstacionesModelo.Objetos
         public IEnumerable<Venta> Ventas { get; set; }
         public bool habilitada { get; set; }
         public int codigoFormaPago { get; set; }
+        public int? codigoFormaPago2 { get; set; }
+        public decimal? total1 { get; set; }
+        public decimal? total2 { get; set; }
         public string numeroTransaccion { get; set; }
         public decimal total { get; set; }
         public decimal subtotal { get; set; }

@@ -23,6 +23,8 @@ namespace ManejadorSurtidor
         private readonly IMessageProducer _messageProducer;
         private bool respondio;
         private bool finalizo;
+        private int? _surtidorEsperaId;
+        private int? _mangueraEsperaId;
         private readonly Sicom _sicom;
         private readonly ISicomConection _sicomConection;
         private readonly IFidelizacion _fidelizacion;
@@ -323,8 +325,12 @@ namespace ManejadorSurtidor
                     await sendEstado(surtidor.Id, manguera.Ubicacion, "Total ultima venta " + manguera.ultimaVenta, surtidor.turno.FechaApertura.ToString(), surtidor.turno.Empleado);
                     _estacionesRepositorio.AgregarVenta(manguera.Id, manguera.ultimaVenta, manguera.Vehiculo.idrom);
                     await Fidelizar(manguera.Id);
+                    manguera.NuevaVenta = manguera.ultimaVenta;
                 }
-                manguera.NuevaVenta = manguera.ultimaVenta;
+                else
+                {
+                    _logger.Log(NLog.LogLevel.Warn, $"Venta bloqueada por inconsistencia de lectura. Surtidor {surtidor.Numero}, manguera {manguera.Ubicacion}, ultimaVenta {manguera.ultimaVenta}, referenciaNuevaVenta {manguera.NuevaVenta}, totalizadorActual {manguera.totalizador}, referenciaTotalizador {manguera.NuevoTotalizador}");
+                }
             }
 
             manguera.Estado = "FinVenta";
@@ -336,6 +342,31 @@ namespace ManejadorSurtidor
         {
             if (manguera.ultimaVenta != manguera.NuevaVenta)
             {
+                manguera.Estado = "Totalizadores";
+                manguera.CambioVenta = false;
+                await totalizadorManguera(surtidor, manguera, stoppingToken);
+                await EsperarCambioVentaAsync(manguera, stoppingToken);
+
+                if (manguera.NuevoTotalizador == manguera.totalizador)
+                {
+                    for (var intento = 0; intento < 3 && manguera.NuevoTotalizador == manguera.totalizador; intento++)
+                    {
+                        await Task.Delay(350, stoppingToken);
+                        manguera.Estado = "Totalizadores";
+                        manguera.CambioVenta = false;
+                        await totalizadorManguera(surtidor, manguera, stoppingToken);
+                        await EsperarCambioVentaAsync(manguera, stoppingToken);
+                    }
+
+                    if (manguera.NuevoTotalizador == manguera.totalizador)
+                    {
+                        _logger.Log(NLog.LogLevel.Warn, $"Totalizador sin cambio tras reintentos, pero ultimaVenta cambió. Se registra venta para evitar pérdida. Surtidor {surtidor.Numero}, manguera {manguera.Ubicacion}, ultimaVenta {manguera.ultimaVenta}, referenciaVenta {manguera.NuevaVenta}");
+                        return true;
+                    }
+                }
+
+                await EsperarEstabilidadTotalizadorAsync(surtidor, manguera, stoppingToken);
+                manguera.NuevoTotalizador = manguera.totalizador;
                 return true;
             }
 
@@ -565,25 +596,52 @@ namespace ManejadorSurtidor
         }
         private async Task EnviarTramaAsync(SurtidorSiges s, MangueraSiges? manguera, string trama, CancellationToken stoppingToken, bool debeEsperar = true)
         {
-            var surtidor = Surtidores.First(x => x.Numero == s.Numero);
+            var surtidor = Surtidores.FirstOrDefault(x => x.Numero == s.Numero);
+            if (surtidor == null)
+            {
+                _logger.Log(NLog.LogLevel.Warn, $"No se encontró surtidor número {s.Numero} para enviar trama {trama}.");
+                return;
+            }
             surtidor.esperando = true;
             respondio = false;
             finalizo = false;
+            _surtidorEsperaId = surtidor.Id;
+            _mangueraEsperaId = manguera?.Id;
             if (manguera != null)
             {
-                var mang = surtidor.mangueras.First(x => x.Id == manguera.Id);
-                mang.esperando = true;
+                var mang = surtidor.mangueras.FirstOrDefault(x => x.Id == manguera.Id);
+                if (mang != null)
+                {
+                    mang.esperando = true;
+                }
+                else
+                {
+                    _logger.Log(NLog.LogLevel.Warn, $"No se encontró manguera id {manguera.Id} en surtidor {surtidor.Numero} para trama {trama}.");
+                }
             }
             byte[] tramaByte = FromHex(trama);
             _logger.Log(NLog.LogLevel.Info, $"Enviando trama {trama} a surtidor {surtidor.Numero} manguera {(manguera?.Ubicacion ?? "N/A")} - Threshold {serialPort1.ReceivedBytesThreshold}");
             count = 0;
             var inicioEsperaRespuesta = DateTime.Now;
+            var bufferLimpiado = false;
             while (!respondio && (debeEsperar || ++count < 6))
             {
                 if (!serialPort1.IsOpen)
                 {
                     _logger.Log(NLog.LogLevel.Error, $"No se puede enviar trama {trama}: puerto {serialPort1.PortName} está cerrado.");
                     break;
+                }
+                if (!bufferLimpiado)
+                {
+                    try
+                    {
+                        serialPort1.DiscardInBuffer();
+                        bufferLimpiado = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Log(NLog.LogLevel.Warn, $"No fue posible limpiar buffer de entrada del puerto {serialPort1.PortName} antes de enviar trama {trama}: {ex.Message}");
+                    }
                 }
                 serialPort1.Write(tramaByte, 0, tramaByte.Length); //ENVIO DE LA TRAMA
                 await Task.Delay(400, stoppingToken);
@@ -615,6 +673,9 @@ namespace ManejadorSurtidor
                 }
                 await Task.Delay(400, stoppingToken);
             }
+
+            _surtidorEsperaId = null;
+            _mangueraEsperaId = null;
         }
 
         public void DataReceiverHandler(object sender,
@@ -664,11 +725,21 @@ namespace ManejadorSurtidor
 
         private SurtidorSiges? ObtenerSurtidorEnEspera()
         {
+            if (_surtidorEsperaId.HasValue)
+            {
+                return Surtidores.FirstOrDefault(x => x.Id == _surtidorEsperaId.Value && x.esperando);
+            }
+
             return Surtidores.FirstOrDefault(x => x.esperando);
         }
 
         private MangueraSiges? ObtenerMangueraEnEspera(SurtidorSiges surtidor)
         {
+            if (_mangueraEsperaId.HasValue)
+            {
+                return surtidor.mangueras.FirstOrDefault(x => x.Id == _mangueraEsperaId.Value && x.esperando);
+            }
+
             return surtidor.mangueras.FirstOrDefault(x => x.esperando);
         }
 
@@ -713,7 +784,9 @@ namespace ManejadorSurtidor
             surtidor = Surtidores.First(x => x.Id == surtidor.Id);
             manguera = surtidor.mangueras.First(x => x.Id == manguera.Id);
             var hexString = "";
-            while (!hexString.Contains("163030") || hexString.Length < 37)
+            var expectedHeader = $"1630303{surtidor.Numero}";
+            const string fallbackHeader = "163030";
+            while ((!hexString.Contains(expectedHeader) && !hexString.Contains(fallbackHeader)) || hexString.Length < 37)
             {
                 if (sp.BytesToRead > 0)
                 {
@@ -725,8 +798,10 @@ namespace ManejadorSurtidor
                     if (hexString.Contains("3F"))
                         hexString = hexString.Replace("3F", "");
 
-                    if (hexString.Contains("163030"))
-                        hexString = hexString.Substring(hexString.IndexOf("163030"));
+                    if (hexString.Contains(expectedHeader))
+                        hexString = hexString.Substring(hexString.LastIndexOf(expectedHeader, StringComparison.Ordinal));
+                    else if (hexString.Contains(fallbackHeader))
+                        hexString = hexString.Substring(hexString.LastIndexOf(fallbackHeader, StringComparison.Ordinal));
                 }
                 Thread.Sleep(250);
             }
@@ -765,7 +840,9 @@ namespace ManejadorSurtidor
         {
             surtidor = Surtidores.First(x => x.Id == surtidor.Id);
             var hexString = "";
-            while (!hexString.Contains("023030") || hexString.Length < 15)
+            var expectedHeader = $"0230303{surtidor.Numero}";
+            const string fallbackHeader = "023030";
+            while ((!hexString.Contains(expectedHeader) && !hexString.Contains(fallbackHeader)) || hexString.Length < 15)
             {
                 if (sp.BytesToRead > 0)
                 {
@@ -777,8 +854,10 @@ namespace ManejadorSurtidor
                     if (hexString.Contains("3F"))
                         hexString = hexString.Replace("3F", "");
 
-                    if (hexString.Contains("023030"))
-                        hexString = hexString.Substring(hexString.IndexOf("023030"));
+                    if (hexString.Contains(expectedHeader))
+                        hexString = hexString.Substring(hexString.LastIndexOf(expectedHeader, StringComparison.Ordinal));
+                    else if (hexString.Contains(fallbackHeader))
+                        hexString = hexString.Substring(hexString.LastIndexOf(fallbackHeader, StringComparison.Ordinal));
                 }
                 Thread.Sleep(250);
             }
@@ -837,7 +916,9 @@ namespace ManejadorSurtidor
             surtidor = Surtidores.First(x => x.Id == surtidor.Id);
             manguera = surtidor.mangueras.First(x => x.Id == manguera.Id);
             var hexString = "";
-            while (!hexString.Contains("0130303") || hexString.Length < 54)
+            var expectedHeader = $"0130303{surtidor.Numero}";
+            const string fallbackHeader = "0130303";
+            while ((!hexString.Contains(expectedHeader) && !hexString.Contains(fallbackHeader)) || hexString.Length < 54)
             {
                 if (sp.BytesToRead > 0)
                 {
@@ -847,8 +928,10 @@ namespace ManejadorSurtidor
                     if (hexString.Contains("-"))
                         hexString = hexString.Replace("-", "");
 
-                    if (hexString.Contains("0130303"))
-                        hexString = hexString.Substring(hexString.IndexOf("0130303"));
+                    if (hexString.Contains(expectedHeader))
+                        hexString = hexString.Substring(hexString.LastIndexOf(expectedHeader, StringComparison.Ordinal));
+                    else if (hexString.Contains(fallbackHeader))
+                        hexString = hexString.Substring(hexString.LastIndexOf(fallbackHeader, StringComparison.Ordinal));
                 }
                 Thread.Sleep(250);
             }
@@ -895,15 +978,21 @@ namespace ManejadorSurtidor
 
         private async Task sendEstado(int id, string ubicacion, string estado, string  turno, string empleado)
         {
-
-            await _messageProducer.SendMessage(new Mensaje()
+            try
             {
-                SurtidorId = id,
-                Estado = estado,
-                Ubicacion = ubicacion,
-                Turno = turno,
-                Empleado = empleado
-            }, "controlador");
+                await _messageProducer.SendMessage(new Mensaje()
+                {
+                    SurtidorId = id,
+                    Estado = estado,
+                    Ubicacion = ubicacion,
+                    Turno = turno,
+                    Empleado = empleado
+                }, "controlador");
+            }
+            catch (Exception ex)
+            {
+                _logger.Log(NLog.LogLevel.Warn, $"No fue posible publicar estado '{estado}' surtidor {id} manguera {ubicacion}: {ex.Message}");
+            }
         }
 
         private async Task sendVehiculo(VehiculoSuic vehiculoSuic)

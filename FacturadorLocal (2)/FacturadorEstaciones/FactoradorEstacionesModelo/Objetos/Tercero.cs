@@ -12,6 +12,7 @@ namespace FactoradorEstacionesModelo.Objetos
         {
             this.terceroId = x.IdLocal;
             this.Nombre = x.Nombre;
+            this.Apellidos = x.Apellidos;
             this.Telefono = x.Telefono;
             this.Direccion = x.Direccion;
             this.identificacion = x.Identificacion;
@@ -24,6 +25,7 @@ namespace FactoradorEstacionesModelo.Objetos
         public int terceroId { get; set; } 
         public string COD_CLI { get; set; }
         public string Nombre { get; set; }
+        public string Apellidos { get; set; }
         public string Telefono { get; set; }
         public string Direccion { get; set; }
         public string identificacion { get; set; }

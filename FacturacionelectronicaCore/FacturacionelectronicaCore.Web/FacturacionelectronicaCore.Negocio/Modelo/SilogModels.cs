@@ -26,6 +26,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
 
     public class InvoiceInformation
     {
+        public string PosPrefix { get; set; }
         public int PosConsecutive { get; set; }
         public string InvoiceDate { get; set; }
         public string Details { get; set; }

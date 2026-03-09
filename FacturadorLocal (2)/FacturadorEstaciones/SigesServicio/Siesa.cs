@@ -40,6 +40,7 @@ namespace SigesServicio
         public string? CentroCostoOtros { get; set; }
         public string? IdFeOtros { get; set; }
         public string? IdDOcumentoCliente { get; set; }
+        public string? FechaMinimaEnvioSiesa { get; set; }
         public string? FechaMaximaEnvioSiesa { get; set; }
         public string CentroOperacionesContableDescuento { get; set; }
         public string AuxiliarDescuento { get; set; }

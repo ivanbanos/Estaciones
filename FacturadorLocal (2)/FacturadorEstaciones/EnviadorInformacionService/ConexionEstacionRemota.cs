@@ -35,9 +35,21 @@ namespace EnviadorInformacionService
         }
         public bool EnviarFacturas(IEnumerable<FactoradorEstacionesModelo.Objetos.Factura> facturas, IEnumerable<FormasPagos> formas, Guid estacion, string token)
         {
+            foreach (var factura in facturas.Where(x => x?.Tercero != null))
+            {
+                factura.Tercero.Nombre = ObtenerNombreCompleto(factura.Tercero.Nombre, factura.Tercero.Apellidos);
+            }
             RequestEnviarFacturas request = new RequestEnviarFacturas();
             request.facturas = new List<FacturacionelectronicaCore.Negocio.Modelo.Factura>();
-            request.ordenDeDespachos = facturas.Select(x => new FacturacionelectronicaCore.Negocio.Modelo.OrdenDeDespacho(x, formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).FirstOrDefault()));
+            request.ordenDeDespachos = facturas.Select(x =>
+            {
+                var forma1 = formas.Where(y => y.Id == x.codigoFormaPago).Select(y => y.Descripcion).FirstOrDefault();
+                var forma2 = x.codigoFormaPago2.HasValue
+                    ? formas.Where(y => y.Id == x.codigoFormaPago2.Value).Select(y => y.Descripcion).FirstOrDefault()
+                    : null;
+
+                return new FacturacionelectronicaCore.Negocio.Modelo.OrdenDeDespacho(x, forma1, forma2);
+            });
             request.Estacion = estacion;
             using (var client = new HttpClient())
             {
@@ -72,7 +84,10 @@ namespace EnviadorInformacionService
                 {
                     if (!tercerosEnviar.Any(x => x.Identificacion == t.identificacion))
                     {
-                        tercerosEnviar.Add(new FacturacionelectronicaCore.Negocio.Modelo.Tercero(t));
+                        var terceroEnviar = new FacturacionelectronicaCore.Negocio.Modelo.Tercero(t);
+                        terceroEnviar.Nombre = ObtenerNombreCompleto(t.Nombre, t.Apellidos);
+                        terceroEnviar.Apellidos = string.IsNullOrWhiteSpace(t.Apellidos) ? null : t.Apellidos.Trim();
+                        tercerosEnviar.Add(terceroEnviar);
                     }
                 }
                 var content = new StringContent(JsonConvert.SerializeObject(tercerosEnviar));
@@ -83,6 +98,11 @@ namespace EnviadorInformacionService
                 string responseBody = response.Content.ReadAsStringAsync().Result;
                 return response.StatusCode == System.Net.HttpStatusCode.OK;
             }
+        }
+
+        private static string ObtenerNombreCompleto(string nombre, string apellidos)
+        {
+            return string.Join(" ", new[] { nombre?.Trim(), apellidos?.Trim() }.Where(x => !string.IsNullOrWhiteSpace(x))).Trim();
         }
 
         public IEnumerable<string> GetGuidsFacturasPendientes(Guid estacion, string token)

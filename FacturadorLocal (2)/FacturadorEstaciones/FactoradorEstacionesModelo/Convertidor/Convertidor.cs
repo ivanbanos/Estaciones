@@ -203,6 +203,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                         COD_CLI = dr.Field<string>("COD_CLI"),
                         Direccion = dr.Field<string>("direccion"),
                         Nombre = dr.Field<string>("Nombre"),
+                        Apellidos = dt.Columns.Contains("apellidos") ? dr.Field<string>("apellidos") : null,
                         Telefono = dr.Field<string>("Telefono"),
                         identificacion = dr.Field<string>("identificacion"),
 
@@ -226,6 +227,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                     COD_CLI = dr.Field<string>("COD_CLI"),
                     Direccion = dr.Field<string>("direccion"),
                     Nombre = dr.Field<string>("Nombre"),
+                    Apellidos = dt.Columns.Contains("apellidos") ? dr.Field<string>("apellidos") : null,
                     Telefono = dr.Field<string>("Telefono"),
                     identificacion = dr.Field<string>("identificacion"),
 
@@ -367,6 +369,9 @@ namespace FactoradorEstacionesModelo.Convertidor
                         impresa = dr.Field<int>("impresa"),
                         Estado = dr.Field<string>("estado"),
                         codigoFormaPago = dr.Field<int>("codigoFormaPago"),
+                        codigoFormaPago2 = dt.Columns.Contains("codigoFormaPago2") ? dr.Field<int?>("codigoFormaPago2") : null,
+                        total1 = dt.Columns.Contains("total1") ? dr.Field<double?>("total1") : null,
+                        total2 = dt.Columns.Contains("total2") ? dr.Field<double?>("total2") : null,
                         Combustible = dr.Field<string>("Combustible"),
                         Surtidor = dr.Field<string>("Surtidor"),
                         Cara = dr.Field<string>("Cara"),
@@ -384,6 +389,7 @@ namespace FactoradorEstacionesModelo.Convertidor
                             COD_CLI = dr.Field<string>("COD_CLI"),
                             Direccion = dr.Field<string>("direccion"),
                             Nombre = dr.Field<string>("Nombre"),
+                            Apellidos = dt.Columns.Contains("apellidos") ? dr.Field<string>("apellidos") : null,
                             Telefono = dr.Field<string>("Telefono"),
                             identificacion = dr.Field<string>("identificacion"),
 

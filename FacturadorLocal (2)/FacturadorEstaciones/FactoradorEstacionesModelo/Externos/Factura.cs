@@ -25,6 +25,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
             Cara = x.Cara + "";
             Manguera = x.Manguera + "";
             FormaDePago = forma;
+            FormaDePago2 = string.Empty;
             Fecha = x.fecha;
             Tercero = new Tercero(x.Tercero);
             Descuento = x.Descuento;
@@ -33,8 +34,11 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
             IdTerceroLocal = x.Tercero.terceroId;
             FechaProximoMantenimiento = DateTime.Now;
             SubTotal = x.Subtotal;
+            Total1 = x.total1;
+            Total2 = x.total2;
             Vendedor = x.Empleado;
             Identificacion = x.Tercero.identificacion;
+            NombreTercero = Tercero?.Nombre;
             Prefijo = x.DescripcionResolucion;
             Cedula = "";
             
@@ -60,6 +64,7 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public string Cara { get; set; }
         public string Manguera { get; set; }
         public string FormaDePago { get; set; }
+        public string FormaDePago2 { get; set; }
         public DateTime Fecha { get; set; }
         public string Estado { get; set; }
         public Tercero Tercero { get; set; }
@@ -68,6 +73,8 @@ namespace FacturacionelectronicaCore.Negocio.Modelo
         public int IdTerceroLocal { get; set; }
         public DateTime FechaProximoMantenimiento { get; set; }
         public double SubTotal { get; set; }
+        public double? Total1 { get; set; }
+        public double? Total2 { get; set; }
         public string Vendedor { get; set; }
         public string DescripcionResolucion { get; set; }
         public IEnumerable<OrdenDeDespacho> Ordenes { get; set; }

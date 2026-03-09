@@ -49,11 +49,11 @@ try
 
         services.AddSingleton<IConexionEstacionRemota, ConexionEstacionRemota>();
         services.AddHostedService<WorkerImpresion>();
-        services.AddHostedService<SubirVentasWorker>();
+        // services.AddHostedService<SubirVentasWorker>();
         services.AddHostedService<ObtenerVehiculosWorker>();
-        // services.AddHostedService<CanastillaWorker>();
+        // // services.AddHostedService<CanastillaWorker>();
         services.AddHostedService<FacturasWorker>();
-        //services.AddHostedService<SiesaWorker>();
+        // services.AddHostedService<SiesaWorker>();
 
     })
 
